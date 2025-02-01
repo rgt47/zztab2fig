@@ -2,7 +2,7 @@
 
 [![CRAN status](https://www.r-pkg.org/badges/version/zzdataframe2graphic)](https://CRAN.R-project.org/package=zzdataframe2graphic)  
 [![License](https://img.shields.io/badge/license-GPL3-blue.svg)](LICENSE)  
-[![R-CMD-check](https://github.com/YourUsername/zzdataframe2graphic/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/YourUsername/zzdataframe2graphic/actions)  
+[![R-CMD-check](https://github.com/rgt47/zzdataframe2graphic/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/rgt47/zzdataframe2graphic/actions)  
 
 ## **Overview**  
 

@@ -30,7 +30,7 @@ The package can be installed from CRAN or directly from GitHub if hosted there.
 install.packages("zzdataframe2graphic")
 
 # Or install from GitHub
-# devtools::install_github("yourusername/zzdataframe2graphic")
+# devtools::install_github("rgt47/zzdataframe2graphic")
 ```
 
 Load the package:
@@ -156,7 +156,7 @@ lapply(datasets, function(df) {
 
 - **`kableExtra`**: A package for creating and styling LaTeX/HTML tables in R. [CRAN link](https://cran.r-project.org/package=kableExtra)
 - **`pdflatex` and `pdfcrop`**: Tools from TeX distributions like TeX Live and MiKTeX.
-- **`zzdataframe2graphic`**: [GitHub link](https://github.com/yourusername/zzdataframe2graphic) (if applicable).
+- **`zzdataframe2graphic`**: [GitHub link](https://github.com/rgt47/zzdataframe2graphic) (if applicable).
 
 # Conclusion
 
