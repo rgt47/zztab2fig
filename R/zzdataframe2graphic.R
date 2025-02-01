@@ -114,22 +114,29 @@ create_latex_table <- function(df, tex_file, scolor) {
 #' @param tex_file Path to the LaTeX file.
 #' @param sub_dir Directory where the PDF will be generated.
 compile_latex <- function(tex_file, sub_dir) {
-        old_wd <- setwd(sub_dir)
-        on.exit(setwd(old_wd))
-
-        system(glue::glue("pdflatex -interaction=batchmode {basename(tex_file)}"))
+    old_wd <- setwd(sub_dir)
+    on.exit(setwd(old_wd))
+    system2("pdflatex",
+            args = c("-interaction=batchmode", basename(tex_file)),
+            stdout = FALSE,
+            stderr = FALSE)
 }
 
 #' Crop a PDF file
 #' @param input_pdf Path to the input PDF file.
 #' @param output_pdf Path to the output cropped PDF file.
 crop_pdf <- function(input_pdf, output_pdf) {
-        system(glue::glue("pdfcrop -margins 10 {shQuote(input_pdf)} {shQuote(output_pdf)}"))
-        # since pdfcrop creates a new file, we need to rename it to the original
-        # file name. We can do this by issuing a system command to rename the
-        # file.
-        # issue a system command to rename the cropped file as the original file
-        system(glue::glue("mv {shQuote(output_pdf)} {shQuote(input_pdf)}"))
+    # Crop PDF with suppressed output
+    system2("pdfcrop",
+            args = c("-margins", "10", input_pdf, output_pdf),
+            stdout = FALSE,
+            stderr = FALSE)
+    
+    # Move file with suppressed output
+    system2("mv",
+            args = c(output_pdf, input_pdf),
+            stdout = FALSE,
+            stderr = FALSE)
 }
 
 #' Log messages if verbose is TRUE
