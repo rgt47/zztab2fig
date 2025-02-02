@@ -1,4 +1,7 @@
 test_that("d2g handles basic dataframe conversion correctly", {
+  skip_if_not(system("pdflatex -version") == 0, "pdflatex not available")
+  skip_if_not(system("pdfcrop -version") == 0, "pdfcrop not available")
+  
   # Setup
   dir.create("test_output", showWarnings = FALSE)
   on.exit(unlink("test_output", recursive = TRUE))
@@ -19,6 +22,9 @@ test_that("d2g handles basic dataframe conversion correctly", {
 })
 
 test_that("d2g handles special characters in column names", {
+  skip_if_not(system("pdflatex -version") == 0, "pdflatex not available")
+  skip_if_not(system("pdfcrop -version") == 0, "pdfcrop not available")
+  
   dir.create("test_output", showWarnings = FALSE)
   on.exit(unlink("test_output", recursive = TRUE))
   
