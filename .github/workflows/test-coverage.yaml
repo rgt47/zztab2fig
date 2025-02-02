@@ -22,15 +22,18 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v2
 
       - uses: r-lib/actions/setup-tinytex@v2
-      
-      - name: Install pdfcrop
+
+      - name: Install LaTeX dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y texlive-extra-utils
+          sudo apt-get install -y texlive-latex-base texlive-latex-extra texlive-extra-utils texlive-extra-utils
+          # texlive-extra-utils includes pdfcrop
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::covr
+          extra-packages: |
+            any::covr
+            any::kableExtra
           needs: coverage
 
       - name: Test coverage

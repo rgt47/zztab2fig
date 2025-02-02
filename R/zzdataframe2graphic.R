@@ -17,47 +17,58 @@
 #' }
 #' @export
 d2g <- function(df, filename = NULL,
-                sub_dir = "output",
-                scolor = "blue!10", verbose = FALSE) {
-        # Validate input dataframe
-        if (is.null(filename)) filename <-  deparse(substitute(df))
-        if (!is.data.frame(df)) stop("`df` must be a dataframe.")
-        if (nrow(df) == 0) stop("`df` must not be empty.")
+               sub_dir = "output",
+               scolor = "blue!10", verbose = FALSE) {
+       # Validate input dataframe
+       if (is.null(filename)) filename <- deparse(substitute(df))
+       if (!is.data.frame(df)) stop("`df` must be a dataframe.")
+       if (nrow(df) == 0) stop("`df` must not be empty.")
+       
+       # Validate directory path
+       if (is.null(sub_dir)) stop("Directory name cannot be NULL")
+       if (sub_dir == "") stop("Directory name cannot be empty")
+       
+       # Try to create directory and check if we can write to it
+       if (!dir.exists(sub_dir)) {
+         tryCatch({
+           dir.create(sub_dir, recursive = TRUE)
+         }, error = function(e) {
+           stop("Cannot create directory: ", sub_dir)
+         })
+       }
+       
+       # Check if directory is writable
+       if (file.access(sub_dir, mode = 2) != 0) {
+         stop("Directory is not writable: ", sub_dir)
+       }
 
-        # Sanitize column names
-        colnames(df) <- sanitize_column_names(names(df))
+       # Sanitize column names
+       colnames(df) <- sanitize_column_names(names(df))
 
-        # Generate sanitized filename
-        # filename <- filename %||% deparse(substitute(df))
-        filename <- sanitize_filename(filename)
+       # Generate sanitized filename
+       filename <- sanitize_filename(filename)
 
-        # Ensure output directory exists
-        if (!dir.exists(sub_dir)) {
-                if (verbose) message(glue::glue("Creating directory: {sub_dir}"))
-                dir.create(sub_dir, recursive = TRUE)
-        }
+       # Paths for output files
+       tex_file <- file.path(sub_dir, glue::glue("{filename}.tex"))
+       pdf_file <- file.path(sub_dir, glue::glue("{filename}.pdf"))
+       cropped_pdf_file <- file.path(sub_dir, glue::glue("{filename}_cropped.pdf"))
 
-        # Paths for output files
-        tex_file <- file.path(sub_dir, glue::glue("{filename}.tex"))
-        pdf_file <- file.path(sub_dir, glue::glue("{filename}.pdf"))
-        cropped_pdf_file <- file.path(sub_dir, glue::glue("{filename}_cropped.pdf"))
+       # Create LaTeX table
+       log_message("Generating LaTeX table...")
+       create_latex_table(df, tex_file, scolor)
 
-        # Create LaTeX table
-        log_message("Generating LaTeX table...")
-        create_latex_table(df, tex_file, scolor)
+       # Compile LaTeX to PDF
+       log_message("Compiling LaTeX to PDF...")
+       compile_latex(tex_file, sub_dir)
 
-        # Compile LaTeX to PDF
-        log_message("Compiling LaTeX to PDF...")
-        compile_latex(tex_file, sub_dir)
+       # Crop PDF
+       log_message("Cropping PDF...")
+       crop_pdf(pdf_file, cropped_pdf_file)
 
-        # Crop PDF
-        log_message("Cropping PDF...")
-        crop_pdf(pdf_file, cropped_pdf_file)
+       log_message(glue::glue("PDF generated at: {cropped_pdf_file}"))
 
-        log_message(glue::glue("PDF generated at: {cropped_pdf_file}"))
-
-        # Return cropped PDF path invisibly
-        invisible(cropped_pdf_file)
+       # Return cropped PDF path invisibly
+       invisible(cropped_pdf_file)
 }
 
 # Helper Functions
