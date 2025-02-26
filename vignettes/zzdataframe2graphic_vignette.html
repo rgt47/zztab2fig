@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Ronald (Ryy) G. Thomas" />
+
+
+<title>Creating LaTeX Tables and Cropped PDFs from Dataframes</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Creating LaTeX Tables and Cropped PDFs from
+Dataframes</h1>
+<h4 class="author">Ronald (Ryy) G. Thomas</h4>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>The <code>zzdataframe2graphic</code> package provides a streamlined
+workflow to transform R dataframes into publication-ready LaTeX tables
+and generate cropped PDF outputs. With built-in options for styling,
+directory management, and verbose logging, the package is ideal for
+researchers, analysts, and data scientists who need professional table
+outputs for reports, presentations, or publications.</p>
+<p>This vignette will cover:</p>
+<ol style="list-style-type: decimal">
+<li>Installing and loading the package.</li>
+<li>Key functions and their usage.</li>
+<li>A complete example of generating LaTeX tables and PDFs.</li>
+<li>Customization options.</li>
+<li>Troubleshooting and tips.</li>
+</ol>
+</div>
+<div id="installation" class="section level1">
+<h1>Installation</h1>
+<p>The package can be installed from CRAN or directly from GitHub if
+hosted there.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Install from CRAN</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;zzdataframe2graphic&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># Or install from GitHub</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># devtools::install_github(&quot;yourusername/zzdataframe2graphic&quot;)</span></span></code></pre></div>
+<p>Load the package:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(zzdataframe2graphic)</span></code></pre></div>
+</div>
+<div id="key-functions" class="section level1">
+<h1>Key Functions</h1>
+<div id="d2g" class="section level2">
+<h2><code>d2g()</code></h2>
+<p>The primary function for converting a dataframe to a LaTeX table and
+generating a cropped PDF.</p>
+<div id="arguments" class="section level3">
+<h3>Arguments</h3>
+<ul>
+<li><code>df</code>: A dataframe to be converted.</li>
+<li><code>filename</code>: Base name of the output files (without
+extensions). Defaults to the dataframe name.</li>
+<li><code>sub_dir</code>: Subdirectory to store the output files.
+Default: <code>&quot;output&quot;</code>.</li>
+<li><code>scolor</code>: A LaTeX color for alternating row shading
+(e.g., <code>&quot;blue!10&quot;</code>). Default: <code>&quot;blue!10&quot;</code>.</li>
+<li><code>verbose</code>: Logical. If <code>TRUE</code>, prints progress
+messages. Default: <code>FALSE</code>.</li>
+</ul>
+</div>
+<div id="returns" class="section level3">
+<h3>Returns</h3>
+<ul>
+<li>Invisibly returns the path to the cropped PDF.</li>
+</ul>
+</div>
+<div id="helper-functions" class="section level3">
+<h3>Helper Functions</h3>
+<p>See the full vignette for detailed descriptions of helper functions
+like <code>sanitize_column_names()</code>,
+<code>sanitize_table_cells()</code>, and
+<code>create_latex_table()</code>.</p>
+</div>
+</div>
+</div>
+<div id="example-workflow" class="section level1">
+<h1>Example Workflow</h1>
+<div id="step-1-prepare-your-data" class="section level2">
+<h2>Step 1: Prepare Your Data</h2>
+<p>Load a dataframe, e.g., the <code>mtcars</code> dataset:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">data</span>(mtcars)</span></code></pre></div>
+</div>
+<div id="step-2-generate-the-latex-table-and-pdf" class="section level2">
+<h2>Step 2: Generate the LaTeX Table and PDF</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">d2g</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">df =</span> mtcars,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">filename =</span> <span class="st">&quot;mtcars_table&quot;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">sub_dir =</span> <span class="st">&quot;tables&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">scolor =</span> <span class="st">&quot;blue!10&quot;</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="step-3-inspect-the-outputs" class="section level2">
+<h2>Step 3: Inspect the Outputs</h2>
+<p>Navigate to the <code>tables</code> subdirectory to find: -
+<code>mtcars_table.tex</code>: The LaTeX source file. -
+<code>mtcars_table.pdf</code>: The compiled PDF. -
+<code>mtcars_table_cropped.pdf</code>: The cropped PDF.</p>
+</div>
+</div>
+<div id="customization-options" class="section level1">
+<h1>Customization Options</h1>
+<div id="filename-and-directory" class="section level2">
+<h2>Filename and Directory</h2>
+<ul>
+<li>Use the <code>filename</code> argument to specify a custom base name
+for output files.</li>
+<li>Use the <code>sub_dir</code> argument to organize files into
+specific directories.</li>
+</ul>
+</div>
+<div id="styling" class="section level2">
+<h2>Styling</h2>
+<p>Customize alternating row shading with the <code>scolor</code>
+argument. For example:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>scolor <span class="ot">=</span> <span class="st">&quot;green!20&quot;</span></span></code></pre></div>
+<p>Valid colors depend on the LaTeX <code>xcolor</code> package.</p>
+</div>
+<div id="verbose-logging" class="section level2">
+<h2>Verbose Logging</h2>
+<p>Enable <code>verbose = TRUE</code> for detailed progress
+messages.</p>
+</div>
+</div>
+<div id="advanced-use-cases" class="section level1">
+<h1>Advanced Use Cases</h1>
+<div id="dynamic-dataframes" class="section level2">
+<h2>Dynamic Dataframes</h2>
+<p>Use <code>dplyr</code> or <code>data.table</code> to dynamically
+prepare data before passing it to <code>d2g()</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>filtered_df <span class="ot">&lt;-</span> mtcars <span class="sc">%&gt;%</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="fu">filter</span>(mpg <span class="sc">&gt;</span> <span class="dv">20</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="fu">d2g</span>(</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="at">df =</span> filtered_df,</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>  <span class="at">filename =</span> <span class="st">&quot;filtered_mtcars&quot;</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="integrating-with-reports" class="section level2">
+<h2>Integrating with Reports</h2>
+<p>Use the <code>.tex</code> file generated by <code>d2g()</code> in a
+larger LaTeX document. Include it using:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode latex"><code class="sourceCode latex"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">\input</span>{tables/filtered_mtcars.tex}</span></code></pre></div>
+</div>
+</div>
+<div id="troubleshooting" class="section level1">
+<h1>Troubleshooting</h1>
+<div id="error-pdflatex-or-pdfcrop-not-found" class="section level2">
+<h2>Error: <code>pdflatex</code> or <code>pdfcrop</code> not found</h2>
+<p>Ensure <code>pdflatex</code> and <code>pdfcrop</code> are installed
+on your system. For example: - On Ubuntu:
+<code>sudo apt-get install texlive texlive-extra-utils</code> - On
+macOS: Use MacTeX. - On Windows: Install MiKTeX.</p>
+</div>
+<div id="latex-table-compilation-fails" class="section level2">
+<h2>LaTeX Table Compilation Fails</h2>
+<p>Check the <code>.log</code> file generated during the
+<code>pdflatex</code> step in the output directory for detailed error
+messages.</p>
+</div>
+</div>
+<div id="additional-tips" class="section level1">
+<h1>Additional Tips</h1>
+<ul>
+<li><strong>Batch Processing</strong>: Automate table generation for
+multiple datasets:</li>
+</ul>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>datasets <span class="ot">&lt;-</span> <span class="fu">list</span>(mtcars, iris)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">lapply</span>(datasets, <span class="cf">function</span>(df) {</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="fu">d2g</span>(df, <span class="at">filename =</span> <span class="fu">deparse</span>(<span class="fu">substitute</span>(df)), <span class="at">verbose =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>})</span></code></pre></div>
+<ul>
+<li><strong>Integration with RMarkdown</strong>: Include the generated
+PDF in an RMarkdown document:</li>
+</ul>
+<div class="sourceCode" id="cb9"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="al">![](tables/mtcars_table_cropped.pdf)</span></span></code></pre></div>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<ul>
+<li><strong><code>kableExtra</code></strong>: A package for creating and
+styling LaTeX/HTML tables in R. <a href="https://cran.r-project.org/package=kableExtra">CRAN link</a></li>
+<li><strong><code>pdflatex</code> and <code>pdfcrop</code></strong>:
+Tools from TeX distributions like TeX Live and MiKTeX.</li>
+<li><strong><code>zzdataframe2graphic</code></strong>: <a href="https://github.com/yourusername/zzdataframe2graphic">GitHub
+link</a> (if applicable).</li>
+</ul>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>The <code>zzdataframe2graphic</code> package simplifies the process
+of creating professional-quality tables for publications and
+presentations. By combining R’s data processing capabilities with
+LaTeX’s typesetting power, the package bridges the gap between analysis
+and presentation, making it an essential tool for any data analyst or
+researcher.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
