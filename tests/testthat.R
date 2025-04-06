@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(zzdataframe2graphic)
+library(zztab2fig)
 
-test_check("zzdataframe2graphic")
+test_check("zztab2fig")

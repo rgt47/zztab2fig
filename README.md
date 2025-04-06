@@ -1,12 +1,12 @@
-# **zzdataframe2graphic**  
+# **zztab2fig**  
 
-[![CRAN status](https://www.r-pkg.org/badges/version/zzdataframe2graphic)](https://CRAN.R-project.org/package=zzdataframe2graphic)  
+[![CRAN status](https://www.r-pkg.org/badges/version/zztab2fig)](https://CRAN.R-project.org/package=zztab2fig)  
 [![License](https://img.shields.io/badge/license-GPL3-blue.svg)](LICENSE)  
-[![R-CMD-check](https://github.com/YourUsername/zzdataframe2graphic/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/YourUsername/zzdataframe2graphic/actions)  
+[![R-CMD-check](https://github.com/YourUsername/zztab2fig/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/YourUsername/zztab2fig/actions)  
 
 ## **Overview**  
 
-**zzdataframe2graphic** is an R package for creating LaTeX tables from data frames and generating cropped PDF outputs. With built-in functionality for row shading, column sanitization, and PDF cropping, the package streamlines the process of turning your data into polished, publication-ready tables.  
+**zztab2fig** is an R package for creating LaTeX tables from data frames and generating cropped PDF outputs. With built-in functionality for row shading, column sanitization, and PDF cropping, the package streamlines the process of turning your data into polished, publication-ready tables.  
 
 This package is ideal for data scientists, researchers, and statisticians who frequently present data in professional reports or academic papers.  
 
@@ -22,4 +22,4 @@ This package is ideal for data scientists, researchers, and statisticians who fr
 ### From CRAN  
 To install the stable version:  
 ```R  
-install.packages("zzdataframe2graphic")  
+install.packages("zztab2fig")  

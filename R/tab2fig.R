@@ -10,13 +10,13 @@
 #' @return Invisibly returns the path to the cropped PDF file.
 #' @examples
 #' \dontrun{
-#' d2g(mtcars,
+#' t2f(mtcars,
 #'         filename = "mtcars_table", sub_dir = "tables",
 #'         scolor = "blue!10", verbose = TRUE
 #' )
 #' }
 #' @export
-d2g <- function(df, filename = NULL,
+t2f <- function(df, filename = NULL,
                sub_dir = "output",
                scolor = "blue!10", verbose = FALSE) {
        # Validate input dataframe
