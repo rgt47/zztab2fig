@@ -16,7 +16,9 @@ Suggests:
     testthat (>= 3.0.0),
     withr,
     knitr,
-    rmarkdown
+    rmarkdown,
+    dplyr,
+    stringr
 SystemRequirements: LaTeX, pdflatex, pdfcrop
 Encoding: UTF-8
 VignetteBuilder: knitr
