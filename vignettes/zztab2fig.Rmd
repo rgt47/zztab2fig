@@ -1,4 +1,3 @@
-
 ---
 title: "Creating LaTeX Tables and Cropped PDFs from Dataframes"
 author: "Ronald (Ryy) G. Thomas"
