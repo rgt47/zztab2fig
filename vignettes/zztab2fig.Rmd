@@ -26,7 +26,7 @@ The package can be installed from CRAN or directly from GitHub if hosted there.
 
 ```r
 # Install from CRAN
-install.packages("zztab2fig")
+#install.packages("zztab2fig")
 
 # Or install from GitHub
 # devtools::install_github("yourusername/zztab2fig")
