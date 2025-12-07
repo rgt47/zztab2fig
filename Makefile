@@ -15,6 +15,10 @@ IMAGE_TAG = $(GIT_SHA)
 help:
 	@echo "Available targets:"
 	@echo ""
+	@echo "  Main workflow (RECOMMENDED):"
+	@echo "    r                     - Start bash terminal (vim editing, all profiles)"
+	@echo "    rstudio               - Start RStudio Server on http://localhost:8787"
+	@echo ""
 	@echo "  Validation (NO HOST R REQUIRED!):"
 	@echo "    check-renv            - Full validation: strict + auto-fix (recommended)"
 	@echo "    check-renv-no-fix     - Validation only, no auto-install"
@@ -22,18 +26,13 @@ help:
 	@echo ""
 	@echo "  Native R - requires local R installation:"
 	@echo "    document, build, check, install, vignettes, test, deps"
-	@echo "    check-renv-ci (legacy)"
 	@echo ""
-	@echo "  Docker - works without local R:"
-	@echo "    r                     - Start container (RECOMMENDED! Auto-detects profile, mounts cache)"
-	@echo "    docker-run            - Same as 'make r' (auto-detects profile, mounts cache, validates)"
+	@echo "  Docker utilities:"
 	@echo "    docker-build          - Build image from current renv.lock"
 	@echo "    docker-rebuild        - Rebuild image without cache (force fresh build)"
 	@echo "    docker-build-log      - Build with detailed logs (for debugging)"
-	@echo "    docker-rstudio        - Start RStudio Server"
 	@echo "    docker-push-team, docker-document, docker-build-pkg, docker-check"
 	@echo "    docker-test, docker-vignettes, docker-render, docker-check-renv"
-	@echo "    docker-check-renv-fix"
 	@echo ""
 	@echo "  Cleanup:"
 	@echo "    clean, docker-clean"
@@ -201,8 +200,29 @@ docker-run: check-renv
 		fi; \
 	fi
 
-# Alias for docker-run (shorthand)
-r: docker-run
+# Terminal: Interactive bash for vim editing
+r: check-renv
+	@PROFILE=$$(head -20 Dockerfile | grep 'Profile:' | head -1 | sed 's/.*Profile: \([a-z0-9_]*\).*/\1/'); \
+	if [ -z "$$PROFILE" ]; then \
+		echo "❌ Could not detect profile from Dockerfile"; \
+		exit 1; \
+	fi; \
+	BASE_IMAGE=$$(grep '^FROM' Dockerfile | head -1 | awk '{print $$2}' | sed 's/--platform[^[:space:]]*[[:space:]]//'); \
+	if echo "$$BASE_IMAGE" | grep -qE '(rocker/verse|rocker/tidyverse|rocker/rstudio|rocker/geospatial)'; then \
+		HOME_DIR="/home/rstudio"; \
+	else \
+		HOME_DIR="/home/analyst"; \
+	fi; \
+	echo "🐳 Starting bash terminal ($$PROFILE)..."; \
+	echo "📝 Use vim, R, or any terminal tools"; \
+	echo ""; \
+	docker run --platform linux/amd64 --rm -it -v $$(pwd):$$HOME_DIR/project -v $$(pwd)/.cache/R/renv:$$HOME_DIR/.cache/R/renv $(PACKAGE_NAME); \
+	echo ""; \
+	echo "📋 Post-session validation..."; \
+	bash modules/validation.sh --fix --strict --verbose || echo "⚠️  Package validation failed"
+
+# Alias for rstudio
+rstudio: docker-rstudio
 
 # Cleanup
 clean:
