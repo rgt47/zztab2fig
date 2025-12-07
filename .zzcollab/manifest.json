@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "created_at": "2025-12-07T20:14:56Z",
+  "created_at": "2025-12-07T20:43:30Z",
   "package_name": "zztab2fig",
   "modules_loaded": [
     "core",
@@ -50,7 +50,6 @@
     "NAMESPACE",
     "tests/testthat.R",
     "tests/testthat/test-utils.R",
-    ".Rprofile",
     ".zzcollab/uninstall.sh"
   ],
   "template_files": [
@@ -63,7 +62,7 @@
       "destination": "docs/DATA_WORKFLOW_GUIDE.md"
     },
     {
-      "template": "DESCRIPTION.ubuntu_standard_minimal",
+      "template": "DESCRIPTION.ubuntu_standard_publishing",
       "destination": "DESCRIPTION"
     },
     {
@@ -131,7 +130,7 @@
       "destination": ".gitignore"
     },
     {
-      "template": "Dockerfile.ubuntu_standard_minimal",
+      "template": "Dockerfile.ubuntu_standard_publishing",
       "destination": "Dockerfile"
     },
     {
