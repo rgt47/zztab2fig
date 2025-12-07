@@ -11,7 +11,14 @@ URL: https://github.com/rgt47/zztab2fig
 BugReports: https://github.com/rgt47/zztab2fig
 Imports: 
     kableExtra,
-    glue
+    glue,
+    dplyr,
+    here,
+    knitr,
+    palmerpenguins,
+    rmarkdown,
+    stringr,
+    testthat,
 Suggests: 
     testthat (>= 3.0.0),
     withr,
