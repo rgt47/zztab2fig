@@ -26,7 +26,7 @@
     "analysis/data",
     "analysis/data/raw_data",
     "analysis/data/derived_data",
-    "analysis/paper",
+    "analysis/report",
     "analysis/figures",
     "analysis/tables",
     "analysis/templates",
@@ -38,7 +38,7 @@
     "tests/integration",
     "renv",
     "analysis",
-    "analysis/paper",
+    "analysis/report",
     "analysis/figures",
     "analysis/tables",
     "analysis/templates",
@@ -142,8 +142,8 @@
       "destination": ".github/workflows/r-package.yml"
     },
     {
-      "template": "unified/.github/workflows/render-paper.yml",
-      "destination": ".github/workflows/render-paper.yml"
+      "template": "unified/.github/workflows/render-report.yml",
+      "destination": ".github/workflows/render-report.yml"
     },
     {
       "template": "Makefile",

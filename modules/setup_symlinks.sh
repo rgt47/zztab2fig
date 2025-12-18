@@ -10,9 +10,9 @@
 #
 # This script creates symlinks at two levels:
 #   1. Post root: For Quarto to find index.qmd and for HTML to resolve paths
-#   2. analysis/paper/: For intuitive editing (paths like figures/plot.png)
+#   2. analysis/report/: For intuitive editing (paths like figures/plot.png)
 #
-# After running, you can write paths in analysis/paper/index.qmd like:
+# After running, you can write paths in analysis/report/index.qmd like:
 #   ![Plot](figures/plot.png)
 #   ![Hero](media/images/hero.jpg)
 #
@@ -153,7 +153,7 @@ update_rbuildignore() {
 
 # Copy index.qmd template if it doesn't exist
 copy_index_template() {
-    local target="analysis/paper/index.qmd"
+    local target="analysis/report/index.qmd"
 
     if [[ -f "$target" ]]; then
         info "index.qmd already exists, skipping template copy"
@@ -165,7 +165,7 @@ copy_index_template() {
         local template="$templates_dir/index.qmd"
         if [[ -f "$template" ]]; then
             cp "$template" "$target"
-            success "Copied index.qmd template to analysis/paper/"
+            success "Copied index.qmd template to analysis/report/"
             return 0
         fi
     fi
@@ -218,7 +218,7 @@ create_symlinks() {
     echo ""
 
     # Ensure required directories exist
-    mkdir -p analysis/paper
+    mkdir -p analysis/report
     mkdir -p analysis/figures
     mkdir -p analysis/media/images
     mkdir -p analysis/media/audio
@@ -236,16 +236,16 @@ create_symlinks() {
     echo "Root-level symlinks (for Quarto/HTML):"
 
     # Root-level symlinks
-    create_symlink "analysis/paper/index.qmd" "index.qmd" "  index.qmd"
+    create_symlink "analysis/report/index.qmd" "index.qmd" "  index.qmd"
     create_symlink "analysis/figures" "figures" "  figures/"
     create_symlink "analysis/media" "media" "  media/"
     create_symlink "analysis/data" "data" "  data/"
 
     echo ""
-    echo "analysis/paper/ symlinks (for intuitive editing):"
+    echo "analysis/report/ symlinks (for intuitive editing):"
 
-    # analysis/paper/ symlinks
-    cd analysis/paper
+    # analysis/report/ symlinks
+    cd analysis/report
     create_symlink "../figures" "figures" "  figures/"
     create_symlink "../media" "media" "  media/"
     create_symlink "../data" "data" "  data/"
@@ -260,7 +260,7 @@ create_symlinks() {
     success "Symlink structure created!"
     echo ""
     echo "Next steps:"
-    echo "  1. Create your blog post: analysis/paper/index.qmd"
+    echo "  1. Create your blog post: analysis/report/index.qmd"
     echo "  2. Add images to: analysis/media/images/"
     echo "  3. Add analysis scripts to: analysis/scripts/"
     echo "  4. Generated figures go to: analysis/figures/"
@@ -282,9 +282,9 @@ remove_symlinks() {
     remove_symlink "data" "  data/"
 
     echo ""
-    echo "Removing analysis/paper/ symlinks:"
-    if [[ -d "analysis/paper" ]]; then
-        cd analysis/paper
+    echo "Removing analysis/report/ symlinks:"
+    if [[ -d "analysis/report" ]]; then
+        cd analysis/report
         remove_symlink "figures" "  figures/"
         remove_symlink "media" "  media/"
         remove_symlink "data" "  data/"
@@ -314,9 +314,9 @@ show_status() {
     done
 
     echo ""
-    echo "analysis/paper/:"
-    if [[ -d "analysis/paper" ]]; then
-        cd analysis/paper
+    echo "analysis/report/:"
+    if [[ -d "analysis/report" ]]; then
+        cd analysis/report
         for link in figures media data; do
             if [[ -L "$link" ]]; then
                 local target
@@ -330,7 +330,7 @@ show_status() {
         done
         cd ../..
     else
-        echo -e "  ${RED}✗${NC} analysis/paper/ directory doesn't exist"
+        echo -e "  ${RED}✗${NC} analysis/report/ directory doesn't exist"
     fi
 }
 
@@ -353,16 +353,16 @@ DESCRIPTION:
 
     1. Quarto to find index.qmd at the post root (required by Quarto blogs)
     2. HTML to resolve paths like figures/plot.png from the post root
-    3. Intuitive editing in analysis/paper/ with simple relative paths
+    3. Intuitive editing in analysis/report/ with simple relative paths
 
 STRUCTURE CREATED:
     post_root/
-    ├── index.qmd → analysis/paper/index.qmd   (for Quarto)
+    ├── index.qmd → analysis/report/index.qmd   (for Quarto)
     ├── figures/  → analysis/figures/           (for HTML)
     ├── media/    → analysis/media/             (for HTML)
     ├── data/     → analysis/data/              (for HTML)
     └── analysis/
-        ├── paper/
+        ├── report/
         │   ├── index.qmd                       (actual file)
         │   ├── figures/ → ../figures/          (for editing)
         │   ├── media/   → ../media/            (for editing)
@@ -377,7 +377,7 @@ STRUCTURE CREATED:
             └── derived_data/
 
 USAGE IN index.qmd:
-    After setup, write paths relative to analysis/paper/:
+    After setup, write paths relative to analysis/report/:
 
     ![Plot](figures/plot.png)
     ![Hero](media/images/hero.jpg)
