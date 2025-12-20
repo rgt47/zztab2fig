@@ -1,0 +1,36 @@
+# renv
+^renv$
+^renv\.lock$
+
+# License files (separate from DESCRIPTION License field)
+^LICENSE\.md$
+^CODE_OF_CONDUCT\.md$
+
+# GitHub
+^\.github$
+
+# Documentation build artifacts
+^doc$
+^Meta$
+
+# RStudio project files
+^.*\.Rproj$
+^\.Rproj\.user$
+
+# zzcollab
+^\.zzcollab$
+^Dockerfile$
+^Makefile$
+^docs$
+^analysis$
+^CLAUDE\.md$
+^ZZCOLLAB_USER_GUIDE\.md$
+
+# zzvim-R temp files
+^\.zz.*\.R$
+
+# Local config
+^\.Rprofile\.local$
+
+# Cache
+^\.cache$

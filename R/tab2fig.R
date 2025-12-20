@@ -26,7 +26,6 @@
 #' )
 #' }
 #' @importFrom kableExtra kable row_spec kable_styling
-#' @importFrom glue glue
 #' @export
 t2f <- function(df, filename = NULL,
                 sub_dir = "output",

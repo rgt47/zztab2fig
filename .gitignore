@@ -1,0 +1,46 @@
+# R session files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# R package build artifacts
+/doc/
+/Meta/
+*.tar.gz
+
+# System files
+.DS_Store
+.httr-oauth
+
+# Quarto
+.quarto/
+_site/
+
+# zzcollab user config (not project config)
+.zzcollab/
+
+# zzvim-R temp files
+.zz*.R
+
+# LaTeX artifacts
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bbl
+*.blg
+
+# Local R profile (user-specific)
+.Rprofile.local
+
+# renv library (lock file is committed)
+renv/library/
+renv/staging/
+renv/python/
+renv/sandbox/
+
+# Cache directories
+.cache/
