@@ -4,7 +4,13 @@
 \alias{create_latex_table}
 \title{Create a LaTeX table with alternating row colors using kableExtra}
 \usage{
-create_latex_table(df, tex_file, scolor)
+create_latex_table(
+  df,
+  tex_file,
+  scolor,
+  extra_packages = NULL,
+  document_class = "article"
+)
 }
 \arguments{
 \item{df}{A dataframe to convert to a LaTeX table.}
@@ -12,7 +18,13 @@ create_latex_table(df, tex_file, scolor)
 \item{tex_file}{Path to the output LaTeX file.}
 
 \item{scolor}{A LaTeX color name for alternating row shading.}
+
+\item{extra_packages}{A list of LaTeX package specifications. Defaults to
+NULL.}
+
+\item{document_class}{LaTeX document class to use. Defaults to "article".}
 }
 \description{
 Create a LaTeX table with alternating row colors using kableExtra
 }
+\keyword{internal}

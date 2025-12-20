@@ -232,9 +232,12 @@ sanitize_filename <- function(filename) {
 #' @param df A dataframe to convert to a LaTeX table.
 #' @param tex_file Path to the output LaTeX file.
 #' @param scolor A LaTeX color name for alternating row shading.
-#' @param extra_packages A list of LaTeX package specifications.
-#' @param document_class LaTeX document class to use.
-create_latex_table <- function(df, tex_file, scolor, extra_packages = NULL, document_class = "article") {
+#' @param extra_packages A list of LaTeX package specifications. Defaults to
+#'   NULL.
+#' @param document_class LaTeX document class to use. Defaults to "article".
+#' @keywords internal
+create_latex_table <- function(df, tex_file, scolor, extra_packages = NULL,
+                               document_class = "article") {
   # Install kableExtra if not installed
   if (!requireNamespace("kableExtra", quietly = TRUE)) {
     stop("The 'kableExtra' package is required but not installed.")
@@ -308,7 +311,9 @@ crop_pdf <- function(input_pdf, output_pdf) {
 
 #' Log messages if verbose is TRUE
 #' @param msg A message to display.
-#' @param verbose Logical indicating whether to display the message.
+#' @param verbose Logical indicating whether to display the message. Defaults
+#'   to FALSE.
+#' @keywords internal
 log_message <- function(msg, verbose = FALSE) {
   if (isTRUE(verbose)) message(msg)
 }

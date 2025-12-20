@@ -4,11 +4,15 @@
 \alias{log_message}
 \title{Log messages if verbose is TRUE}
 \usage{
-log_message(msg)
+log_message(msg, verbose = FALSE)
 }
 \arguments{
 \item{msg}{A message to display.}
+
+\item{verbose}{Logical indicating whether to display the message. Defaults
+to FALSE.}
 }
 \description{
 Log messages if verbose is TRUE
 }
+\keyword{internal}

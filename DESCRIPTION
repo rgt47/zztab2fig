@@ -7,24 +7,20 @@ Authors@R:
            comment = c(ORCID = "0000-0003-1686-4965"))
 Description: A package to create LaTeX tables from dataframes with
     optional styling and generate cropped PDF figures.
-License: GPL (>= 3)
+License: GPL (>= 3) + file LICENSE
 URL: https://github.com/rgt47/zztab2fig
 BugReports: https://github.com/rgt47/zztab2fig/issues
 Imports:
-    kableExtra,
-    dplyr,
-    here,
-    stringr,
-    testthat,
-    renv,
+    kableExtra
 Suggests:
-    testthat (>= 3.0.0),
+    dplyr,
     knitr,
+    palmerpenguins,
     rmarkdown,
-    palmerpenguins
+    testthat (>= 3.0.0)
 SystemRequirements: LaTeX, pdflatex, pdfcrop
 Encoding: UTF-8
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3

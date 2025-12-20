@@ -9,7 +9,9 @@ t2f(
   filename = NULL,
   sub_dir = "output",
   scolor = "blue!10",
-  verbose = FALSE
+  verbose = FALSE,
+  extra_packages = NULL,
+  document_class = "article"
 )
 }
 \arguments{
@@ -22,6 +24,10 @@ t2f(
 \item{scolor}{A LaTeX color name for alternating row shading in the table (e.g., "blue!10").}
 
 \item{verbose}{Logical. If TRUE, prints progress messages.}
+
+\item{extra_packages}{A list of LaTeX package specifications. Can include helper functions like geometry(), babel(), fontspec() or raw LaTeX strings.}
+
+\item{document_class}{LaTeX document class to use. Defaults to "article".}
 }
 \value{
 Invisibly returns the path to the cropped PDF file.
@@ -32,8 +38,16 @@ Invisibly returns the path to the cropped PDF file.
 \examples{
 \dontrun{
 t2f(mtcars,
-        filename = "mtcars_table", sub_dir = "tables",
-        scolor = "blue!10", verbose = TRUE
+  filename = "mtcars_table", sub_dir = "tables",
+  scolor = "blue!10", verbose = TRUE
+)
+
+# With custom LaTeX packages
+t2f(mtcars,
+  extra_packages = list(
+    geometry(margin = "5mm", paper = "a4paper"),
+    babel("spanish")
+  )
 )
 }
 }
