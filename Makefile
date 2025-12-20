@@ -4,8 +4,12 @@
 PACKAGE_NAME = zztab2fig
 R_VERSION = 4.5.1
 TEAM_NAME = rgtlab
-PROJECT_NAME = 
+PROJECT_NAME =
 DOCKERHUB_ACCOUNT = rgt47
+
+# zzcollab framework location (override with ZZCOLLAB_HOME env var)
+ZZCOLLAB_HOME ?= $(HOME)/.zzcollab
+VALIDATION_SCRIPT = $(ZZCOLLAB_HOME)/modules/validation.sh
 
 # Git-based versioning for reproducibility (use git SHA or date)
 GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo "$(shell date +%Y%m%d)")
@@ -69,20 +73,20 @@ deps:
 # Auto-adds missing packages to DESCRIPTION and renv.lock
 # Run this before `git commit` to catch issues locally (prevents CI failures)
 check-renv:
-	@bash modules/validation.sh --fix --strict --verbose
+	@bash $(VALIDATION_SCRIPT) --fix --strict --verbose
 
 # Validation only, no auto-fix (report issues without modifying files)
 check-renv-no-fix:
-	@bash modules/validation.sh --no-fix --strict --verbose
+	@bash $(VALIDATION_SCRIPT) --no-fix --strict --verbose
 
 # Standard mode validation (skip tests/, vignettes/, inst/ directories)
 check-renv-no-strict:
-	@bash modules/validation.sh --fix --verbose
+	@bash $(VALIDATION_SCRIPT) --fix --verbose
 
 # Legacy: R-based validation (for CI/CD that has R pre-installed)
 # This is the old approach, kept for backward compatibility
 check-renv-ci:
-	@bash modules/validation.sh --fix --strict --verbose
+	@bash $(VALIDATION_SCRIPT) --fix --strict --verbose
 
 # Docker targets (work without local R)
 # Docker-first workflow:
@@ -193,7 +197,7 @@ docker-run: check-renv
 	esac
 	@echo ""
 	@echo "📋 Post-session validation: checking for new packages..."
-	@bash modules/validation.sh --fix --strict --verbose || echo "⚠️  Package validation failed - see above for details"
+	@bash $(VALIDATION_SCRIPT) --fix --strict --verbose || echo "⚠️  Package validation failed - see above for details"
 	@if [ -f renv.lock ]; then \
 		if ! touch renv.lock; then \
 			echo "⚠️  Warning: Failed to restore renv.lock timestamp (file may be readonly)" >&2; \
@@ -219,7 +223,7 @@ r: check-renv
 	docker run --platform linux/amd64 --rm -it -v $$(pwd):$$HOME_DIR/project -v $$(pwd)/.cache/R/renv:$$HOME_DIR/.cache/R/renv $(PACKAGE_NAME); \
 	echo ""; \
 	echo "📋 Post-session validation..."; \
-	bash modules/validation.sh --fix --strict --verbose || echo "⚠️  Package validation failed"
+	bash $(VALIDATION_SCRIPT) --fix --strict --verbose || echo "⚠️  Package validation failed"
 
 # Alias for rstudio
 rstudio: docker-rstudio
