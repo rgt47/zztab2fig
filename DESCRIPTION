@@ -11,7 +11,12 @@ License: GPL (>= 3)
 URL: https://github.com/rgt47/zztab2fig
 BugReports: https://github.com/rgt47/zztab2fig/issues
 Imports:
-    kableExtra
+    kableExtra,
+    dplyr,
+    here,
+    stringr,
+    testthat,
+    renv,
 Suggests:
     testthat (>= 3.0.0),
     knitr,
