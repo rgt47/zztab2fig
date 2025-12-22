@@ -4,12 +4,15 @@
 \alias{crop_pdf}
 \title{Crop a PDF file}
 \usage{
-crop_pdf(input_pdf, output_pdf)
+crop_pdf(input_pdf, output_pdf, margin = 10)
 }
 \arguments{
 \item{input_pdf}{Path to the input PDF file.}
 
 \item{output_pdf}{Path to the output cropped PDF file.}
+
+\item{margin}{Numeric. Margin size in points. Can be a single value (applied
+to all sides) or a vector of 4 values (left, top, right, bottom).}
 }
 \description{
 Crop a PDF file

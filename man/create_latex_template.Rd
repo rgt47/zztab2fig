@@ -4,12 +4,18 @@
 \alias{create_latex_template}
 \title{Create LaTeX document template with specified packages}
 \usage{
-create_latex_template(document_class = "article", extra_packages = NULL)
+create_latex_template(
+  document_class = "article",
+  extra_packages = NULL,
+  longtable = FALSE
+)
 }
 \arguments{
 \item{document_class}{LaTeX document class}
 
 \item{extra_packages}{List of package specifications or character strings}
+
+\item{longtable}{Logical. Include longtable package if TRUE.}
 }
 \value{
 Character string with complete LaTeX document preamble

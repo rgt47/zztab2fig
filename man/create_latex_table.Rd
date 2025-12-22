@@ -9,7 +9,12 @@ create_latex_table(
   tex_file,
   scolor,
   extra_packages = NULL,
-  document_class = "article"
+  document_class = "article",
+  caption = NULL,
+  label = NULL,
+  align = NULL,
+  longtable = FALSE,
+  striped = TRUE
 )
 }
 \arguments{
@@ -23,6 +28,16 @@ create_latex_table(
 NULL.}
 
 \item{document_class}{LaTeX document class to use. Defaults to "article".}
+
+\item{caption}{Table caption. Defaults to NULL.}
+
+\item{label}{LaTeX label for cross-referencing. Defaults to NULL.}
+
+\item{align}{Column alignment vector. Defaults to NULL (auto).}
+
+\item{longtable}{Logical. Use longtable for multi-page tables.}
+
+\item{striped}{Logical. Apply alternating row colors.}
 }
 \description{
 Create a LaTeX table with alternating row colors using kableExtra
