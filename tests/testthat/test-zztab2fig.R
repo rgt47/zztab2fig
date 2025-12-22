@@ -90,8 +90,8 @@ test_that("t2f handles extra_packages", {
 })
 
 test_that("t2f input validation works", {
-  # Test invalid dataframe
-  expect_error(t2f("not a dataframe"), "`df` must be a dataframe")
+  # Test invalid input type (S3 method dispatch error)
+  expect_error(t2f("not a dataframe"), "No t2f method for class")
   
   # Test empty dataframe
   empty_df <- data.frame()
