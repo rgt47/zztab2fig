@@ -1,49 +1,118 @@
-#' Convert a dataframe to a LaTeX table and generate a cropped PDF
-#' @author Ronald G. Thomas
-#' @description: A package to create LaTeX tables from dataframes with optional styling and generate cropped PDF outputs.
+#' Internal implementation for t2f
+#'
+#' @description Internal function that performs the actual table generation.
+#'   This is called by the S3 methods defined in s3-methods.R.
 #'
 #' @param df A dataframe to be converted to a LaTeX table.
-#' @param filename A character string. The base name of the output files (without extensions).
-#' @param sub_dir A character string. The subdirectory where output files will be stored. Defaults to "output".
-#' @param scolor A LaTeX color name for alternating row shading in the table (e.g., "blue!10").
+#' @param filename A character string. The base name of the output files
+#'   (without extensions).
+#' @param sub_dir A character string. The subdirectory where output files will
+#'   be stored. Defaults to "output".
+#' @param scolor A LaTeX color name for alternating row shading in the table
+#'   (e.g., "blue!10"). Overrides theme setting if provided.
 #' @param verbose Logical. If TRUE, prints progress messages.
-#' @param extra_packages A list of LaTeX package specifications. Can include helper functions like geometry(), babel(), fontspec() or raw LaTeX strings.
+#' @param extra_packages A list of LaTeX package specifications. Can include
+#'   helper functions like geometry(), babel(), fontspec() or raw LaTeX
+#'   strings. Combined with theme packages if a theme is active.
 #' @param document_class LaTeX document class to use. Defaults to "article".
-#' @return Invisibly returns the path to the cropped PDF file.
-#' @examples
-#' \dontrun{
-#' t2f(mtcars,
-#'   filename = "mtcars_table", sub_dir = "tables",
-#'   scolor = "blue!10", verbose = TRUE
-#' )
+#'   Overrides theme setting if provided.
+#' @param caption A character string. LaTeX caption for the table. Defaults to
+#'   NULL (no caption).
+#' @param label A character string. LaTeX label for cross-referencing (e.g.,
+#'   "tab:mytable"). Defaults to NULL (no label).
+#' @param align Column alignment specification. Can be NULL (auto-detect),
+#'   a single character ("l", "c", "r") applied to all columns, or a character
+#'   vector with one alignment per column.
+#' @param longtable Logical. If TRUE, uses longtable package for tables
+#'   spanning multiple pages. Defaults to FALSE.
+#' @param crop Logical. If TRUE (default), crops the PDF to remove margins.
+#' @param crop_margin Numeric. Margin size in points for cropped PDF. Can be a
+#'   single value (applied to all sides) or a vector of 4 values (left, top,
+#'   right, bottom). Defaults to 10.
+#' @param theme A t2f_theme object or character string naming a built-in theme
+#'   ("minimal", "apa", "nature", "nejm"). Theme settings are used as defaults
+#'   but can be overridden by explicit arguments.
 #'
-#' # With custom LaTeX packages
-#' t2f(mtcars,
-#'   extra_packages = list(
-#'     geometry(margin = "5mm", paper = "a4paper"),
-#'     babel("spanish")
-#'   )
-#' )
-#' }
-#' @importFrom kableExtra kable row_spec kable_styling
-#' @export
-t2f <- function(df, filename = NULL,
+#' @return Invisibly returns the path to the cropped PDF file (or full PDF if
+#'   crop=FALSE).
+#'
+#' @importFrom kableExtra kable row_spec kable_styling column_spec
+#' @keywords internal
+t2f_internal <- function(df, filename = NULL,
                 sub_dir = "output",
-                scolor = "blue!10", verbose = FALSE,
+                scolor = NULL, verbose = FALSE,
                 extra_packages = NULL,
-                document_class = "article") {
+                document_class = NULL,
+                caption = NULL,
+                label = NULL,
+                align = NULL,
+                longtable = FALSE,
+                crop = TRUE,
+                crop_margin = 10,
+                theme = NULL) {
+
   # Validate inputs
   if (is.null(filename)) filename <- deparse(substitute(df))
   if (!is.data.frame(df)) stop("`df` must be a dataframe.", call. = FALSE)
   if (nrow(df) == 0) stop("`df` must not be empty.", call. = FALSE)
+  if (!is.logical(verbose) || length(verbose) != 1) {
+    stop("`verbose` must be a single logical value.", call. = FALSE)
+  }
+  if (!is.logical(crop) || length(crop) != 1) {
+    stop("`crop` must be a single logical value.", call. = FALSE)
+  }
+  if (!is.logical(longtable) || length(longtable) != 1) {
+    stop("`longtable` must be a single logical value.", call. = FALSE)
+  }
+
+  # Validate crop_margin
+  if (!is.numeric(crop_margin) || !(length(crop_margin) %in% c(1, 4))) {
+    stop("`crop_margin` must be numeric of length 1 or 4.", call. = FALSE)
+  }
+
+  # Validate caption and label
+  if (!is.null(caption) && (!is.character(caption) || length(caption) != 1)) {
+    stop("`caption` must be a single character string or NULL.", call. = FALSE)
+  }
+  if (!is.null(label) && (!is.character(label) || length(label) != 1)) {
+    stop("`label` must be a single character string or NULL.", call. = FALSE)
+  }
+
+  # Validate alignment
+  if (!is.null(align)) {
+    if (!is.character(align)) {
+      stop("`align` must be a character vector or NULL.", call. = FALSE)
+    }
+    valid_aligns <- c("l", "c", "r")
+    if (!all(align %in% valid_aligns)) {
+      stop("`align` must contain only 'l', 'c', or 'r'.", call. = FALSE)
+    }
+    if (length(align) != 1 && length(align) != ncol(df)) {
+      stop("`align` must be length 1 or match number of columns.", call. = FALSE)
+    }
+  }
+
+  # Resolve theme and apply settings
+  resolved_theme <- resolve_theme(theme)
+  theme_settings <- apply_theme_settings(
+    resolved_theme,
+    scolor = scolor,
+    document_class = document_class,
+    extra_packages = extra_packages
+  )
+
+  # Use resolved values (explicit args override theme)
+  scolor <- theme_settings$scolor
+  document_class <- theme_settings$document_class
+  extra_packages <- theme_settings$extra_packages
+  striped <- theme_settings$striped
+
+  # Validate resolved values
   if (!is.character(scolor) || length(scolor) != 1) {
     stop("`scolor` must be a single character string.", call. = FALSE)
   }
   if (!is.character(document_class) || length(document_class) != 1) {
     stop("`document_class` must be a single character string.", call. = FALSE)
-  }
-  if (!is.logical(verbose) || length(verbose) != 1) {
-    stop("`verbose` must be a single logical value.", call. = FALSE)
   }
 
   # Validate directory path
@@ -81,22 +150,44 @@ t2f <- function(df, filename = NULL,
   pdf_file <- file.path(sub_dir, paste0(filename, ".pdf"))
   cropped_pdf_file <- file.path(sub_dir, paste0(filename, "_cropped.pdf"))
 
+  # Auto-detect alignment if not specified
+  if (is.null(align)) {
+    align <- auto_align(df)
+  } else if (length(align) == 1) {
+    align <- rep(align, ncol(df))
+  }
+
   # Create LaTeX table
   log_message("Generating LaTeX table...", verbose)
-  create_latex_table(df, tex_file, scolor, extra_packages, document_class)
+  create_latex_table(
+    df = df,
+    tex_file = tex_file,
+    scolor = scolor,
+    extra_packages = extra_packages,
+    document_class = document_class,
+    caption = caption,
+    label = label,
+    align = align,
+    longtable = longtable,
+    striped = striped
+  )
 
   # Compile LaTeX to PDF
   log_message("Compiling LaTeX to PDF...", verbose)
   compile_latex(tex_file, sub_dir)
 
-  # Crop PDF
-  log_message("Cropping PDF...", verbose)
-  crop_pdf(pdf_file, cropped_pdf_file)
+  # Determine output file
+  if (crop) {
+    log_message("Cropping PDF...", verbose)
+    crop_pdf(pdf_file, cropped_pdf_file, margin = crop_margin)
+    output_file <- cropped_pdf_file
+  } else {
+    output_file <- pdf_file
+  }
 
-  log_message(paste("PDF generated at:", cropped_pdf_file), verbose)
+  log_message(paste("PDF generated at:", output_file), verbose)
 
-  # Return cropped PDF path invisibly
-  invisible(cropped_pdf_file)
+  invisible(output_file)
 }
 
 # LaTeX Package Helper Functions
@@ -168,13 +259,20 @@ fontspec <- function(main_font = NULL, sans_font = NULL, mono_font = NULL) {
 #' Create LaTeX document template with specified packages
 #' @param document_class LaTeX document class
 #' @param extra_packages List of package specifications or character strings
+#' @param longtable Logical. Include longtable package if TRUE.
 #' @return Character string with complete LaTeX document preamble
-create_latex_template <- function(document_class = "article", extra_packages = NULL) {
+create_latex_template <- function(document_class = "article",
+                                  extra_packages = NULL, longtable = FALSE) {
   # Basic required packages
   base_packages <- c(
     "\\usepackage[table]{xcolor}",
     "\\usepackage{booktabs}"
   )
+
+  # Add longtable package if needed
+  if (longtable) {
+    base_packages <- c(base_packages, "\\usepackage{longtable}")
+  }
 
   # Process extra packages
   processed_packages <- character(0)
@@ -183,7 +281,6 @@ create_latex_template <- function(document_class = "article", extra_packages = N
       if (is.character(pkg)) {
         processed_packages <- c(processed_packages, pkg)
       } else if (is.list(pkg)) {
-        # Handle case where package functions return multiple lines
         processed_packages <- c(processed_packages, unlist(pkg))
       }
     }
@@ -228,6 +325,20 @@ sanitize_filename <- function(filename) {
   gsub("[^a-zA-Z0-9_]", "_", filename)
 }
 
+#' Auto-detect column alignment based on data types
+#' @param df A dataframe.
+#' @return A character vector of alignments ("l", "c", or "r").
+#' @keywords internal
+auto_align <- function(df) {
+  vapply(df, function(col) {
+    if (is.numeric(col)) {
+      "r"
+    } else {
+      "l"
+    }
+  }, character(1))
+}
+
 #' Create a LaTeX table with alternating row colors using kableExtra
 #' @param df A dataframe to convert to a LaTeX table.
 #' @param tex_file Path to the output LaTeX file.
@@ -235,10 +346,16 @@ sanitize_filename <- function(filename) {
 #' @param extra_packages A list of LaTeX package specifications. Defaults to
 #'   NULL.
 #' @param document_class LaTeX document class to use. Defaults to "article".
+#' @param caption Table caption. Defaults to NULL.
+#' @param label LaTeX label for cross-referencing. Defaults to NULL.
+#' @param align Column alignment vector. Defaults to NULL (auto).
+#' @param longtable Logical. Use longtable for multi-page tables.
+#' @param striped Logical. Apply alternating row colors.
 #' @keywords internal
 create_latex_table <- function(df, tex_file, scolor, extra_packages = NULL,
-                               document_class = "article") {
-  # Install kableExtra if not installed
+                               document_class = "article", caption = NULL,
+                               label = NULL, align = NULL, longtable = FALSE,
+                               striped = TRUE) {
   if (!requireNamespace("kableExtra", quietly = TRUE)) {
     stop("The 'kableExtra' package is required but not installed.")
   }
@@ -252,16 +369,39 @@ create_latex_table <- function(df, tex_file, scolor, extra_packages = NULL,
     }
   })
 
+  # Build alignment string
+  align_str <- if (!is.null(align)) paste(align, collapse = "") else NULL
+
   # Generate LaTeX table
-  latex_table <- kableExtra::kable(df, format = "latex", booktabs = TRUE) |>
-    kableExtra::row_spec(0, bold = TRUE) |>
-    kableExtra::kable_styling(
-      latex_options = c("striped"),
+  latex_table <- kableExtra::kable(
+    df,
+    format = "latex",
+    booktabs = TRUE,
+    longtable = longtable,
+    caption = caption,
+    label = label,
+    align = align_str
+  )
+
+  # Apply header styling
+  latex_table <- kableExtra::row_spec(latex_table, 0, bold = TRUE)
+
+  # Apply row styling based on striped setting
+  if (striped) {
+    latex_table <- kableExtra::kable_styling(
+      latex_table,
+      latex_options = c("striped", if (longtable) "repeat_header" else NULL),
       stripe_color = scolor
     )
+  } else if (longtable) {
+    latex_table <- kableExtra::kable_styling(
+      latex_table,
+      latex_options = "repeat_header"
+    )
+  }
 
   # Create LaTeX document with template
-  template <- create_latex_template(document_class, extra_packages)
+  template <- create_latex_template(document_class, extra_packages, longtable)
   ending <- "\\end{document}"
 
   writeLines(c(template, latex_table, ending), con = tex_file)
@@ -296,8 +436,21 @@ compile_latex <- function(tex_file, sub_dir) {
 #' Crop a PDF file
 #' @param input_pdf Path to the input PDF file.
 #' @param output_pdf Path to the output cropped PDF file.
-crop_pdf <- function(input_pdf, output_pdf) {
-  cmd <- paste("pdfcrop -margins 10", shQuote(input_pdf), shQuote(output_pdf))
+#' @param margin Numeric. Margin size in points. Can be a single value (applied
+#'   to all sides) or a vector of 4 values (left, top, right, bottom).
+crop_pdf <- function(input_pdf, output_pdf, margin = 10) {
+  # Format margin argument
+  if (length(margin) == 1) {
+    margin_str <- as.character(margin)
+  } else if (length(margin) == 4) {
+    margin_str <- paste(margin, collapse = " ")
+  } else {
+    stop("`margin` must be length 1 or 4.", call. = FALSE)
+  }
+
+  cmd <- paste("pdfcrop -margins", shQuote(margin_str),
+    shQuote(input_pdf), shQuote(output_pdf)
+  )
   result <- system(cmd)
 
   if (result != 0) {
