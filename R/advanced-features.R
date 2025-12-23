@@ -230,8 +230,6 @@ print.t2f_header <- function(x, ...) {
 #' @param valign Vertical alignment: "top", "middle", or "bottom".
 #' @param latex_hline Horizontal line style: "full", "major", "none", or
 #'   "custom".
-#' @param row_group_label_position Position of group labels: "stack" or
-#'   "identity".
 #' @param custom_latex_hline Integer vector. Row indices for custom hlines
 #'   (when latex_hline = "custom").
 #' @param row_group_label_fonts List of font specifications for group labels.
@@ -251,19 +249,16 @@ print.t2f_header <- function(x, ...) {
 t2f_collapse_rows <- function(columns = NULL,
                                valign = c("middle", "top", "bottom"),
                                latex_hline = c("full", "major", "none", "custom"),
-                               row_group_label_position = c("stack", "identity"),
                                custom_latex_hline = NULL,
                                row_group_label_fonts = NULL) {
   valign <- match.arg(valign)
   latex_hline <- match.arg(latex_hline)
-  row_group_label_position <- match.arg(row_group_label_position)
 
   structure(
     list(
       columns = columns,
       valign = valign,
       latex_hline = latex_hline,
-      row_group_label_position = row_group_label_position,
       custom_latex_hline = custom_latex_hline,
       row_group_label_fonts = row_group_label_fonts
     ),
@@ -485,15 +480,25 @@ apply_collapse_rows <- function(kable_obj, collapse_spec) {
     return(kable_obj)
   }
 
-  kableExtra::collapse_rows(
-    kable_obj,
-    columns = collapse_spec$columns,
-    valign = collapse_spec$valign,
-    latex_hline = collapse_spec$latex_hline,
-    row_group_label_position = collapse_spec$row_group_label_position,
-    custom_latex_hline = collapse_spec$custom_latex_hline,
-    row_group_label_fonts = collapse_spec$row_group_label_fonts
-  )
+  # Build args list, only including parameters that are set
+  # row_group_label_position = "stack" can cause issues with striped tables
+  args <- list(kable_input = kable_obj)
+
+  if (!is.null(collapse_spec$columns)) {
+    args$columns <- collapse_spec$columns
+  }
+  args$valign <- collapse_spec$valign
+  args$latex_hline <- collapse_spec$latex_hline
+
+  # Only pass these if explicitly set to non-default values
+  if (!is.null(collapse_spec$custom_latex_hline)) {
+    args$custom_latex_hline <- collapse_spec$custom_latex_hline
+  }
+  if (!is.null(collapse_spec$row_group_label_fonts)) {
+    args$row_group_label_fonts <- collapse_spec$row_group_label_fonts
+  }
+
+  do.call(kableExtra::collapse_rows, args)
 }
 
 #' Process alignment specification for siunitx columns

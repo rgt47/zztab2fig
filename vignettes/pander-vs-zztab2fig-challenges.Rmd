@@ -26,11 +26,11 @@ the relative strengths and approaches of each package.
 
 ## Setup
 
-```{r libraries, message=FALSE}
-library(zztab2fig)
+```{r libraries, message=FALSE, warning=FALSE}
+suppressPackageStartupMessages(library(zztab2fig))
 ```
 
----
+
 # Standard Difficulty Challenges
 
 ## Challenge 1: Basic Data Frame
@@ -74,7 +74,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 **Comparison**: pander outputs markdown for inline display; zztab2fig produces
 publication-ready PDF files.
 
----
+
 
 ## Challenge 2: Custom Column Alignment
 
@@ -113,7 +113,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 **Comparison**: Both handle basic alignment. zztab2fig auto-detects based on
 column type.
 
----
+
 
 ## Challenge 3: Table with Caption
 
@@ -148,7 +148,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 
 **Comparison**: zztab2fig adds cross-reference labels; pander does not.
 
----
+
 
 ## Challenge 4: Regression Model Output
 
@@ -193,7 +193,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 **Comparison**: Both handle lm objects natively. zztab2fig allows selecting
 which statistics to include.
 
----
+
 
 ## Challenge 5: Highlighting Cells
 
@@ -226,7 +226,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 **Comparison**: pander uses row/column indices; zztab2fig supports conditional
 formatting with LaTeX colors.
 
----
+
 
 # Advanced Challenges
 
@@ -282,7 +282,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 **Advantage**: zztab2fig produces proper LaTeX footnotes within the table
 environment using threeparttable.
 
----
+
 
 ## Challenge 7: Spanning Column Headers
 
@@ -342,7 +342,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 **Advantage**: zztab2fig creates proper LaTeX multicolumn headers with cmidrule
 separators.
 
----
+
 
 ## Challenge 8: Multi-Row Cells (Row Spanning)
 
@@ -393,7 +393,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 **Advantage**: zztab2fig automatically merges repeated values using LaTeX
 multirow.
 
----
+
 
 ## Challenge 9: Decimal Point Alignment
 
@@ -442,7 +442,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 
 **Advantage**: zztab2fig uses siunitx for true decimal alignment.
 
----
+
 
 ## Challenge 10: Multi-Page Tables
 
@@ -481,7 +481,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 **Advantage**: zztab2fig uses LaTeX longtable for proper page breaks with
 repeated headers.
 
----
+
 
 ## Challenge 11: Journal-Specific Formatting
 
@@ -527,7 +527,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 **Advantage**: zztab2fig includes built-in themes for NEJM, APA, and Nature
 journals.
 
----
+
 
 ## Challenge 12: Model Comparison Table
 
@@ -576,7 +576,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 **Advantage**: zztab2fig provides `t2f_regression()` for publication-ready
 model comparison tables.
 
----
+
 
 ## Challenge 13: Figure Placement in LaTeX
 
@@ -616,7 +616,7 @@ if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 **Advantage**: zztab2fig provides helper functions for all LaTeX placement
 options (float, inline, margin, wrap).
 
----
+
 
 ## Challenge 14: Combining Multiple Features
 
@@ -673,7 +673,7 @@ pdf_path <- file.path(output_dir, "complex_table_cropped.pdf")
 if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
----
+
 
 # Summary Comparison
 

@@ -370,6 +370,7 @@ t2f.htest <- function(x, digits = 3, ...) {
 #' @param se_in_parens Logical. Show standard errors in parentheses below
 #'   estimates.
 #' @param filename Base name for output files.
+#' @param sub_dir Output directory for generated files.
 #' @param t2f_args List of additional arguments passed to t2f().
 #'
 #' @return Invisibly returns the path to the generated PDF.
@@ -389,6 +390,7 @@ t2f_regression <- function(...,
                            digits = 3,
                            se_in_parens = TRUE,
                            filename = "regression_table",
+                           sub_dir = "output",
                            t2f_args = list()) {
   models <- list(...)
 
@@ -449,7 +451,8 @@ t2f_regression <- function(...,
   result <- rbind(result, stats_rows)
 
   # Call t2f with the comparison table
-  do.call(t2f.default, c(list(x = result, filename = filename), t2f_args))
+  do.call(t2f.default, c(list(x = result, filename = filename, sub_dir = sub_dir),
+                         t2f_args))
 }
 
 # Helper functions
