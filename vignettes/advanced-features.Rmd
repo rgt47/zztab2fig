@@ -12,8 +12,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE
+  fig.align = "center"
 )
+
+has_latex <- nzchar(Sys.which("pdflatex")) && nzchar(Sys.which("pdfcrop"))
+
+output_dir <- tempdir()
 ```
 
 This vignette demonstrates the advanced table formatting capabilities in
@@ -36,8 +40,7 @@ support via the `t2f_footnote()` function.
 
 ### Basic Footnotes
 
-```{r footnotes-basic}
-# Create sample data
+```{r footnotes-basic, eval=has_latex}
 results <- data.frame(
   Variable = c("Age", "BMI", "Systolic BP", "HbA1c"),
   Treatment = c("52.3 (8.2)", "28.1 (4.3)", "142.5 (18.3)", "7.2 (1.1)"),
@@ -46,9 +49,8 @@ results <- data.frame(
   check.names = FALSE
 )
 
-# Define footnotes
 fn <- t2f_footnote(
- general = c(
+  general = c(
     "Values are mean (SD) unless otherwise noted.",
     "BMI = body mass index; BP = blood pressure; HbA1c = hemoglobin A1c."
   )
@@ -56,9 +58,17 @@ fn <- t2f_footnote(
 
 t2f(results,
     filename = "baseline_characteristics",
+    sub_dir = output_dir,
     caption = "Baseline Characteristics by Treatment Group",
     footnote = fn,
     theme = "nejm")
+```
+
+```{r footnotes-basic-display, echo=FALSE, eval=has_latex, out.width="80%"}
+pdf_path <- file.path(output_dir, "baseline_characteristics_cropped.pdf")
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+}
 ```
 
 ### Multiple Footnote Types (APA Style)
@@ -66,8 +76,7 @@ t2f(results,
 APA format requires specific footnote organization: general notes, then
 specific notes, then probability notes.
 
-```{r footnotes-apa}
-# Data with significance markers
+```{r footnotes-apa, eval=has_latex}
 anova_results <- data.frame(
   Source = c("Treatment", "Time", "Treatment x Time", "Error"),
   SS = c(245.32, 189.45, 52.18, 1024.56),
@@ -77,7 +86,6 @@ anova_results <- data.frame(
   p = c("<0.001", "0.002", "0.485", NA)
 )
 
-# Mark significant results with footnote markers
 anova_results$F[1] <- t2f_mark("12.93", 1, "symbol")
 anova_results$F[2] <- t2f_mark("6.66", 2, "symbol")
 
@@ -91,15 +99,22 @@ fn_apa <- t2f_footnote(
 
 t2f(anova_results,
     filename = "anova_table",
+    sub_dir = output_dir,
     caption = "Analysis of Variance Results",
     footnote = fn_apa,
     theme = "apa")
 ```
 
+```{r footnotes-apa-display, echo=FALSE, eval=has_latex, out.width="80%"}
+pdf_path <- file.path(output_dir, "anova_table_cropped.pdf")
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+}
+```
+
 ### Numbered Footnotes for Specific Cells
 
-```{r footnotes-numbered}
-# Clinical trial endpoints
+```{r footnotes-numbered, eval=has_latex}
 endpoints <- data.frame(
   Endpoint = c("Primary: ADAS-Cog14", "Secondary: CDR-SB",
                "Secondary: ADCS-ADL", "Exploratory: Brain Volume"),
@@ -109,7 +124,6 @@ endpoints <- data.frame(
   P = c("0.018", "0.024", "0.285", "0.016")
 )
 
-# Add footnote markers
 endpoints$Endpoint[1] <- t2f_mark(endpoints$Endpoint[1], 1, "number")
 endpoints$Difference[4] <- t2f_mark(endpoints$Difference[4], 2, "number")
 
@@ -122,9 +136,17 @@ fn_numbered <- t2f_footnote(
 
 t2f(endpoints,
     filename = "endpoints_table",
+    sub_dir = output_dir,
     caption = "Efficacy Endpoints at Week 78",
     footnote = fn_numbered,
     theme = "nejm")
+```
+
+```{r footnotes-numbered-display, echo=FALSE, eval=has_latex, out.width="80%"}
+pdf_path <- file.path(output_dir, "endpoints_table_cropped.pdf")
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+}
 ```
 
 ---
@@ -136,8 +158,7 @@ complex tables comparing multiple conditions or timepoints.
 
 ### Basic Spanning Header
 
-```{r header-basic}
-# Treatment comparison data
+```{r header-basic, eval=has_latex}
 comparison <- data.frame(
   Measure = c("Score A", "Score B", "Score C"),
   T_Mean = c(23.4, 18.7, 42.1),
@@ -147,23 +168,30 @@ comparison <- data.frame(
 )
 names(comparison) <- c("Measure", "Mean", "SD", "Mean", "SD")
 
-# Create spanning header
 hdr <- t2f_header_above(
-  " " = 1,           # Empty cell above "Measure"
-  "Treatment" = 2,   # Spans Mean and SD
-  "Control" = 2      # Spans Mean and SD
+  " " = 1,
+  "Treatment" = 2,
+
+  "Control" = 2
 )
 
 t2f(comparison,
     filename = "treatment_comparison",
+    sub_dir = output_dir,
     caption = "Treatment vs Control Outcomes",
     header_above = hdr)
 ```
 
+```{r header-basic-display, echo=FALSE, eval=has_latex, out.width="70%"}
+pdf_path <- file.path(output_dir, "treatment_comparison_cropped.pdf")
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+}
+```
+
 ### Multiple Header Rows
 
-```{r header-multiple}
-# Complex longitudinal data
+```{r header-multiple, eval=has_latex}
 longitudinal <- data.frame(
   Variable = c("Cognitive", "Functional", "Behavioral"),
   W12_T = c(-1.2, -0.8, -0.3),
@@ -175,7 +203,6 @@ longitudinal <- data.frame(
 )
 names(longitudinal) <- c("Domain", "Trt", "Ctrl", "Trt", "Ctrl", "Trt", "Ctrl")
 
-# Two levels of headers
 headers <- list(
   t2f_header_above(
     " " = 1,
@@ -192,9 +219,17 @@ headers <- list(
 
 t2f(longitudinal,
     filename = "longitudinal_outcomes",
+    sub_dir = output_dir,
     caption = "Change from Baseline by Timepoint",
     header_above = headers,
     theme = "nature")
+```
+
+```{r header-multiple-display, echo=FALSE, eval=has_latex, out.width="80%"}
+pdf_path <- file.path(output_dir, "longitudinal_outcomes_cropped.pdf")
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+}
 ```
 
 ---
@@ -206,8 +241,7 @@ multi-row cells improves readability.
 
 ### Basic Row Collapsing
 
-```{r collapse-basic}
-# Hierarchical data
+```{r collapse-basic, eval=has_latex}
 subgroup <- data.frame(
   Category = c("Age", "Age", "Sex", "Sex", "Race", "Race", "Race"),
   Subgroup = c("<65", ">=65", "Male", "Female", "White", "Black", "Asian"),
@@ -219,6 +253,7 @@ subgroup <- data.frame(
 
 t2f(subgroup,
     filename = "subgroup_analysis",
+    sub_dir = output_dir,
     caption = "Subgroup Analysis of Treatment Effect",
     collapse_rows = t2f_collapse_rows(
       columns = 1,
@@ -227,10 +262,16 @@ t2f(subgroup,
     ))
 ```
 
+```{r collapse-basic-display, echo=FALSE, eval=has_latex, out.width="70%"}
+pdf_path <- file.path(output_dir, "subgroup_analysis_cropped.pdf")
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+}
+```
+
 ### Multiple Column Collapse
 
-```{r collapse-multiple}
-# Multi-level hierarchy
+```{r collapse-multiple, eval=has_latex}
 adverse_events <- data.frame(
   System = c(rep("Nervous System", 3), rep("Gastrointestinal", 3),
              rep("General", 2)),
@@ -243,6 +284,7 @@ adverse_events <- data.frame(
 
 t2f(adverse_events,
     filename = "adverse_events",
+    sub_dir = output_dir,
     caption = "Adverse Events by System Organ Class",
     collapse_rows = t2f_collapse_rows(
       columns = 1,
@@ -250,6 +292,13 @@ t2f(adverse_events,
       latex_hline = "major"
     ),
     theme = "nejm")
+```
+
+```{r collapse-multiple-display, echo=FALSE, eval=has_latex, out.width="70%"}
+pdf_path <- file.path(output_dir, "adverse_events_cropped.pdf")
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+}
 ```
 
 ---
@@ -261,29 +310,34 @@ zztab2fig provides siunitx integration for precise alignment.
 
 ### Basic Decimal Alignment
 
-```{r decimal-basic}
-# Numeric results requiring alignment
+```{r decimal-basic, eval=has_latex}
 stats <- data.frame(
   Parameter = c("Mean", "Median", "SD", "Min", "Max"),
   Treatment = c(127.45, 125.00, 18.234, 89.1, 178.92),
   Control = c(124.82, 123.50, 17.891, 91.3, 172.45)
 )
 
-# Create decimal-aligned columns
 t2f(stats,
     filename = "summary_stats",
+    sub_dir = output_dir,
     caption = "Summary Statistics by Group",
     align = list(
-      "l",                    # Parameter: left
-      t2f_decimal(3, 2),      # Treatment: up to 999.99
-      t2f_decimal(3, 2)       # Control: up to 999.99
+      "l",
+      t2f_decimal(3, 2),
+      t2f_decimal(3, 2)
     ))
+```
+
+```{r decimal-basic-display, echo=FALSE, eval=has_latex, out.width="60%"}
+pdf_path <- file.path(output_dir, "summary_stats_cropped.pdf")
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+}
 ```
 
 ### Mixed Alignment with Custom Formats
 
-```{r decimal-custom}
-# Regression coefficients
+```{r decimal-custom, eval=has_latex}
 coefs <- data.frame(
   Term = c("(Intercept)", "Age", "Sex (Male)", "BMI", "Smoking"),
   Estimate = c(2.345, 0.082, -0.451, 0.123, 0.892),
@@ -292,17 +346,24 @@ coefs <- data.frame(
   p = c("<0.001", "<0.001", "0.024", "<0.001", "<0.001")
 )
 
-# Different precision for different columns
 t2f(coefs,
     filename = "regression_coefs",
+    sub_dir = output_dir,
     caption = "Regression Coefficients",
     align = list(
       "l",
-      t2f_siunitx(table_format = "1.3"),   # Estimate: X.XXX
-      t2f_siunitx(table_format = "1.3"),   # SE: X.XXX
-      t2f_siunitx(table_format = "2.2"),   # t: XX.XX
-      "r"                                   # p: right-aligned text
+      t2f_siunitx(table_format = "1.3"),
+      t2f_siunitx(table_format = "1.3"),
+      t2f_siunitx(table_format = "2.2"),
+      "r"
     ))
+```
+
+```{r decimal-custom-display, echo=FALSE, eval=has_latex, out.width="70%"}
+pdf_path <- file.path(output_dir, "regression_coefs_cropped.pdf")
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+}
 ```
 
 ---
@@ -312,7 +373,7 @@ t2f(coefs,
 For documents with a List of Tables, short captions provide concise entries
 while the full caption remains with the table.
 
-```{r short-caption}
+```{r short-caption, eval=has_latex}
 detailed_results <- data.frame(
   Outcome = c("Primary", "Secondary 1", "Secondary 2"),
   Estimate = c(0.45, 0.32, 0.28),
@@ -322,6 +383,7 @@ detailed_results <- data.frame(
 
 t2f(detailed_results,
     filename = "efficacy_results",
+    sub_dir = output_dir,
     caption = paste(
       "Efficacy Results from the Phase 3 Randomized Controlled Trial",
       "of Drug X versus Placebo in Patients with Moderate-to-Severe",
@@ -329,6 +391,13 @@ t2f(detailed_results,
     ),
     caption_short = "Efficacy Results from Phase 3 Trial",
     label = "tab:efficacy")
+```
+
+```{r short-caption-display, echo=FALSE, eval=has_latex, out.width="60%"}
+pdf_path <- file.path(output_dir, "efficacy_results_cropped.pdf")
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+}
 ```
 
 ---
@@ -339,8 +408,7 @@ Real-world tables often require multiple advanced features simultaneously.
 
 ### Publication-Ready Clinical Table
 
-```{r combined-clinical}
-# Complex clinical trial table
+```{r combined-clinical, eval=has_latex}
 clinical <- data.frame(
   Endpoint = c("ADAS-Cog14", "ADAS-Cog14", "CDR-SB", "CDR-SB"),
   Timepoint = c("Week 52", "Week 78", "Week 52", "Week 78"),
@@ -352,7 +420,6 @@ clinical <- data.frame(
   P = c("0.024", "0.018", "0.025", "0.024")
 )
 
-# Add significance markers
 clinical$Diff <- sapply(seq_len(nrow(clinical)), function(i) {
   if (as.numeric(clinical$P[i]) < 0.05) {
     t2f_mark(as.character(clinical$Diff[i]), 1, "symbol")
@@ -361,14 +428,12 @@ clinical$Diff <- sapply(seq_len(nrow(clinical)), function(i) {
   }
 })
 
-# Spanning header
 hdr <- t2f_header_above(
   " " = 2,
   "N" = 2,
   "Treatment Effect" = 4
 )
 
-# Footnotes
 fn <- t2f_footnote(
   general = "Difference is treatment minus placebo (negative favors treatment).",
   symbol = "p < 0.05 vs placebo.",
@@ -377,6 +442,7 @@ fn <- t2f_footnote(
 
 t2f(clinical,
     filename = "clinical_efficacy",
+    sub_dir = output_dir,
     caption = "Efficacy Outcomes in the Modified ITT Population",
     caption_short = "Efficacy Outcomes",
     label = "tab:efficacy",
@@ -386,29 +452,50 @@ t2f(clinical,
     theme = "nejm")
 ```
 
+```{r combined-clinical-display, echo=FALSE, eval=has_latex, out.width="90%"}
+pdf_path <- file.path(output_dir, "clinical_efficacy_cropped.pdf")
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+}
+```
+
 ---
 
 ## 7. LaTeX Figure Placement Helpers
 
 After generating tables, use these helpers to include them in LaTeX documents
-with precise placement control.
+with precise placement control. These functions output raw LaTeX code for use
+in `.Rnw` or `.tex` documents.
 
 ### Standard Figure Float
 
-```{r include-figure, results='asis'}
-# Generate the table first
+The `t2f_include()` function wraps the PDF in a figure environment:
+
+```{r include-figure-code, eval=FALSE}
 t2f(mtcars[1:5, 1:4], filename = "demo_table", sub_dir = "tables")
 
-# Include as figure (in R Markdown with results='asis')
 t2f_include("tables/demo_table",
             caption = "Motor Trend Car Data (First 5 Rows)",
             label = "fig:mtcars",
             position = "htbp")
 ```
 
+**Generated LaTeX:**
+
+```latex
+\begin{figure}[htbp]
+\centering
+\includegraphics{tables/demo_table_cropped.pdf}
+\caption{Motor Trend Car Data (First 5 Rows)}
+\label{fig:mtcars}
+\end{figure}
+```
+
 ### Exact Placement (No Floating)
 
-```{r include-inline, results='asis'}
+For precise placement without LaTeX float behavior:
+
+```{r include-inline-code, eval=FALSE}
 t2f_include_inline("tables/demo_table",
                    width = "0.8\\textwidth",
                    vspace = "1em")
@@ -416,12 +503,10 @@ t2f_include_inline("tables/demo_table",
 
 ### Side-by-Side Tables
 
-```{r include-sidebyside, results='asis'}
-# Generate two tables
+```{r include-sidebyside-code, eval=FALSE}
 t2f(mtcars[1:5, 1:3], filename = "table_a", sub_dir = "tables")
 t2f(mtcars[1:5, 4:6], filename = "table_b", sub_dir = "tables")
 
-# Include side by side
 t2f_include_sidebyside(
   "tables/table_a", "tables/table_b",
   caption1 = "(a) Performance",
@@ -433,8 +518,9 @@ t2f_include_sidebyside(
 
 ### Margin Placement
 
-```{r include-margin, results='asis'}
-# For documents with wide margins (Tufte style, etc.)
+For documents with wide margins (Tufte style, etc.):
+
+```{r include-margin-code, eval=FALSE}
 t2f_include_margin("tables/demo_table",
                    caption = "Summary",
                    method = "sidenotes")
@@ -442,7 +528,7 @@ t2f_include_margin("tables/demo_table",
 
 ### Text Wrapping
 
-```{r include-wrap, results='asis'}
+```{r include-wrap-code, eval=FALSE}
 t2f_include_wrap("tables/demo_table",
                  placement = "r",
                  wrap_width = "0.45\\textwidth",
@@ -450,17 +536,16 @@ t2f_include_wrap("tables/demo_table",
 ```
 
 ---
+
 ## 8. Cross-References
 
 Generate LaTeX cross-reference commands from R:
 
-```{r crossref, results='asis'}
-# In text, reference the table
+```{r crossref-code, eval=FALSE}
 cat("As shown in ")
 t2f_ref("fig:mtcars")
 cat(", the fuel efficiency varies considerably.")
 
-# Or build the reference into a string
 ref_text <- sprintf("Results are presented in %s.",
                     t2f_ref("tab:efficacy", cat = FALSE))
 cat(ref_text)
@@ -471,6 +556,7 @@ cat(ref_text)
 ## Summary
 
 zztab2fig v0.2.0 provides comprehensive support for publication-quality tables:
+
 - **Footnotes**: General, numbered, alphabetic, and symbol notation
 - **Spanning headers**: Single or multiple levels of grouped columns
 - **Multi-row cells**: Automatic collapsing of hierarchical data

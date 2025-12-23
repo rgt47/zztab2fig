@@ -403,19 +403,38 @@ apply_footnotes <- function(kable_obj, footnote_spec) {
     return(kable_obj)
   }
 
-  kableExtra::footnote(
-    kable_obj,
-    general = footnote_spec$general,
-    number = footnote_spec$number,
-    alphabet = footnote_spec$alphabet,
-    symbol = footnote_spec$symbol,
-    general_title = footnote_spec$general_title,
-    number_title = footnote_spec$number_title,
-    alphabet_title = footnote_spec$alphabet_title,
-    symbol_title = footnote_spec$symbol_title,
-    footnote_as_chunk = footnote_spec$footnote_as_chunk,
-    threeparttable = footnote_spec$threeparttable
-  )
+  # Build args list, only including non-NULL values
+  args <- list(kable_input = kable_obj)
+
+  if (!is.null(footnote_spec$general)) {
+    args$general <- footnote_spec$general
+  }
+  if (!is.null(footnote_spec$number)) {
+    args$number <- footnote_spec$number
+  }
+  if (!is.null(footnote_spec$alphabet)) {
+    args$alphabet <- footnote_spec$alphabet
+  }
+  if (!is.null(footnote_spec$symbol)) {
+    args$symbol <- footnote_spec$symbol
+  }
+  if (!is.null(footnote_spec$general_title)) {
+    args$general_title <- footnote_spec$general_title
+  }
+  if (!is.null(footnote_spec$number_title)) {
+    args$number_title <- footnote_spec$number_title
+  }
+  if (!is.null(footnote_spec$alphabet_title)) {
+    args$alphabet_title <- footnote_spec$alphabet_title
+  }
+  if (!is.null(footnote_spec$symbol_title)) {
+    args$symbol_title <- footnote_spec$symbol_title
+  }
+
+  args$footnote_as_chunk <- footnote_spec$footnote_as_chunk
+  args$threeparttable <- footnote_spec$threeparttable
+
+  do.call(kableExtra::footnote, args)
 }
 
 #' Apply spanning headers to kable object

@@ -12,22 +12,25 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE
+  fig.align = "center"
 )
+
+has_latex <- nzchar(Sys.which("pdflatex")) && nzchar(Sys.which("pdfcrop"))
+
+output_dir <- tempdir()
 ```
+
 This vignette presents a series of tabling challenges of varying difficulty,
 showing solutions in both pander and zztab2fig. Each challenge demonstrates
 the relative strengths and approaches of each package.
 
 ## Setup
 
-```{r libraries}
-library(pander)
+```{r libraries, message=FALSE}
 library(zztab2fig)
 ```
 
 ---
-
 # Standard Difficulty Challenges
 
 ## Challenge 1: Basic Data Frame
@@ -36,10 +39,10 @@ library(zztab2fig)
 
 ### pander Solution
 
-```{r challenge1-pander}
+```{r challenge1-pander, eval=FALSE}
 df <- mtcars[1:5, 1:4]
 
-pander(df)
+pander::pander(df)
 ```
 
 **Output** (Markdown):
@@ -52,22 +55,21 @@ pander(df)
  **Mazda RX4 Wag**    21     6    160   110
 
   **Datsun 710**     22.8    4    108    93
-
- **Hornet 4 Drive**  21.4    6    258   110
-
-**Hornet Sportabout** 18.7   8    360   175
 -------------------------------------------
 ```
 
 ### zztab2fig Solution
 
-```{r challenge1-zztab2fig}
+```{r challenge1-zztab2fig, eval=has_latex}
 df <- mtcars[1:5, 1:4]
 
-t2f(df, filename = "basic_table")
+t2f(df, filename = "basic_table", sub_dir = output_dir)
 ```
 
-**Output**: Cropped PDF with LaTeX booktabs formatting.
+```{r challenge1-display, echo=FALSE, eval=has_latex, out.width="70%"}
+pdf_path <- file.path(output_dir, "basic_table_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+```
 
 **Comparison**: pander outputs markdown for inline display; zztab2fig produces
 publication-ready PDF files.
@@ -80,30 +82,32 @@ publication-ready PDF files.
 
 ### pander Solution
 
-```{r challenge2-pander}
+```{r challenge2-pander, eval=FALSE}
 df <- data.frame(
   Name = c("Alice", "Bob", "Charlie"),
   Score = c(95.5, 87.2, 91.8),
   Rank = c(1, 3, 2)
 )
 
-pander(df, justify = c("left", "right", "right"))
+pander::pander(df, justify = c("left", "right", "right"))
 ```
 
 ### zztab2fig Solution
 
-```{r challenge2-zztab2fig}
+```{r challenge2-zztab2fig, eval=has_latex}
 df <- data.frame(
   Name = c("Alice", "Bob", "Charlie"),
   Score = c(95.5, 87.2, 91.8),
   Rank = c(1, 3, 2)
 )
 
-# Auto-detection (default)
-t2f(df, filename = "aligned_table")
+t2f(df, filename = "aligned_table", sub_dir = output_dir,
+    align = c("l", "r", "r"))
+```
 
-# Or explicit
-t2f(df, filename = "aligned_table", align = c("l", "r", "r"))
+```{r challenge2-display, echo=FALSE, eval=has_latex, out.width="50%"}
+pdf_path <- file.path(output_dir, "aligned_table_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
 **Comparison**: Both handle basic alignment. zztab2fig auto-detects based on
@@ -117,26 +121,30 @@ column type.
 
 ### pander Solution
 
-```{r challenge3-pander}
+```{r challenge3-pander, eval=FALSE}
 df <- iris[1:5, ]
 
-pander(df, caption = "First Five Rows of Iris Dataset")
+pander::pander(df, caption = "First Five Rows of Iris Dataset")
 ```
 
 **Output**: Caption appears below table with "Table:" prefix.
 
 ### zztab2fig Solution
 
-```{r challenge3-zztab2fig}
+```{r challenge3-zztab2fig, eval=has_latex}
 df <- iris[1:5, ]
 
 t2f(df,
     filename = "iris_sample",
+    sub_dir = output_dir,
     caption = "First Five Rows of Iris Dataset",
     label = "tab:iris")
 ```
 
-**Output**: LaTeX `\caption{}` with optional `\label{}` for cross-referencing.
+```{r challenge3-display, echo=FALSE, eval=has_latex, out.width="70%"}
+pdf_path <- file.path(output_dir, "iris_sample_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+```
 
 **Comparison**: zztab2fig adds cross-reference labels; pander does not.
 
@@ -148,10 +156,10 @@ t2f(df,
 
 ### pander Solution
 
-```{r challenge4-pander}
+```{r challenge4-pander, eval=FALSE}
 model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
 
-pander(model)
+pander::pander(model)
 ```
 
 **Output**:
@@ -162,25 +170,25 @@ pander(model)
  **(Intercept)**    38.75       1.787       21.69    3.043e-18
 
      **cyl**       -0.9416      0.5509     -1.709     0.0985
-
-      **hp**       -0.01804    0.01188     -1.519     0.1400
-
-      **wt**        -3.167      0.7406     -4.276    0.0002073
 ---------------------------------------------------------------
 ```
 
 ### zztab2fig Solution
 
-```{r challenge4-zztab2fig}
+```{r challenge4-zztab2fig, eval=has_latex}
 model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
 
 t2f(model,
     filename = "regression",
+    sub_dir = output_dir,
     include = c("estimate", "std.error", "p.value"),
     caption = "Linear Regression Results")
 ```
 
-**Output**: Formatted coefficient table with selected statistics.
+```{r challenge4-display, echo=FALSE, eval=has_latex, out.width="60%"}
+pdf_path <- file.path(output_dir, "regression_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+```
 
 **Comparison**: Both handle lm objects natively. zztab2fig allows selecting
 which statistics to include.
@@ -193,31 +201,26 @@ which statistics to include.
 
 ### pander Solution
 
-```{r challenge5-pander}
+```{r challenge5-pander, eval=FALSE}
 df <- mtcars[1:5, 1:4]
 
-# Emphasize row 2, column 1
-pander(df, emphasize.strong.cells = which(df == df[2,1], arr.ind = TRUE))
-
-# Or emphasize entire rows/columns
-pander(df, emphasize.strong.rows = 2, emphasize.italics.cols = 3)
+pander::pander(df, emphasize.strong.rows = 2, emphasize.italics.cols = 3)
 ```
 
 ### zztab2fig Solution
 
-```{r challenge5-zztab2fig}
+```{r challenge5-zztab2fig, eval=has_latex}
 df <- mtcars[1:5, 1:4]
 
-# Bold a column
 t2f(df,
     filename = "emphasized",
+    sub_dir = output_dir,
     formatting = list(t2f_bold_col(1)))
+```
 
-# Conditional highlighting
-fmt <- t2f_highlight(
-  condition = function(x) as.numeric(x) > 20,
-  background = "yellow!20"
-)
+```{r challenge5-display, echo=FALSE, eval=has_latex, out.width="70%"}
+pdf_path <- file.path(output_dir, "emphasized_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
 **Comparison**: pander uses row/column indices; zztab2fig supports conditional
@@ -233,17 +236,15 @@ formatting with LaTeX colors.
 
 ### pander Solution
 
-```{r challenge6-pander}
+```{r challenge6-pander, eval=FALSE}
 df <- data.frame(
   Variable = c("BMI*", "SBP", "DBP"),
   Mean = c(27.5, 142.3, 88.2),
   SD = c(4.2, 18.5, 11.3)
 )
 
-pander(df, caption = "Clinical Measurements")
+pander::pander(df, caption = "Clinical Measurements")
 # Footnote must be added as separate text outside the table
-cat("\n\n*BMI = Body Mass Index; SBP = Systolic Blood Pressure;
-DBP = Diastolic Blood Pressure\n")
 ```
 
 **Limitation**: pander has no native table footnote support. Footnotes must be
@@ -251,26 +252,31 @@ added manually as separate text.
 
 ### zztab2fig Solution
 
-```{r challenge6-zztab2fig}
+```{r challenge6-zztab2fig, eval=has_latex}
 df <- data.frame(
   Variable = c("BMI", "SBP", "DBP"),
   Mean = c(27.5, 142.3, 88.2),
   SD = c(4.2, 18.5, 11.3)
 )
 
-# Add footnote marker to cell
 df$Variable[1] <- t2f_mark("BMI", 1, "symbol")
 
 fn <- t2f_footnote(
   general = "SBP = Systolic Blood Pressure; DBP = Diastolic Blood Pressure.",
-  symbol = "Body Mass Index (kg/m²).",
+  symbol = "Body Mass Index (kg/m2).",
   threeparttable = TRUE
 )
 
 t2f(df,
     filename = "clinical_footnotes",
+    sub_dir = output_dir,
     caption = "Clinical Measurements",
     footnote = fn)
+```
+
+```{r challenge6-display, echo=FALSE, eval=has_latex, out.width="50%"}
+pdf_path <- file.path(output_dir, "clinical_footnotes_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
 **Advantage**: zztab2fig produces proper LaTeX footnotes within the table
@@ -285,7 +291,7 @@ columns).
 
 ### pander Solution
 
-```{r challenge7-pander}
+```{r challenge7-pander, eval=FALSE}
 df <- data.frame(
   Outcome = c("Score A", "Score B"),
   T_Mean = c(45.2, 38.7),
@@ -298,14 +304,14 @@ df <- data.frame(
 # Best approximation: rename columns
 names(df) <- c("Outcome", "Treatment Mean", "Treatment SD",
                "Control Mean", "Control SD")
-pander(df)
+pander::pander(df)
 ```
 
 **Limitation**: pander does not support spanning (multi-column) headers.
 
 ### zztab2fig Solution
 
-```{r challenge7-zztab2fig}
+```{r challenge7-zztab2fig, eval=has_latex}
 df <- data.frame(
   Outcome = c("Score A", "Score B"),
   T_Mean = c(45.2, 38.7),
@@ -323,8 +329,14 @@ hdr <- t2f_header_above(
 
 t2f(df,
     filename = "spanning_header",
+    sub_dir = output_dir,
     caption = "Outcomes by Group",
     header_above = hdr)
+```
+
+```{r challenge7-display, echo=FALSE, eval=has_latex, out.width="60%"}
+pdf_path <- file.path(output_dir, "spanning_header_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
 **Advantage**: zztab2fig creates proper LaTeX multicolumn headers with cmidrule
@@ -338,7 +350,7 @@ separators.
 
 ### pander Solution
 
-```{r challenge8-pander}
+```{r challenge8-pander, eval=FALSE}
 df <- data.frame(
   Category = c("Treatment", "Treatment", "Control", "Control"),
   Subgroup = c("Male", "Female", "Male", "Female"),
@@ -347,14 +359,14 @@ df <- data.frame(
 )
 
 # pander cannot merge rows - display as-is with repeated values
-pander(df)
+pander::pander(df)
 ```
 
 **Limitation**: pander does not support multi-row (vertically merged) cells.
 
 ### zztab2fig Solution
 
-```{r challenge8-zztab2fig}
+```{r challenge8-zztab2fig, eval=has_latex}
 df <- data.frame(
   Category = c("Treatment", "Treatment", "Control", "Control"),
   Subgroup = c("Male", "Female", "Male", "Female"),
@@ -364,12 +376,18 @@ df <- data.frame(
 
 t2f(df,
     filename = "multirow",
+    sub_dir = output_dir,
     caption = "Response by Group and Sex",
     collapse_rows = t2f_collapse_rows(
       columns = 1,
       valign = "middle",
       latex_hline = "major"
     ))
+```
+
+```{r challenge8-display, echo=FALSE, eval=has_latex, out.width="55%"}
+pdf_path <- file.path(output_dir, "multirow_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
 **Advantage**: zztab2fig automatically merges repeated values using LaTeX
@@ -383,7 +401,7 @@ multirow.
 
 ### pander Solution
 
-```{r challenge9-pander}
+```{r challenge9-pander, eval=FALSE}
 df <- data.frame(
   Item = c("A", "B", "C"),
   Value1 = c(1.5, 123.45, 12.345),
@@ -392,7 +410,7 @@ df <- data.frame(
 
 # pander uses right-alignment for numbers
 # No decimal alignment available
-pander(df, justify = c("left", "right", "right"))
+pander::pander(df, justify = c("left", "right", "right"))
 ```
 
 **Limitation**: pander supports left/center/right alignment only, not decimal
@@ -400,7 +418,7 @@ alignment.
 
 ### zztab2fig Solution
 
-```{r challenge9-zztab2fig}
+```{r challenge9-zztab2fig, eval=has_latex}
 df <- data.frame(
   Item = c("A", "B", "C"),
   Value1 = c(1.5, 123.45, 12.345),
@@ -409,11 +427,17 @@ df <- data.frame(
 
 t2f(df,
     filename = "decimal_aligned",
+    sub_dir = output_dir,
     align = list(
       "l",
       t2f_siunitx(table_format = "3.3"),
       t2f_siunitx(table_format = "4.2")
     ))
+```
+
+```{r challenge9-display, echo=FALSE, eval=has_latex, out.width="45%"}
+pdf_path <- file.path(output_dir, "decimal_aligned_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
 **Advantage**: zztab2fig uses siunitx for true decimal alignment.
@@ -426,12 +450,12 @@ t2f(df,
 
 ### pander Solution
 
-```{r challenge10-pander}
+```{r challenge10-pander, eval=FALSE}
 df <- mtcars[rep(1:32, 3), ]  # 96 rows
 
 # pander splits wide tables but not long tables
 # For long tables, output continues without repeated headers
-pander(df)
+pander::pander(df)
 ```
 
 **Limitation**: pander splits wide tables horizontally but does not handle
@@ -439,13 +463,19 @@ multi-page tables with repeated headers.
 
 ### zztab2fig Solution
 
-```{r challenge10-zztab2fig}
-df <- mtcars[rep(1:32, 3), ]  # 96 rows
+```{r challenge10-zztab2fig, eval=has_latex}
+df <- mtcars[rep(1:10, 2), 1:4]  # Smaller example for vignette
 
 t2f(df,
     filename = "multipage",
-    caption = "Complete mtcars Dataset (Repeated)",
+    sub_dir = output_dir,
+    caption = "mtcars Data (Repeated)",
     longtable = TRUE)
+```
+
+```{r challenge10-display, echo=FALSE, eval=has_latex, out.width="55%"}
+pdf_path <- file.path(output_dir, "multipage_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
 **Advantage**: zztab2fig uses LaTeX longtable for proper page breaks with
@@ -460,7 +490,7 @@ style guidelines.
 
 ### pander Solution
 
-```{r challenge11-pander}
+```{r challenge11-pander, eval=FALSE}
 df <- data.frame(
   Characteristic = c("Age", "Male sex", "BMI"),
   Treatment = c("65.2 (8.4)", "58%", "27.3 (4.1)"),
@@ -469,13 +499,13 @@ df <- data.frame(
 
 # pander has no journal-specific themes
 # Manual formatting required
-panderOptions("table.style", "rmarkdown")
-pander(df, caption = "Baseline Characteristics")
+pander::panderOptions("table.style", "rmarkdown")
+pander::pander(df, caption = "Baseline Characteristics")
 ```
 
 ### zztab2fig Solution
 
-```{r challenge11-zztab2fig}
+```{r challenge11-zztab2fig, eval=has_latex}
 df <- data.frame(
   Characteristic = c("Age", "Male sex", "BMI"),
   Treatment = c("65.2 (8.4)", "58%", "27.3 (4.1)"),
@@ -484,8 +514,14 @@ df <- data.frame(
 
 t2f(df,
     filename = "nejm_table",
+    sub_dir = output_dir,
     caption = "Baseline Characteristics",
     theme = "nejm")
+```
+
+```{r challenge11-display, echo=FALSE, eval=has_latex, out.width="55%"}
+pdf_path <- file.path(output_dir, "nejm_table_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
 **Advantage**: zztab2fig includes built-in themes for NEJM, APA, and Nature
@@ -500,15 +536,15 @@ stars.
 
 ### pander Solution
 
-```{r challenge12-pander}
+```{r challenge12-pander, eval=FALSE}
 m1 <- lm(mpg ~ cyl, data = mtcars)
 m2 <- lm(mpg ~ cyl + hp, data = mtcars)
 m3 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
 
 # pander displays one model at a time
-pander(m1)
-pander(m2)
-pander(m3)
+pander::pander(m1)
+pander::pander(m2)
+pander::pander(m3)
 
 # Side-by-side comparison requires manual construction
 ```
@@ -517,7 +553,7 @@ pander(m3)
 
 ### zztab2fig Solution
 
-```{r challenge12-zztab2fig}
+```{r challenge12-zztab2fig, eval=has_latex}
 m1 <- lm(mpg ~ cyl, data = mtcars)
 m2 <- lm(mpg ~ cyl + hp, data = mtcars)
 m3 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
@@ -527,8 +563,14 @@ t2f_regression(
   Model2 = m2,
   Model3 = m3,
   stars = TRUE,
-  filename = "model_comparison"
+  filename = "model_comparison",
+  sub_dir = output_dir
 )
+```
+
+```{r challenge12-display, echo=FALSE, eval=has_latex, out.width="70%"}
+pdf_path <- file.path(output_dir, "model_comparison_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
 **Advantage**: zztab2fig provides `t2f_regression()` for publication-ready
@@ -542,11 +584,11 @@ model comparison tables.
 
 ### pander Solution
 
-```{r challenge13-pander}
+```{r challenge13-pander, eval=FALSE}
 df <- mtcars[1:5, 1:4]
 
 # pander outputs markdown - LaTeX float control not applicable
-pander(df)
+pander::pander(df)
 
 # For LaTeX output, user must manually wrap in figure environment
 ```
@@ -556,17 +598,19 @@ intervention.
 
 ### zztab2fig Solution
 
-```{r challenge13-zztab2fig, results='asis'}
+```{r challenge13-zztab2fig, eval=has_latex}
 df <- mtcars[1:5, 1:4]
 
-# Generate cropped PDF
-t2f(df, filename = "float_demo", sub_dir = "tables")
+t2f(df, filename = "float_demo", sub_dir = output_dir)
 
-# Include with float positioning
-t2f_include("tables/float_demo",
-            caption = "Sample Data",
-            label = "fig:sample",
-            position = "htbp")
+# In LaTeX documents, use:
+# t2f_include("float_demo", caption = "Sample Data",
+#             label = "fig:sample", position = "htbp")
+```
+
+```{r challenge13-display, echo=FALSE, eval=has_latex, out.width="70%"}
+pdf_path <- file.path(output_dir, "float_demo_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
 **Advantage**: zztab2fig provides helper functions for all LaTeX placement
@@ -581,7 +625,7 @@ cells, and NEJM styling.
 
 ### pander Solution
 
-```{r challenge14-pander}
+```{r challenge14-pander, eval=FALSE}
 # This combination is not achievable in pander
 # Would require extensive manual LaTeX coding
 ```
@@ -590,7 +634,7 @@ cells, and NEJM styling.
 
 ### zztab2fig Solution
 
-```{r challenge14-zztab2fig}
+```{r challenge14-zztab2fig, eval=has_latex}
 df <- data.frame(
   Endpoint = c("Primary", "Primary", "Secondary", "Secondary"),
   Timepoint = c("Week 26", "Week 52", "Week 26", "Week 52"),
@@ -599,7 +643,6 @@ df <- data.frame(
   P = c("0.008", "0.002", "0.045", "0.018")
 )
 
-# Add footnote markers
 df$Difference <- sapply(seq_len(nrow(df)), function(i) {
   p <- as.numeric(df$P[i])
   if (p < 0.01) t2f_mark(as.character(df$Difference[i]), 2, "symbol")
@@ -616,12 +659,18 @@ fn <- t2f_footnote(
 
 t2f(df,
     filename = "complex_table",
+    sub_dir = output_dir,
     caption = "Efficacy Results by Endpoint and Timepoint",
     caption_short = "Efficacy Results",
     header_above = hdr,
     collapse_rows = t2f_collapse_rows(1, valign = "top"),
     footnote = fn,
     theme = "nejm")
+```
+
+```{r challenge14-display, echo=FALSE, eval=has_latex, out.width="65%"}
+pdf_path <- file.path(output_dir, "complex_table_cropped.pdf")
+if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
 ```
 
 ---
