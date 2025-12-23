@@ -18,6 +18,14 @@ knitr::opts_chunk$set(
 has_latex <- nzchar(Sys.which("pdflatex")) && nzchar(Sys.which("pdfcrop"))
 
 output_dir <- tempdir()
+
+include_table <- function(filename) {
+  pdf_path <- file.path(output_dir, paste0(filename, "_cropped.pdf"))
+  if (!file.exists(pdf_path)) return(invisible(NULL))
+  png_path <- sub("\\.pdf$", ".png", pdf_path)
+  convert_pdf_to_png(pdf_path, png_path, dpi = 150)
+  knitr::include_graphics(png_path)
+}
 ```
 
 This vignette demonstrates the advanced table formatting capabilities in
@@ -65,10 +73,7 @@ t2f(results,
 ```
 
 ```{r footnotes-basic-display, echo=FALSE, eval=has_latex, out.width="80%"}
-pdf_path <- file.path(output_dir, "baseline_characteristics_cropped.pdf")
-if (file.exists(pdf_path)) {
-  knitr::include_graphics(pdf_path)
-}
+include_table("baseline_characteristics")
 ```
 
 ### Multiple Footnote Types (APA Style)
@@ -106,10 +111,7 @@ t2f(anova_results,
 ```
 
 ```{r footnotes-apa-display, echo=FALSE, eval=has_latex, out.width="80%"}
-pdf_path <- file.path(output_dir, "anova_table_cropped.pdf")
-if (file.exists(pdf_path)) {
-  knitr::include_graphics(pdf_path)
-}
+include_table("anova_table")
 ```
 
 ### Numbered Footnotes for Specific Cells
@@ -143,10 +145,7 @@ t2f(endpoints,
 ```
 
 ```{r footnotes-numbered-display, echo=FALSE, eval=has_latex, out.width="80%"}
-pdf_path <- file.path(output_dir, "endpoints_table_cropped.pdf")
-if (file.exists(pdf_path)) {
-  knitr::include_graphics(pdf_path)
-}
+include_table("endpoints_table")
 ```
 
 ---
@@ -183,10 +182,7 @@ t2f(comparison,
 ```
 
 ```{r header-basic-display, echo=FALSE, eval=has_latex, out.width="70%"}
-pdf_path <- file.path(output_dir, "treatment_comparison_cropped.pdf")
-if (file.exists(pdf_path)) {
-  knitr::include_graphics(pdf_path)
-}
+include_table("treatment_comparison")
 ```
 
 ### Multiple Header Rows
@@ -226,10 +222,7 @@ t2f(longitudinal,
 ```
 
 ```{r header-multiple-display, echo=FALSE, eval=has_latex, out.width="80%"}
-pdf_path <- file.path(output_dir, "longitudinal_outcomes_cropped.pdf")
-if (file.exists(pdf_path)) {
-  knitr::include_graphics(pdf_path)
-}
+include_table("longitudinal_outcomes")
 ```
 
 ---
@@ -263,10 +256,7 @@ t2f(subgroup,
 ```
 
 ```{r collapse-basic-display, echo=FALSE, eval=has_latex, out.width="70%"}
-pdf_path <- file.path(output_dir, "subgroup_analysis_cropped.pdf")
-if (file.exists(pdf_path)) {
-  knitr::include_graphics(pdf_path)
-}
+include_table("subgroup_analysis")
 ```
 
 ### Multiple Column Collapse
@@ -295,10 +285,7 @@ t2f(adverse_events,
 ```
 
 ```{r collapse-multiple-display, echo=FALSE, eval=has_latex, out.width="70%"}
-pdf_path <- file.path(output_dir, "adverse_events_cropped.pdf")
-if (file.exists(pdf_path)) {
-  knitr::include_graphics(pdf_path)
-}
+include_table("adverse_events")
 ```
 
 ---
@@ -329,10 +316,7 @@ t2f(stats,
 ```
 
 ```{r decimal-basic-display, echo=FALSE, eval=has_latex, out.width="60%"}
-pdf_path <- file.path(output_dir, "summary_stats_cropped.pdf")
-if (file.exists(pdf_path)) {
-  knitr::include_graphics(pdf_path)
-}
+include_table("summary_stats")
 ```
 
 ### Mixed Alignment with Custom Formats
@@ -360,10 +344,7 @@ t2f(coefs,
 ```
 
 ```{r decimal-custom-display, echo=FALSE, eval=has_latex, out.width="70%"}
-pdf_path <- file.path(output_dir, "regression_coefs_cropped.pdf")
-if (file.exists(pdf_path)) {
-  knitr::include_graphics(pdf_path)
-}
+include_table("regression_coefs")
 ```
 
 ---
@@ -394,10 +375,7 @@ t2f(detailed_results,
 ```
 
 ```{r short-caption-display, echo=FALSE, eval=has_latex, out.width="60%"}
-pdf_path <- file.path(output_dir, "efficacy_results_cropped.pdf")
-if (file.exists(pdf_path)) {
-  knitr::include_graphics(pdf_path)
-}
+include_table("efficacy_results")
 ```
 
 ---
@@ -453,10 +431,7 @@ t2f(clinical,
 ```
 
 ```{r combined-clinical-display, echo=FALSE, eval=has_latex, out.width="90%"}
-pdf_path <- file.path(output_dir, "clinical_efficacy_cropped.pdf")
-if (file.exists(pdf_path)) {
-  knitr::include_graphics(pdf_path)
-}
+include_table("clinical_efficacy")
 ```
 
 ---

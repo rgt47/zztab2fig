@@ -18,6 +18,14 @@ knitr::opts_chunk$set(
 has_latex <- nzchar(Sys.which("pdflatex")) && nzchar(Sys.which("pdfcrop"))
 
 output_dir <- tempdir()
+
+include_table <- function(filename) {
+  pdf_path <- file.path(output_dir, paste0(filename, "_cropped.pdf"))
+  if (!file.exists(pdf_path)) return(invisible(NULL))
+  png_path <- sub("\\.pdf$", ".png", pdf_path)
+  convert_pdf_to_png(pdf_path, png_path, dpi = 150)
+  knitr::include_graphics(png_path)
+}
 ```
 
 This vignette presents a series of tabling challenges of varying difficulty,
@@ -67,8 +75,7 @@ t2f(df, filename = "basic_table", sub_dir = output_dir)
 ```
 
 ```{r challenge1-display, echo=FALSE, eval=has_latex, out.width="70%"}
-pdf_path <- file.path(output_dir, "basic_table_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("basic_table")
 ```
 
 **Comparison**: pander outputs markdown for inline display; zztab2fig produces
@@ -106,8 +113,7 @@ t2f(df, filename = "aligned_table", sub_dir = output_dir,
 ```
 
 ```{r challenge2-display, echo=FALSE, eval=has_latex, out.width="50%"}
-pdf_path <- file.path(output_dir, "aligned_table_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("aligned_table")
 ```
 
 **Comparison**: Both handle basic alignment. zztab2fig auto-detects based on
@@ -142,8 +148,7 @@ t2f(df,
 ```
 
 ```{r challenge3-display, echo=FALSE, eval=has_latex, out.width="70%"}
-pdf_path <- file.path(output_dir, "iris_sample_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("iris_sample")
 ```
 
 **Comparison**: zztab2fig adds cross-reference labels; pander does not.
@@ -186,8 +191,7 @@ t2f(model,
 ```
 
 ```{r challenge4-display, echo=FALSE, eval=has_latex, out.width="60%"}
-pdf_path <- file.path(output_dir, "regression_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("regression")
 ```
 
 **Comparison**: Both handle lm objects natively. zztab2fig allows selecting
@@ -219,8 +223,7 @@ t2f(df,
 ```
 
 ```{r challenge5-display, echo=FALSE, eval=has_latex, out.width="70%"}
-pdf_path <- file.path(output_dir, "emphasized_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("emphasized")
 ```
 
 **Comparison**: pander uses row/column indices; zztab2fig supports conditional
@@ -275,8 +278,7 @@ t2f(df,
 ```
 
 ```{r challenge6-display, echo=FALSE, eval=has_latex, out.width="50%"}
-pdf_path <- file.path(output_dir, "clinical_footnotes_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("clinical_footnotes")
 ```
 
 **Advantage**: zztab2fig produces proper LaTeX footnotes within the table
@@ -335,8 +337,7 @@ t2f(df,
 ```
 
 ```{r challenge7-display, echo=FALSE, eval=has_latex, out.width="60%"}
-pdf_path <- file.path(output_dir, "spanning_header_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("spanning_header")
 ```
 
 **Advantage**: zztab2fig creates proper LaTeX multicolumn headers with cmidrule
@@ -386,8 +387,7 @@ t2f(df,
 ```
 
 ```{r challenge8-display, echo=FALSE, eval=has_latex, out.width="55%"}
-pdf_path <- file.path(output_dir, "multirow_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("multirow")
 ```
 
 **Advantage**: zztab2fig automatically merges repeated values using LaTeX
@@ -436,8 +436,7 @@ t2f(df,
 ```
 
 ```{r challenge9-display, echo=FALSE, eval=has_latex, out.width="45%"}
-pdf_path <- file.path(output_dir, "decimal_aligned_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("decimal_aligned")
 ```
 
 **Advantage**: zztab2fig uses siunitx for true decimal alignment.
@@ -474,8 +473,7 @@ t2f(df,
 ```
 
 ```{r challenge10-display, echo=FALSE, eval=has_latex, out.width="55%"}
-pdf_path <- file.path(output_dir, "multipage_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("multipage")
 ```
 
 **Advantage**: zztab2fig uses LaTeX longtable for proper page breaks with
@@ -520,8 +518,7 @@ t2f(df,
 ```
 
 ```{r challenge11-display, echo=FALSE, eval=has_latex, out.width="55%"}
-pdf_path <- file.path(output_dir, "nejm_table_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("nejm_table")
 ```
 
 **Advantage**: zztab2fig includes built-in themes for NEJM, APA, and Nature
@@ -569,8 +566,7 @@ t2f_regression(
 ```
 
 ```{r challenge12-display, echo=FALSE, eval=has_latex, out.width="70%"}
-pdf_path <- file.path(output_dir, "model_comparison_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("model_comparison")
 ```
 
 **Advantage**: zztab2fig provides `t2f_regression()` for publication-ready
@@ -609,8 +605,7 @@ t2f(df, filename = "float_demo", sub_dir = output_dir)
 ```
 
 ```{r challenge13-display, echo=FALSE, eval=has_latex, out.width="70%"}
-pdf_path <- file.path(output_dir, "float_demo_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("float_demo")
 ```
 
 **Advantage**: zztab2fig provides helper functions for all LaTeX placement
@@ -669,8 +664,7 @@ t2f(df,
 ```
 
 ```{r challenge14-display, echo=FALSE, eval=has_latex, out.width="65%"}
-pdf_path <- file.path(output_dir, "complex_table_cropped.pdf")
-if (file.exists(pdf_path)) knitr::include_graphics(pdf_path)
+include_table("complex_table")
 ```
 
 
