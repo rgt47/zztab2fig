@@ -156,8 +156,7 @@ t2f_theme_register <- function(theme, name = NULL, overwrite = FALSE) {
   reg_name <- tolower(reg_name)
 
   # Check for built-in theme name collision
-
-  builtin_names <- c("minimal", "apa", "nature", "nejm")
+  builtin_names <- c("minimal", "apa", "nature", "nejm", "lancet")
   if (reg_name %in% builtin_names) {
     stop("Cannot register theme with built-in name '", reg_name,
          "'. Choose a different name.", call. = FALSE)
@@ -258,6 +257,7 @@ get_builtin_theme <- function(name) {
     "apa" = t2f_theme_apa(),
     "nature" = t2f_theme_nature(),
     "nejm" = t2f_theme_nejm(),
+    "lancet" = t2f_theme_lancet(),
     NULL
   )
 
@@ -293,7 +293,7 @@ get_builtin_theme <- function(name) {
 #'
 #' @export
 t2f_list_themes <- function(builtin_only = FALSE) {
-  builtin <- c("minimal", "apa", "nature", "nejm")
+ builtin <- c("minimal", "apa", "nature", "nejm", "lancet")
   if (builtin_only) {
     return(builtin)
   }
@@ -320,7 +320,9 @@ t2f_theme_minimal <- function() {
     font_size = NULL,
     document_class = "article",
     extra_packages = list(
-      geometry(margin = "15mm")
+      geometry(margin = "15mm"),
+      "\\usepackage{helvet}",
+      "\\renewcommand{\\familydefault}{\\sfdefault}"
     ),
     booktabs = TRUE,
     striped = TRUE
@@ -382,13 +384,13 @@ t2f_theme_nature <- function() {
 #' NEJM theme
 #'
 #' @description Theme following New England Journal of Medicine table styling.
-#'   Characterized by light yellow alternating row striping, sans-serif font
-#'   (Helvetica), booktabs horizontal rules, and compact spacing.
+#'   Characterized by light cream alternating row striping (#FEF8EA), sans-serif
+#'   font (Helvetica), booktabs horizontal rules, and compact spacing.
 #'
 #' @details NEJM tables are designed for maximum clarity and professional
 #'   appearance in medical publications. Key characteristics:
 #'
-#' - Light yellow alternating row colors
+#' - Light cream alternating row colors (#FEF8EA)
 #' - Sans-serif font (Helvetica/Arial family)
 #' - Booktabs-style horizontal rules (\\toprule, \\midrule, \\bottomrule)
 #' - Compact column spacing (4pt)
@@ -407,13 +409,14 @@ t2f_theme_nature <- function() {
 t2f_theme_nejm <- function() {
   t2f_theme(
     name = "nejm",
-    scolor = "yellow!8",
+    scolor = "nejmshade",
     header_bold = TRUE,
-    header_color = "yellow!15",
+    header_color = NULL,
     font_size = "footnotesize",
     document_class = "article",
     extra_packages = list(
       geometry(margin = "20mm", paper = "letterpaper"),
+      "\\definecolor{nejmshade}{HTML}{FEF8EA}",
       "\\usepackage{helvet}",
       "\\renewcommand{\\familydefault}{\\sfdefault}",
       "\\usepackage{microtype}",
@@ -422,6 +425,51 @@ t2f_theme_nejm <- function() {
     ),
     booktabs = TRUE,
     striped = TRUE
+  )
+}
+
+#' Lancet theme
+#'
+#' @description Theme following The Lancet journal table styling. Characterized
+#'   by a clean, minimal appearance with sans-serif font (Helvetica), no row
+#'   shading, and booktabs-style horizontal rules.
+#'
+#' @details The Lancet reformats all submitted tables to match their house
+#'   style. Key characteristics based on their formatting guidelines:
+#'
+#' - Sans-serif font (Helvetica/Arial family)
+#' - No alternating row shading (clean appearance)
+#' - Booktabs-style horizontal rules
+#' - Compact layout (75mm single column, 154mm double column)
+#' - Small font size for space efficiency
+#'
+#' @return A t2f_theme object.
+#'
+#' @examples
+#' \dontrun{
+#' t2f_theme_set(t2f_theme_lancet())
+#' t2f(mtcars[1:10, 1:5], filename = "lancet_table")
+#' }
+#'
+#' @export
+t2f_theme_lancet <- function() {
+  t2f_theme(
+    name = "lancet",
+    scolor = "white",
+    header_bold = TRUE,
+    header_color = NULL,
+    font_size = "small",
+    document_class = "article",
+    extra_packages = list(
+      geometry(margin = "20mm", paper = "a4paper"),
+      "\\usepackage{helvet}",
+      "\\renewcommand{\\familydefault}{\\sfdefault}",
+      "\\usepackage{microtype}",
+      "\\setlength{\\tabcolsep}{5pt}",
+      "\\renewcommand{\\arraystretch}{1.2}"
+    ),
+    booktabs = TRUE,
+    striped = FALSE
   )
 }
 

@@ -13,6 +13,7 @@ test_that("built-in themes are accessible by name", {
   expect_s3_class(t2f_theme_apa(), "t2f_theme")
   expect_s3_class(t2f_theme_nature(), "t2f_theme")
   expect_s3_class(t2f_theme_nejm(), "t2f_theme")
+  expect_s3_class(t2f_theme_lancet(), "t2f_theme")
 })
 
 test_that("t2f_list_themes returns built-in themes", {
@@ -22,6 +23,7 @@ test_that("t2f_list_themes returns built-in themes", {
   expect_true("apa" %in% themes)
   expect_true("nature" %in% themes)
   expect_true("nejm" %in% themes)
+  expect_true("lancet" %in% themes)
 })
 
 test_that("t2f_theme_set and t2f_theme_get work", {
@@ -107,13 +109,13 @@ test_that("registered themes work with t2f_theme_set", {
     t2f_theme_clear()
   })
 
-  lancet <- t2f_theme(name = "lancet", scolor = "gray!5", font_size = "small")
-  t2f_theme_register(lancet)
+  jama <- t2f_theme(name = "jama", scolor = "gray!5", font_size = "small")
+  t2f_theme_register(jama)
 
-  t2f_theme_set("lancet")
+  t2f_theme_set("jama")
   current <- t2f_theme_get()
 
-  expect_equal(current$name, "lancet")
+  expect_equal(current$name, "jama")
   expect_equal(current$font_size, "small")
 })
 
