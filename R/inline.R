@@ -2,7 +2,8 @@
 #'
 #' @description Generate a table and include it inline in an R Markdown
 #'   document. Automatically handles PDF vs HTML output and provides
-#'   control over size, alignment, and captioning without using floats.
+#'   control over size, alignment, captioning, and visual styling without
+#'   using floats.
 #'
 #' @param x An object to convert to a table (data.frame, lm, glm, etc.).
 #' @param width Figure width. Use LaTeX units for PDF ("2in", "5cm",
@@ -20,6 +21,13 @@
 #'   Defaults to NULL (no label).
 #' @param caption_position Position of caption: "above" (default, standard for
 #'   tables) or "below".
+#' @param frame Logical. If TRUE, draw a border around the table. Default FALSE.
+#' @param frame_color Color for the frame border. Uses xcolor syntax (e.g.,
+#'   "black", "blue!50"). Default "black".
+#' @param frame_width Line width for the frame. Default "0.4pt".
+#' @param background Background color for the table container. Uses xcolor
+#'   syntax (e.g., "gray!10", "yellow!5"). Default NULL (no background).
+#' @param inner_sep Padding between content and frame. Default "2pt".
 #' @param ... Additional arguments passed to t2f().
 #'
 #' @return For knitr, returns the result of knitr::asis_output() with LaTeX
@@ -59,6 +67,26 @@
 #'            caption = "Results",
 #'            caption_position = "below")
 #'
+#' # With frame border:
+#' t2f_inline(model,
+#'            width = "3in",
+#'            frame = TRUE,
+#'            frame_color = "gray",
+#'            frame_width = "0.5pt")
+#'
+#' # With background color:
+#' t2f_inline(model,
+#'            width = "3in",
+#'            background = "gray!5")
+#'
+#' # With both frame and background:
+#' t2f_inline(model,
+#'            width = "3in",
+#'            frame = TRUE,
+#'            frame_color = "blue!50",
+#'            background = "blue!5",
+#'            inner_sep = "4pt")
+#'
 #' # With explicit format:
 #' t2f_inline(mtcars[1:5,], width = "4in", format = "png", dpi = 300)
 #' }
@@ -76,6 +104,11 @@ t2f_inline <- function(x,
                        caption_short = NULL,
                        label = NULL,
                        caption_position = c("above", "below"),
+                       frame = FALSE,
+                       frame_color = "black",
+                       frame_width = "0.4pt",
+                       background = NULL,
+                       inner_sep = "2pt",
                        ...) {
   align <- match.arg(align)
   format <- match.arg(format)
@@ -128,7 +161,12 @@ t2f_inline <- function(x,
         caption = caption,
         caption_short = caption_short,
         label = label,
-        caption_position = caption_position
+        caption_position = caption_position,
+        frame = frame,
+        frame_color = frame_color,
+        frame_width = frame_width,
+        background = background,
+        inner_sep = inner_sep
       )
       return(knitr::asis_output(latex_code))
     }
@@ -151,14 +189,21 @@ t2f_inline <- function(x,
 #' @param caption_short Short caption for LoT.
 #' @param label LaTeX label.
 #' @param caption_position Above or below.
+#' @param frame Whether to draw a frame border.
+#' @param frame_color Color for frame border.
+#' @param frame_width Line width for frame.
+#' @param background Background color.
+#' @param inner_sep Padding inside the box.
 #'
 #' @return Character string with LaTeX code.
 #' @keywords internal
 build_inline_latex <- function(path, width, height, align,
                                caption, caption_short, label,
-                               caption_position) {
+                               caption_position,
+                               frame = FALSE, frame_color = "black",
+                               frame_width = "0.4pt", background = NULL,
+                               inner_sep = "2pt") {
   # Alignment environment
-
   align_env <- switch(align,
     "left" = c("\\begin{flushleft}", "\\end{flushleft}"),
     "center" = c("\\begin{center}", "\\end{center}"),
@@ -178,17 +223,54 @@ build_inline_latex <- function(path, width, height, align,
   # Build includegraphics command
   include_cmd <- paste0("\\includegraphics", options_str, "{", path, "}")
 
+  # Wrap in box if frame or background specified
+  has_frame <- isTRUE(frame)
+  has_background <- !is.null(background)
+
+  if (has_frame || has_background) {
+    # Set fboxsep for inner padding
+    box_setup <- paste0("\\setlength{\\fboxsep}{", inner_sep, "}")
+
+    if (has_frame) {
+      # Set fboxrule for frame width
+      box_setup <- paste0(box_setup, "\\setlength{\\fboxrule}{", frame_width, "}")
+
+      if (has_background) {
+        # Both frame and background: use fcolorbox
+        include_cmd <- paste0(
+          "{", box_setup,
+          "\\fcolorbox{", frame_color, "}{", background, "}{",
+          include_cmd, "}}"
+        )
+      } else {
+        # Frame only: use fbox with color
+        include_cmd <- paste0(
+          "{", box_setup,
+          "\\fcolorbox{", frame_color, "}{white}{",
+          include_cmd, "}}"
+        )
+      }
+    } else {
+      # Background only: use colorbox
+      include_cmd <- paste0(
+        "{", box_setup,
+        "\\colorbox{", background, "}{",
+        include_cmd, "}}"
+      )
+    }
+  }
+
   # Build caption command if provided
   caption_cmd <- NULL
   if (!is.null(caption)) {
     # Handle short caption for List of Tables
     if (!is.null(caption_short)) {
-      caption_cmd <- paste0("\\captionof{table}[", caption_short, "]{", caption, "}")
+      caption_cmd <- paste0("\\captionof{table}[", caption_short, "]{",
+                            caption, "}")
     } else {
       caption_cmd <- paste0("\\captionof{table}{", caption, "}")
     }
     # Add label if provided
-
     if (!is.null(label)) {
       caption_cmd <- paste0(caption_cmd, "\\label{", label, "}")
     }
@@ -230,6 +312,11 @@ build_inline_latex <- function(path, width, height, align,
 #' @param caption_short Short caption for List of Tables. Defaults to NULL.
 #' @param label LaTeX label for cross-referencing. Defaults to NULL.
 #' @param caption_position Position of caption: "above" (default) or "below".
+#' @param frame Logical. If TRUE, draw a border around the table. Default FALSE.
+#' @param frame_color Color for the frame border. Default "black".
+#' @param frame_width Line width for the frame. Default "0.4pt".
+#' @param background Background color for the table container. Default NULL.
+#' @param inner_sep Padding between content and frame. Default "2pt".
 #' @param ... Additional arguments passed to t2f_inline().
 #'
 #' @return Same as t2f_inline().
@@ -238,6 +325,9 @@ build_inline_latex <- function(path, width, height, align,
 #' \dontrun{
 #' model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
 #' t2f_coef(model)
+#'
+#' # With frame and background
+#' t2f_coef(model, frame = TRUE, background = "gray!5")
 #' }
 #'
 #' @export
@@ -251,6 +341,11 @@ t2f_coef <- function(model,
                      caption_short = NULL,
                      label = NULL,
                      caption_position = "above",
+                     frame = FALSE,
+                     frame_color = "black",
+                     frame_width = "0.4pt",
+                     background = NULL,
+                     inner_sep = "2pt",
                      ...) {
   t2f_inline(
     model,
@@ -262,6 +357,11 @@ t2f_coef <- function(model,
     caption_short = caption_short,
     label = label,
     caption_position = caption_position,
+    frame = frame,
+    frame_color = frame_color,
+    frame_width = frame_width,
+    background = background,
+    inner_sep = inner_sep,
     ...
   )
 }

@@ -242,3 +242,153 @@ test_that("t2f_inline accepts caption_position parameter", {
 
   expect_true(file.exists(result))
 })
+
+test_that("build_inline_latex generates frame with fcolorbox", {
+  result <- zztab2fig:::build_inline_latex(
+    path = "test.pdf",
+    width = "3in",
+    height = NULL,
+    align = "center",
+    caption = NULL,
+    caption_short = NULL,
+    label = NULL,
+    caption_position = "above",
+    frame = TRUE,
+    frame_color = "black",
+    frame_width = "0.4pt",
+    background = NULL,
+    inner_sep = "2pt"
+  )
+
+  expect_match(result, "\\\\fcolorbox\\{black\\}\\{white\\}")
+  expect_match(result, "\\\\setlength\\{\\\\fboxsep\\}\\{2pt\\}")
+  expect_match(result, "\\\\setlength\\{\\\\fboxrule\\}\\{0.4pt\\}")
+})
+
+test_that("build_inline_latex generates background with colorbox", {
+  result <- zztab2fig:::build_inline_latex(
+    path = "test.pdf",
+    width = "3in",
+    height = NULL,
+    align = "center",
+    caption = NULL,
+    caption_short = NULL,
+    label = NULL,
+    caption_position = "above",
+    frame = FALSE,
+    frame_color = "black",
+    frame_width = "0.4pt",
+    background = "gray!10",
+    inner_sep = "4pt"
+  )
+
+  expect_match(result, "\\\\colorbox\\{gray!10\\}")
+  expect_match(result, "\\\\setlength\\{\\\\fboxsep\\}\\{4pt\\}")
+  expect_false(grepl("fcolorbox", result))
+})
+
+test_that("build_inline_latex generates frame with background using fcolorbox", {
+  result <- zztab2fig:::build_inline_latex(
+    path = "test.pdf",
+    width = "3in",
+    height = NULL,
+    align = "center",
+    caption = NULL,
+    caption_short = NULL,
+    label = NULL,
+    caption_position = "above",
+    frame = TRUE,
+    frame_color = "blue!50",
+    frame_width = "1pt",
+    background = "blue!5",
+    inner_sep = "3pt"
+  )
+
+  expect_match(result, "\\\\fcolorbox\\{blue!50\\}\\{blue!5\\}")
+  expect_match(result, "\\\\setlength\\{\\\\fboxsep\\}\\{3pt\\}")
+  expect_match(result, "\\\\setlength\\{\\\\fboxrule\\}\\{1pt\\}")
+})
+
+test_that("build_inline_latex without frame or background has no box commands", {
+  result <- zztab2fig:::build_inline_latex(
+    path = "test.pdf",
+    width = "3in",
+    height = NULL,
+    align = "center",
+    caption = NULL,
+    caption_short = NULL,
+    label = NULL,
+    caption_position = "above",
+    frame = FALSE,
+    frame_color = "black",
+    frame_width = "0.4pt",
+    background = NULL,
+    inner_sep = "2pt"
+  )
+
+  expect_false(grepl("fcolorbox", result))
+  expect_false(grepl("colorbox", result))
+  expect_false(grepl("fboxsep", result))
+})
+
+test_that("t2f_inline accepts frame parameters", {
+  output_dir <- tempdir()
+
+  result <- t2f_inline(
+    mtcars[1:3, 1:2],
+    frame = TRUE,
+    frame_color = "gray",
+    frame_width = "0.5pt",
+    format = "pdf",
+    filename = "inline_frame",
+    sub_dir = output_dir
+  )
+
+  expect_true(file.exists(result))
+})
+
+test_that("t2f_inline accepts background parameter", {
+  output_dir <- tempdir()
+
+  result <- t2f_inline(
+    mtcars[1:3, 1:2],
+    background = "yellow!10",
+    format = "pdf",
+    filename = "inline_background",
+    sub_dir = output_dir
+  )
+
+  expect_true(file.exists(result))
+})
+
+test_that("t2f_inline accepts frame and background together", {
+  output_dir <- tempdir()
+
+  result <- t2f_inline(
+    mtcars[1:3, 1:2],
+    frame = TRUE,
+    frame_color = "blue!50",
+    background = "blue!5",
+    inner_sep = "4pt",
+    format = "pdf",
+    filename = "inline_frame_bg",
+    sub_dir = output_dir
+  )
+
+  expect_true(file.exists(result))
+})
+
+test_that("t2f_coef accepts frame parameters", {
+  output_dir <- tempdir()
+  model <- lm(mpg ~ cyl, data = mtcars)
+
+  result <- t2f_coef(
+    model,
+    frame = TRUE,
+    background = "gray!5",
+    filename = "coef_frame",
+    sub_dir = output_dir
+  )
+
+  expect_true(file.exists(result))
+})

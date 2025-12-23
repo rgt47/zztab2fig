@@ -364,7 +364,20 @@ df <- data.frame(
 pander::pander(df)
 ```
 
-**Limitation**: pander cannot merge cells vertically.
+**pander-style output** (no cell merging):
+
+```{r challenge7-pander, echo=FALSE}
+df <- data.frame(
+  Category = c("Treatment", "Treatment", "Control", "Control"),
+  Subgroup = c("Male", "Female", "Male", "Female"),
+  N = c(45, 52, 48, 49),
+  Response = c("72%", "68%", "45%", "42%")
+)
+knitr::kable(df)
+```
+
+**Limitation**: pander cannot merge cells vertically. Repeated values clutter
+the table and obscure the hierarchical structure.
 
 ### zztab2fig
 
@@ -411,8 +424,19 @@ df <- data.frame(
 pander::pander(df, justify = c("left", "right", "right"))
 ```
 
+**pander-style output** (right-aligned, not decimal-aligned):
+
+```{r challenge8-pander, echo=FALSE}
+df <- data.frame(
+  Item = c("A", "B", "C"),
+  Value1 = c(1.5, 123.45, 12.345),
+  Value2 = c(0.001, 10.1, 1000.01)
+)
+knitr::kable(df, align = c("l", "r", "r"))
+```
+
 **Limitation**: pander only supports left/center/right alignment, not decimal
-alignment.
+alignment. Values with different decimal places are harder to compare visually.
 
 ### zztab2fig
 
@@ -455,7 +479,19 @@ pander::panderOptions("table.style", "rmarkdown")
 pander::pander(df, caption = "Baseline Characteristics")
 ```
 
-**Limitation**: pander provides no built-in journal themes.
+**pander-style output** (default styling, no NEJM formatting):
+
+```{r challenge9-pander, echo=FALSE}
+df <- data.frame(
+  Characteristic = c("Age, years", "Male sex, n (%)", "BMI, kg/m2"),
+  Treatment = c("65.2 (8.4)", "142 (58%)", "27.3 (4.1)"),
+  Placebo = c("64.8 (8.1)", "138 (56%)", "27.1 (3.9)")
+)
+knitr::kable(df, caption = "Baseline Characteristics")
+```
+
+**Limitation**: pander provides no built-in journal themes. Meeting specific
+journal requirements requires manual formatting.
 
 ### zztab2fig
 
@@ -500,7 +536,34 @@ pander::pander(m3)
 # Side-by-side comparison requires manual table construction
 ```
 
+**pander-style output** (separate tables, no side-by-side comparison):
+
+Model 1:
+```{r challenge10-pander1, echo=FALSE}
+m1 <- lm(mpg ~ cyl, data = mtcars)
+coef_df <- as.data.frame(summary(m1)$coefficients)
+coef_df <- round(coef_df, 4)
+knitr::kable(coef_df)
+```
+
+Model 2:
+```{r challenge10-pander2, echo=FALSE}
+m2 <- lm(mpg ~ cyl + hp, data = mtcars)
+coef_df <- as.data.frame(summary(m2)$coefficients)
+coef_df <- round(coef_df, 4)
+knitr::kable(coef_df)
+```
+
+Model 3:
+```{r challenge10-pander3, echo=FALSE}
+m3 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+coef_df <- as.data.frame(summary(m3)$coefficients)
+coef_df <- round(coef_df, 4)
+knitr::kable(coef_df)
+```
+
 **Limitation**: pander cannot create comparative model tables automatically.
+Each model must be displayed separately, making comparison difficult.
 
 ### zztab2fig
 

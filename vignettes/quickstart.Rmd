@@ -125,6 +125,17 @@ Or use the convenience function for coefficient tables:
 t2f_coef(model, caption = "Coefficients")
 ```
 
+Add visual styling with frames and backgrounds:
+
+```{r inline-styled, eval=FALSE}
+t2f_inline(model,
+           width = "3in",
+           frame = TRUE,
+           frame_color = "gray",
+           background = "gray!5",
+           inner_sep = "4pt")
+```
+
 **Note**: Add `\usepackage{caption}` to your R Markdown YAML for captions.
 
 
@@ -229,6 +240,10 @@ t2f(mtcars,
 | `caption` | Uses \\captionof (no float) | NULL |
 | `label` | LaTeX cross-reference label | NULL |
 | `caption_position` | "above" or "below" | "above" |
+| `frame` | Draw border around table | FALSE |
+| `frame_color` | Border color (xcolor syntax) | "black" |
+| `background` | Background color (xcolor syntax) | NULL |
+| `inner_sep` | Padding inside frame | "2pt" |
 | `format` | "auto", "pdf", "png" | "auto" |
 
 ### Core Functions
