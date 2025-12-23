@@ -1,9 +1,9 @@
 ---
-title: "Tabling Challenges: pander vs zztab2fig"
+title: "Why zztab2fig? A Practical Comparison with pander"
 author: "Ronald G. Thomas"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Tabling Challenges: pander vs zztab2fig}
+  %\VignetteIndexEntry{Why zztab2fig? A Practical Comparison with pander}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -28,32 +28,50 @@ include_table <- function(filename) {
 }
 ```
 
-This vignette presents a series of tabling challenges of varying difficulty,
-showing solutions in both pander and zztab2fig. Each challenge demonstrates
-the relative strengths and approaches of each package.
+## Introduction
 
-## Setup
+R provides multiple packages for creating tables from data frames, each with
+distinct design philosophies. This vignette compares **pander** and
+**zztab2fig** through practical examples to help you choose the right tool.
+
+**pander** is designed for quick, inline table generation in R Markdown
+documents. It converts R objects to Markdown format, which Pandoc then renders
+to HTML, PDF, or Word. This approach is fast and integrates seamlessly with
+the R Markdown ecosystem.
+**zztab2fig** takes a different approach: it generates standalone PDF tables
+via LaTeX compilation, then crops them for inclusion in documents. This
+produces publication-quality tables with features that Markdown cannot
+express, such as footnotes, spanning headers, and decimal alignment.
+
+The choice depends on your needs:
+
+- **Quick reports and HTML output**: pander is simpler and faster
+- **Journal submissions and formal publications**: zztab2fig provides the
+  control and formatting features required
 
 ```{r libraries, message=FALSE, warning=FALSE}
 suppressPackageStartupMessages(library(zztab2fig))
 ```
 
 
-# Standard Difficulty Challenges
+# Part 1: Basic Tabling
 
-## Challenge 1: Basic Data Frame
+These examples show that both packages handle simple tables well. The
+differences emerge in formatting control and output quality.
 
-**Task**: Display a simple data frame with default formatting.
+## Challenge 1: Simple Data Frame
 
-### pander Solution
+**Task**: Display a basic data frame.
 
-```{r challenge1-pander, eval=FALSE}
+### pander Approach
+
+```r
 df <- mtcars[1:5, 1:4]
-
 pander::pander(df)
 ```
 
-**Output** (Markdown):
+**pander output** (Markdown, rendered by Pandoc):
+
 ```
 -------------------------------------------
        &nbsp;         mpg   cyl   disp   hp
@@ -66,11 +84,10 @@ pander::pander(df)
 -------------------------------------------
 ```
 
-### zztab2fig Solution
+### zztab2fig Approach
 
 ```{r challenge1-zztab2fig, eval=has_latex}
 df <- mtcars[1:5, 1:4]
-
 t2f(df, filename = "basic_table", sub_dir = output_dir)
 ```
 
@@ -78,28 +95,26 @@ t2f(df, filename = "basic_table", sub_dir = output_dir)
 include_table("basic_table")
 ```
 
-**Comparison**: pander outputs markdown for inline display; zztab2fig produces
-publication-ready PDF files.
+**Key difference**: zztab2fig produces a PDF with professional typesetting
+(booktabs rules, proper spacing). pander produces Markdown for inline display.
 
 
+## Challenge 2: Column Alignment
 
-## Challenge 2: Custom Column Alignment
+**Task**: Left-align text columns, right-align numeric columns.
 
-**Task**: Create a table with left-aligned text and right-aligned numbers.
+### pander
 
-### pander Solution
-
-```{r challenge2-pander, eval=FALSE}
+```r
 df <- data.frame(
   Name = c("Alice", "Bob", "Charlie"),
   Score = c(95.5, 87.2, 91.8),
   Rank = c(1, 3, 2)
 )
-
 pander::pander(df, justify = c("left", "right", "right"))
 ```
 
-### zztab2fig Solution
+### zztab2fig
 
 ```{r challenge2-zztab2fig, eval=has_latex}
 df <- data.frame(
@@ -107,7 +122,6 @@ df <- data.frame(
   Score = c(95.5, 87.2, 91.8),
   Rank = c(1, 3, 2)
 )
-
 t2f(df, filename = "aligned_table", sub_dir = output_dir,
     align = c("l", "r", "r"))
 ```
@@ -116,30 +130,27 @@ t2f(df, filename = "aligned_table", sub_dir = output_dir,
 include_table("aligned_table")
 ```
 
-**Comparison**: Both handle basic alignment. zztab2fig auto-detects based on
-column type.
-
+**Key difference**: Both handle L/C/R alignment. zztab2fig also supports
+decimal alignment via siunitx (shown later).
 
 
 ## Challenge 3: Table with Caption
 
-**Task**: Add a caption to the table.
+**Task**: Add a descriptive caption.
 
-### pander Solution
+### pander
 
-```{r challenge3-pander, eval=FALSE}
+```r
 df <- iris[1:5, ]
-
 pander::pander(df, caption = "First Five Rows of Iris Dataset")
 ```
 
-**Output**: Caption appears below table with "Table:" prefix.
+Produces caption below the table with "Table:" prefix.
 
-### zztab2fig Solution
+### zztab2fig
 
 ```{r challenge3-zztab2fig, eval=has_latex}
 df <- iris[1:5, ]
-
 t2f(df,
     filename = "iris_sample",
     sub_dir = output_dir,
@@ -151,38 +162,27 @@ t2f(df,
 include_table("iris_sample")
 ```
 
-**Comparison**: zztab2fig adds cross-reference labels; pander does not.
-
+**Key difference**: zztab2fig adds LaTeX cross-reference labels for use with
+`\ref{tab:iris}` in documents. pander has no equivalent.
 
 
 ## Challenge 4: Regression Model Output
 
-**Task**: Display linear regression coefficients.
+**Task**: Display coefficients from a linear model.
 
-### pander Solution
+### pander
 
-```{r challenge4-pander, eval=FALSE}
+```r
 model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
-
 pander::pander(model)
 ```
 
-**Output**:
-```
----------------------------------------------------------------
-     &nbsp;        Estimate   Std. Error   t value   Pr(>|t|)
------------------ ---------- ------------ --------- ----------
- **(Intercept)**    38.75       1.787       21.69    3.043e-18
+Produces a markdown table of coefficients.
 
-     **cyl**       -0.9416      0.5509     -1.709     0.0985
----------------------------------------------------------------
-```
-
-### zztab2fig Solution
+### zztab2fig
 
 ```{r challenge4-zztab2fig, eval=has_latex}
 model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
-
 t2f(model,
     filename = "regression",
     sub_dir = output_dir,
@@ -194,68 +194,39 @@ t2f(model,
 include_table("regression")
 ```
 
-**Comparison**: Both handle lm objects natively. zztab2fig allows selecting
-which statistics to include.
+**Key difference**: Both handle `lm` objects. zztab2fig provides S3 methods
+for selecting which statistics to display (`include` parameter) and supports
+additional object types (glm, anova, htest).
 
 
+# Part 2: Advanced Features
 
-## Challenge 5: Highlighting Cells
-
-**Task**: Emphasize specific cells in a table.
-
-### pander Solution
-
-```{r challenge5-pander, eval=FALSE}
-df <- mtcars[1:5, 1:4]
-
-pander::pander(df, emphasize.strong.rows = 2, emphasize.italics.cols = 3)
-```
-
-### zztab2fig Solution
-
-```{r challenge5-zztab2fig, eval=has_latex}
-df <- mtcars[1:5, 1:4]
-
-t2f(df,
-    filename = "emphasized",
-    sub_dir = output_dir,
-    formatting = list(t2f_bold_col(1)))
-```
-
-```{r challenge5-display, echo=FALSE, eval=has_latex, out.width="70%"}
-include_table("emphasized")
-```
-
-**Comparison**: pander uses row/column indices; zztab2fig supports conditional
-formatting with LaTeX colors.
+These challenges demonstrate capabilities unique to zztab2fig. pander cannot
+replicate these without manual LaTeX coding.
 
 
-
-# Advanced Challenges
-
-## Challenge 6: Table Footnotes
+## Challenge 5: Table Footnotes
 
 **Task**: Add footnotes explaining abbreviations and significance levels.
 
-### pander Solution
+### pander
 
-```{r challenge6-pander, eval=FALSE}
+```r
 df <- data.frame(
   Variable = c("BMI*", "SBP", "DBP"),
   Mean = c(27.5, 142.3, 88.2),
   SD = c(4.2, 18.5, 11.3)
 )
-
 pander::pander(df, caption = "Clinical Measurements")
-# Footnote must be added as separate text outside the table
+# Footnotes must be added as separate text below the table
 ```
 
-**Limitation**: pander has no native table footnote support. Footnotes must be
-added manually as separate text.
+**Limitation**: pander has no table footnote support. Notes must be added
+manually as prose.
 
-### zztab2fig Solution
+### zztab2fig
 
-```{r challenge6-zztab2fig, eval=has_latex}
+```{r challenge5-zztab2fig, eval=has_latex}
 df <- data.frame(
   Variable = c("BMI", "SBP", "DBP"),
   Mean = c(27.5, 142.3, 88.2),
@@ -277,43 +248,35 @@ t2f(df,
     footnote = fn)
 ```
 
-```{r challenge6-display, echo=FALSE, eval=has_latex, out.width="50%"}
+```{r challenge5-display, echo=FALSE, eval=has_latex, out.width="50%"}
 include_table("clinical_footnotes")
 ```
 
-**Advantage**: zztab2fig produces proper LaTeX footnotes within the table
-environment using threeparttable.
+**Advantage**: zztab2fig produces proper LaTeX footnotes using threeparttable,
+with support for general notes, numbered notes, and symbol notes.
 
 
+## Challenge 6: Spanning Column Headers
 
-## Challenge 7: Spanning Column Headers
+**Task**: Group related columns under a common header (e.g., "Treatment" and
+"Control" groups).
 
-**Task**: Create grouped column headers (e.g., "Treatment" spanning two
-columns).
+### pander
 
-### pander Solution
-
-```{r challenge7-pander, eval=FALSE}
-df <- data.frame(
-  Outcome = c("Score A", "Score B"),
-  T_Mean = c(45.2, 38.7),
-  T_SD = c(8.3, 6.2),
-  C_Mean = c(42.1, 37.9),
-  C_SD = c(7.9, 5.8)
-)
-
+```r
 # pander cannot create spanning headers
-# Best approximation: rename columns
+# Best approximation: rename columns to indicate grouping
 names(df) <- c("Outcome", "Treatment Mean", "Treatment SD",
                "Control Mean", "Control SD")
 pander::pander(df)
 ```
 
-**Limitation**: pander does not support spanning (multi-column) headers.
+**Limitation**: pander cannot create multi-column headers. Column names must
+encode the grouping.
 
-### zztab2fig Solution
+### zztab2fig
 
-```{r challenge7-zztab2fig, eval=has_latex}
+```{r challenge6-zztab2fig, eval=has_latex}
 df <- data.frame(
   Outcome = c("Score A", "Score B"),
   T_Mean = c(45.2, 38.7),
@@ -336,38 +299,36 @@ t2f(df,
     header_above = hdr)
 ```
 
-```{r challenge7-display, echo=FALSE, eval=has_latex, out.width="60%"}
+```{r challenge6-display, echo=FALSE, eval=has_latex, out.width="60%"}
 include_table("spanning_header")
 ```
 
-**Advantage**: zztab2fig creates proper LaTeX multicolumn headers with cmidrule
-separators.
+**Advantage**: zztab2fig creates proper LaTeX multicolumn headers with
+cmidrule separators, essential for clinical trial and research tables.
 
 
+## Challenge 7: Multi-Row Cells (Hierarchical Data)
 
-## Challenge 8: Multi-Row Cells (Row Spanning)
+**Task**: Merge repeated values vertically to show data hierarchy.
 
-**Task**: Merge cells vertically for hierarchical data.
+### pander
 
-### pander Solution
-
-```{r challenge8-pander, eval=FALSE}
+```r
 df <- data.frame(
   Category = c("Treatment", "Treatment", "Control", "Control"),
   Subgroup = c("Male", "Female", "Male", "Female"),
   N = c(45, 52, 48, 49),
   Response = c("72%", "68%", "45%", "42%")
 )
-
-# pander cannot merge rows - display as-is with repeated values
+# pander displays repeated values without merging
 pander::pander(df)
 ```
 
-**Limitation**: pander does not support multi-row (vertically merged) cells.
+**Limitation**: pander cannot merge cells vertically.
 
-### zztab2fig Solution
+### zztab2fig
 
-```{r challenge8-zztab2fig, eval=has_latex}
+```{r challenge7-zztab2fig, eval=has_latex}
 df <- data.frame(
   Category = c("Treatment", "Treatment", "Control", "Control"),
   Subgroup = c("Male", "Female", "Male", "Female"),
@@ -386,39 +347,36 @@ t2f(df,
     ))
 ```
 
-```{r challenge8-display, echo=FALSE, eval=has_latex, out.width="55%"}
+```{r challenge7-display, echo=FALSE, eval=has_latex, out.width="55%"}
 include_table("multirow")
 ```
 
-**Advantage**: zztab2fig automatically merges repeated values using LaTeX
-multirow.
+**Advantage**: zztab2fig automatically collapses repeated values using LaTeX
+multirow, with configurable vertical alignment and horizontal rules.
 
 
+## Challenge 8: Decimal Point Alignment
 
-## Challenge 9: Decimal Point Alignment
+**Task**: Align numbers on the decimal point for easy visual comparison.
 
-**Task**: Align numbers on the decimal point for easy comparison.
+### pander
 
-### pander Solution
-
-```{r challenge9-pander, eval=FALSE}
+```r
 df <- data.frame(
   Item = c("A", "B", "C"),
   Value1 = c(1.5, 123.45, 12.345),
   Value2 = c(0.001, 10.1, 1000.01)
 )
-
-# pander uses right-alignment for numbers
-# No decimal alignment available
+# pander uses right-alignment (no decimal alignment)
 pander::pander(df, justify = c("left", "right", "right"))
 ```
 
-**Limitation**: pander supports left/center/right alignment only, not decimal
+**Limitation**: pander only supports left/center/right alignment, not decimal
 alignment.
 
-### zztab2fig Solution
+### zztab2fig
 
-```{r challenge9-zztab2fig, eval=has_latex}
+```{r challenge8-zztab2fig, eval=has_latex}
 df <- data.frame(
   Item = c("A", "B", "C"),
   Value1 = c(1.5, 123.45, 12.345),
@@ -435,79 +393,37 @@ t2f(df,
     ))
 ```
 
-```{r challenge9-display, echo=FALSE, eval=has_latex, out.width="45%"}
+```{r challenge8-display, echo=FALSE, eval=has_latex, out.width="45%"}
 include_table("decimal_aligned")
 ```
 
-**Advantage**: zztab2fig uses siunitx for true decimal alignment.
+**Advantage**: zztab2fig uses siunitx for true decimal alignment, making
+numeric comparisons significantly easier to read.
 
 
+## Challenge 9: Journal-Specific Themes
 
-## Challenge 10: Multi-Page Tables
+**Task**: Format a table for NEJM (New England Journal of Medicine)
+submission.
 
-**Task**: Create a table that spans multiple pages with repeated headers.
+### pander
 
-### pander Solution
-
-```{r challenge10-pander, eval=FALSE}
-df <- mtcars[rep(1:32, 3), ]  # 96 rows
-
-# pander splits wide tables but not long tables
-# For long tables, output continues without repeated headers
-pander::pander(df)
-```
-
-**Limitation**: pander splits wide tables horizontally but does not handle
-multi-page tables with repeated headers.
-
-### zztab2fig Solution
-
-```{r challenge10-zztab2fig, eval=has_latex}
-df <- mtcars[rep(1:10, 2), 1:4]  # Smaller example for vignette
-
-t2f(df,
-    filename = "multipage",
-    sub_dir = output_dir,
-    caption = "mtcars Data (Repeated)",
-    longtable = TRUE)
-```
-
-```{r challenge10-display, echo=FALSE, eval=has_latex, out.width="55%"}
-include_table("multipage")
-```
-
-**Advantage**: zztab2fig uses LaTeX longtable for proper page breaks with
-repeated headers.
-
-
-
-## Challenge 11: Journal-Specific Formatting
-
-**Task**: Format table according to NEJM (New England Journal of Medicine)
-style guidelines.
-
-### pander Solution
-
-```{r challenge11-pander, eval=FALSE}
-df <- data.frame(
-  Characteristic = c("Age", "Male sex", "BMI"),
-  Treatment = c("65.2 (8.4)", "58%", "27.3 (4.1)"),
-  Placebo = c("64.8 (8.1)", "56%", "27.1 (3.9)")
-)
-
+```r
 # pander has no journal-specific themes
-# Manual formatting required
+# Manual formatting required for each style guide
 pander::panderOptions("table.style", "rmarkdown")
 pander::pander(df, caption = "Baseline Characteristics")
 ```
 
-### zztab2fig Solution
+**Limitation**: pander provides no built-in journal themes.
 
-```{r challenge11-zztab2fig, eval=has_latex}
+### zztab2fig
+
+```{r challenge9-zztab2fig, eval=has_latex}
 df <- data.frame(
-  Characteristic = c("Age", "Male sex", "BMI"),
-  Treatment = c("65.2 (8.4)", "58%", "27.3 (4.1)"),
-  Placebo = c("64.8 (8.1)", "56%", "27.1 (3.9)")
+  Characteristic = c("Age, years", "Male sex, n (%)", "BMI, kg/m2"),
+  Treatment = c("65.2 (8.4)", "142 (58%)", "27.3 (4.1)"),
+  Placebo = c("64.8 (8.1)", "138 (56%)", "27.1 (3.9)")
 )
 
 t2f(df,
@@ -517,23 +433,22 @@ t2f(df,
     theme = "nejm")
 ```
 
-```{r challenge11-display, echo=FALSE, eval=has_latex, out.width="55%"}
+```{r challenge9-display, echo=FALSE, eval=has_latex, out.width="55%"}
 include_table("nejm_table")
 ```
 
-**Advantage**: zztab2fig includes built-in themes for NEJM, APA, and Nature
-journals.
+**Advantage**: zztab2fig includes built-in themes for NEJM, APA, Nature, and
+a minimal style. Each theme sets appropriate fonts, spacing, and rules.
 
 
+## Challenge 10: Model Comparison Table
 
-## Challenge 12: Model Comparison Table
-
-**Task**: Display multiple regression models side by side with significance
+**Task**: Display multiple regression models side-by-side with significance
 stars.
 
-### pander Solution
+### pander
 
-```{r challenge12-pander, eval=FALSE}
+```r
 m1 <- lm(mpg ~ cyl, data = mtcars)
 m2 <- lm(mpg ~ cyl + hp, data = mtcars)
 m3 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
@@ -542,15 +457,14 @@ m3 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
 pander::pander(m1)
 pander::pander(m2)
 pander::pander(m3)
-
-# Side-by-side comparison requires manual construction
+# Side-by-side comparison requires manual table construction
 ```
 
-**Limitation**: pander has no built-in model comparison functionality.
+**Limitation**: pander cannot create comparative model tables automatically.
 
-### zztab2fig Solution
+### zztab2fig
 
-```{r challenge12-zztab2fig, eval=has_latex}
+```{r challenge10-zztab2fig, eval=has_latex}
 m1 <- lm(mpg ~ cyl, data = mtcars)
 m2 <- lm(mpg ~ cyl + hp, data = mtcars)
 m3 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
@@ -565,71 +479,29 @@ t2f_regression(
 )
 ```
 
-```{r challenge12-display, echo=FALSE, eval=has_latex, out.width="70%"}
+```{r challenge10-display, echo=FALSE, eval=has_latex, out.width="70%"}
 include_table("model_comparison")
 ```
 
-**Advantage**: zztab2fig provides `t2f_regression()` for publication-ready
-model comparison tables.
+**Advantage**: `t2f_regression()` automatically aligns terms across models,
+adds significance stars, and includes model statistics (N, R-squared).
 
 
+## Challenge 11: Complex Combined Features
 
-## Challenge 13: Figure Placement in LaTeX
+**Task**: Create a publication-quality table with footnotes, spanning headers,
+multi-row cells, and NEJM styling.
 
-**Task**: Include a table as a float with specific positioning.
+### pander
 
-### pander Solution
-
-```{r challenge13-pander, eval=FALSE}
-df <- mtcars[1:5, 1:4]
-
-# pander outputs markdown - LaTeX float control not applicable
-pander::pander(df)
-
-# For LaTeX output, user must manually wrap in figure environment
+```r
+# This combination cannot be achieved in pander
+# Requires manual LaTeX coding
 ```
 
-**Limitation**: pander targets markdown; LaTeX float control requires manual
-intervention.
+### zztab2fig
 
-### zztab2fig Solution
-
-```{r challenge13-zztab2fig, eval=has_latex}
-df <- mtcars[1:5, 1:4]
-
-t2f(df, filename = "float_demo", sub_dir = output_dir)
-
-# In LaTeX documents, use:
-# t2f_include("float_demo", caption = "Sample Data",
-#             label = "fig:sample", position = "htbp")
-```
-
-```{r challenge13-display, echo=FALSE, eval=has_latex, out.width="70%"}
-include_table("float_demo")
-```
-
-**Advantage**: zztab2fig provides helper functions for all LaTeX placement
-options (float, inline, margin, wrap).
-
-
-
-## Challenge 14: Combining Multiple Features
-
-**Task**: Create a complex table with footnotes, spanning headers, multi-row
-cells, and NEJM styling.
-
-### pander Solution
-
-```{r challenge14-pander, eval=FALSE}
-# This combination is not achievable in pander
-# Would require extensive manual LaTeX coding
-```
-
-**Limitation**: pander cannot combine these advanced features.
-
-### zztab2fig Solution
-
-```{r challenge14-zztab2fig, eval=has_latex}
+```{r challenge11-zztab2fig, eval=has_latex}
 df <- data.frame(
   Endpoint = c("Primary", "Primary", "Secondary", "Secondary"),
   Timepoint = c("Week 26", "Week 52", "Week 26", "Week 52"),
@@ -663,18 +535,20 @@ t2f(df,
     theme = "nejm")
 ```
 
-```{r challenge14-display, echo=FALSE, eval=has_latex, out.width="65%"}
+```{r challenge11-display, echo=FALSE, eval=has_latex, out.width="65%"}
 include_table("complex_table")
 ```
 
 
+# Summary
 
-# Summary Comparison
+## Feature Comparison
 
 | Feature | pander | zztab2fig |
-|---------|:------:|:---------:|
-| Basic tables | Yes | Yes |
-| Column alignment | L/C/R | L/C/R + decimal |
+|:--------|:------:|:---------:|
+| Basic data frames | Yes | Yes |
+| Column alignment (L/C/R) | Yes | Yes |
+| Decimal alignment | No | Yes (siunitx) |
 | Captions | Yes | Yes + short captions |
 | Cross-reference labels | No | Yes |
 | Table footnotes | No | Yes (4 notation types) |
@@ -683,24 +557,42 @@ include_table("complex_table")
 | Multi-page tables | No | Yes (longtable) |
 | Journal themes | No | Yes (NEJM, APA, Nature) |
 | Model comparison | No | Yes |
-| LaTeX float control | No | Yes |
-| Margin placement | No | Yes |
+| Statistical object S3 methods | Partial | Yes (lm, glm, anova, htest) |
 | Output formats | Markdown | PDF, PNG, SVG, TEX |
 
 ## When to Use Each Package
 
-**Choose pander when:**
+### Choose pander when:
 
-- Working in R Markdown targeting HTML/Word output
-- Need quick inline display of many R object types
+- Creating R Markdown documents for HTML or Word output
+- Need quick, inline display of many R object types
 - Document will be processed through Pandoc
-- Simple tables without advanced formatting
+- Simple tables with basic formatting are sufficient
+- Rapid iteration is more important than typographic quality
 
-**Choose zztab2fig when:**
+### Choose zztab2fig when:
 
-- Creating publication-ready tables for journals
+- Creating tables for journal submission
 - Need footnotes, spanning headers, or multi-row cells
-- Working with LaTeX documents
-- Require decimal alignment
-- Need consistent journal-specific styling
-- Creating cropped PDF tables for inclusion in documents
+- Working with LaTeX documents directly
+- Require decimal alignment for numeric comparison
+- Want consistent journal-specific styling (NEJM, APA, Nature)
+- Need cropped PDF tables for inclusion in external documents
+- Building model comparison tables
+
+## v0.2.0 Features Used in This Vignette
+
+This vignette demonstrates several features introduced in zztab2fig v0.2.0:
+
+- **S3 methods**: `t2f.lm()` for linear models
+- **Theme system**: Built-in NEJM theme (`theme = "nejm"`)
+- **t2f_regression()**: Side-by-side model comparison
+- **t2f_footnote()**: Structured footnotes with multiple notation types
+- **t2f_header_above()**: Spanning column headers
+- **t2f_collapse_rows()**: Multi-row cell merging
+- **t2f_siunitx()**: Decimal alignment
+- **t2f_mark()**: Footnote markers in cells
+- **caption_short**: Short captions for List of Tables
+
+For complete documentation of these features, see the "Advanced Features" and
+"Object Types and Themes" vignettes.

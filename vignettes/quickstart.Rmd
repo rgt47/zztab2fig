@@ -12,288 +12,181 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE
+  fig.align = "center"
 )
+
+has_latex <- nzchar(Sys.which("pdflatex")) && nzchar(Sys.which("pdfcrop"))
+
+output_dir <- tempdir()
+
+include_table <- function(filename) {
+  pdf_path <- file.path(output_dir, paste0(filename, "_cropped.pdf"))
+  if (!file.exists(pdf_path)) return(invisible(NULL))
+  png_path <- sub("\\.pdf$", ".png", pdf_path)
+  convert_pdf_to_png(pdf_path, png_path, dpi = 150)
+  knitr::include_graphics(png_path)
+}
 ```
 
-This quickstart guide covers the new features in zztab2fig v0.2.0. For complete
-documentation, see the main vignette.
+This quickstart guide covers the key features in zztab2fig v0.2.0. For complete
+documentation, see the "Object Types and Themes" and "Advanced Features"
+vignettes.
 
 ## Installation
 
-```{r install}
+```{r install, eval=FALSE}
 # Install from GitHub
 # devtools::install_github("rgt47/zztab2fig")
+```
 
+```{r load}
 library(zztab2fig)
 ```
 
 ## Basic Usage
 
-The simplest usage converts a data frame to a cropped PDF table:
-```{r basic}
-t2f(mtcars[1:6, 1:4], filename = "basic_table")
+Convert a data frame to a cropped PDF table:
+
+```{r basic, eval=has_latex}
+t2f(mtcars[1:6, 1:4], filename = "basic_table", sub_dir = output_dir)
 ```
 
-This generates three files in `output/`:
+```{r basic-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("basic_table")
+```
+
+This generates three files:
 
 - `basic_table.tex` - LaTeX source
 - `basic_table.pdf` - Full PDF
 - `basic_table_cropped.pdf` - Cropped PDF for document inclusion
 
+
 ## Journal Themes
 
-Version 0.2.0 introduces built-in themes for common journal styles:
+Built-in themes provide journal-specific styling:
 
-```{r themes}
-# NEJM (New England Journal of Medicine)
-t2f(mtcars[1:6, 1:4], theme = "nejm", filename = "nejm_table")
-
-# APA (American Psychological Association)
-t2f(mtcars[1:6, 1:4], theme = "apa", filename = "apa_table")
-
-# Nature
-t2f(mtcars[1:6, 1:4], theme = "nature", filename = "nature_table")
-
-# Minimal (clean, light styling)
-t2f(mtcars[1:6, 1:4], theme = "minimal", filename = "minimal_table")
+```{r themes, eval=has_latex}
+t2f(mtcars[1:6, 1:4], theme = "nejm",
+    filename = "nejm_table", sub_dir = output_dir)
 ```
 
-Set a global theme for all subsequent calls:
+```{r themes-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("nejm_table")
+```
 
-```{r global-theme}
+Available themes: `"nejm"`, `"apa"`, `"nature"`, `"minimal"`
+
+Set a global theme:
+
+```{r global-theme, eval=FALSE}
 t2f_theme_set("nejm")
 t2f(mtcars[1:6, 1:4])
 t2f(iris[1:6, ])
 ```
 
-View available themes and create custom ones:
-
-```{r custom-theme}
-t2f_list_themes()
-
-my_theme <- t2f_theme(
-  name = "custom",
-  scolor = "green!8",
-  header_bold = TRUE,
-  font_size = "small",
-  striped = TRUE
-)
-t2f_theme_set(my_theme)
-```
 
 ## Statistical Objects
 
-t2f now works directly with statistical objects via S3 methods:
+t2f works directly with statistical objects:
 
-```{r stats-objects}
-# Linear models
+```{r stats-objects, eval=has_latex}
 model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
-t2f(model, filename = "regression")
-
-# GLM with odds ratios
-logit <- glm(am ~ mpg + hp, data = mtcars, family = binomial)
-t2f(logit, exponentiate = TRUE, filename = "logistic")
-
-# ANOVA tables
-aov_result <- aov(mpg ~ cyl + gear, data = mtcars)
-t2f(aov_result, filename = "anova")
-
-# Hypothesis tests
-ttest <- t.test(mtcars$mpg, mu = 20)
-t2f(ttest, filename = "ttest")
-
-# Matrices
-cor_matrix <- cor(mtcars[, 1:4])
-t2f(cor_matrix, filename = "correlation")
+t2f(model, filename = "regression", sub_dir = output_dir,
+    include = c("estimate", "std.error", "p.value"))
 ```
 
-Compare multiple regression models side-by-side:
+```{r stats-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("regression")
+```
 
-```{r regression-comparison}
+Supported object types: `lm`, `glm`, `anova`, `aov`, `htest`, `matrix`, `table`
+
+
+## Model Comparison
+
+Compare multiple models side-by-side:
+
+```{r regression-comparison, eval=has_latex}
 m1 <- lm(mpg ~ cyl, data = mtcars)
 m2 <- lm(mpg ~ cyl + hp, data = mtcars)
 m3 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
 
 t2f_regression(
-  Model1 = m1,
-  Model2 = m2,
-  Model3 = m3,
+  Model1 = m1, Model2 = m2, Model3 = m3,
   stars = TRUE,
-  filename = "model_comparison"
+  filename = "model_comparison",
+  sub_dir = output_dir
 )
 ```
 
-## Table Captions and Labels
+```{r regression-display, echo=FALSE, eval=has_latex, out.width="65%"}
+include_table("model_comparison")
+```
+
+
+## Captions and Labels
 
 Add LaTeX captions and cross-reference labels:
 
-```{r caption-label}
+```{r caption-label, eval=FALSE}
 t2f(mtcars[1:6, 1:4],
     caption = "Motor Trend Car Road Tests (1974)",
     label = "tab:mtcars",
     filename = "captioned_table")
 ```
 
+
 ## Column Alignment
 
-Control column alignment explicitly or use auto-detection:
+Explicit or auto-detected alignment:
 
-```{r alignment}
-# Auto-detect (numeric=right, character=left)
+```{r alignment, eval=FALSE}
 t2f(iris[1:6, ], align = NULL)
-
-# Explicit alignment
 t2f(mtcars[1:6, 1:4], align = c("l", "r", "r", "r"))
-
-# Single value for all columns
 t2f(mtcars[1:6, 1:4], align = "c")
 ```
+
+
+## Decimal Alignment
+
+Use siunitx for decimal-aligned columns:
+
+```{r decimal, eval=has_latex}
+df <- data.frame(
+  Item = c("A", "B", "C"),
+  Value1 = c(1.5, 123.45, 12.345),
+  Value2 = c(0.001, 10.1, 1000.01)
+)
+
+t2f(df, filename = "decimal_aligned", sub_dir = output_dir,
+    align = list("l", t2f_siunitx(table_format = "3.3"),
+                 t2f_siunitx(table_format = "4.2")))
+```
+
+```{r decimal-display, echo=FALSE, eval=has_latex, out.width="45%"}
+include_table("decimal_aligned")
+```
+
 
 ## Multi-Page Tables
 
 For large tables that span multiple pages:
 
-```{r longtable}
+```{r longtable, eval=FALSE}
 t2f(mtcars,
     longtable = TRUE,
     caption = "Complete mtcars Dataset",
     filename = "long_table")
 ```
 
-## Crop Control
-
-Customize PDF cropping margins or disable cropping:
-
-```{r crop}
-# Custom margin (points)
-t2f(mtcars[1:6, 1:4], crop_margin = 5)
-
-# Different margins per side (left, top, right, bottom)
-t2f(mtcars[1:6, 1:4], crop_margin = c(5, 10, 5, 10))
-
-# No cropping (return full PDF)
-t2f(mtcars[1:6, 1:4], crop = FALSE)
-```
-
-## Batch Processing
-
-Process multiple tables with consistent styling:
-
-```{r batch}
-tables <- list(
-  cars = mtcars[1:6, 1:4],
-  flowers = iris[1:6, ],
-  trees = trees[1:6, ]
-)
-
-results <- t2f_batch(
-  tables,
-  sub_dir = "batch_output",
-  theme = "nejm",
-  verbose = TRUE
-)
-```
-
-For per-table customization:
-
-```{r batch-advanced}
-specs <- list(
-  t2f_batch_spec(mtcars[1:6, 1:4], "cars",
-                 caption = "Car Data"),
-  t2f_batch_spec(iris[1:6, ], "flowers",
-                 caption = "Iris Data", theme = "apa"),
-  t2f_batch_spec(trees[1:6, ], "trees",
-                 caption = "Tree Data")
-)
-
-t2f_batch_advanced(specs, theme = "nejm")
-```
-
-## Cell Formatting
-
-Highlight specific cells, rows, or columns:
-
-```{r formatting}
-# Bold a column
-fmt <- t2f_bold_col("mpg")
-
-# Highlight cells conditionally
-fmt <- t2f_highlight(
-  condition = function(x) as.numeric(x) > 20,
-  background = "green!20"
-)
-
-# Color specific rows
-fmt <- t2f_color_row(c(1, 3, 5), background = "yellow!15")
-
-# Combined formatting
-fmt_list <- list(
-  t2f_bold_col(1),
-  t2f_highlight(function(x) x < 0.05, background = "red!20")
-)
-```
-
-## Output Formats
-
-Generate tables in different formats:
-
-```{r output-formats}
-# Check available formats
-t2f_output_formats()
-
-# Generate PNG (requires ImageMagick)
-# t2f(mtcars[1:6, 1:4], output_format = "png", dpi = 300)
-
-# Generate SVG (requires pdf2svg or Inkscape)
-# t2f(mtcars[1:6, 1:4], output_format = "svg")
-
-# TEX only (no PDF compilation)
-# t2f(mtcars[1:6, 1:4], output_format = "tex")
-```
-
-## Caching
-
-Enable caching to skip recompilation of unchanged tables:
-
-```{r caching}
-# Enable caching
-# t2f(mtcars, cache = TRUE)
-
-# Force regeneration
-# t2f(mtcars, cache = TRUE, force = TRUE)
-
-# Cache management
-t2f_cache_info()
-t2f_cache_clear()
-t2f_cache_clear(older_than = 7)  # Clear files older than 7 days
-```
-
-## R Markdown Integration
-
-Use the custom knitr engine in R Markdown documents:
-
-````markdown
-```{t2f, t2f.caption="My Table", t2f.theme="nejm"}`
-mtcars[1:5, 1:4]
-```
-````
-
-Supported chunk options (prefix with `t2f.`):
-
-- `t2f.scolor` - Row shading color
-- `t2f.caption` - Table caption
-- `t2f.label` - LaTeX label
-- `t2f.theme` - Theme name
-- `t2f.align` - Column alignment
-- `t2f.crop_margin` - Crop margin
 
 ## Quick Reference
 
-### New Parameters in t2f()
+### Key t2f() Parameters
 
 | Parameter | Description | Default |
-|-----------|-------------|---------|
+|:----------|:------------|:--------|
 | `caption` | LaTeX table caption | NULL |
 | `label` | LaTeX label for cross-refs | NULL |
 | `align` | Column alignment (l/c/r) | NULL (auto) |
@@ -302,39 +195,40 @@ Supported chunk options (prefix with `t2f.`):
 | `crop_margin` | Margin size (pts) | 10 |
 | `theme` | Theme name or object | NULL |
 
-### New Functions
+### Core Functions
 
 | Function | Purpose |
-|----------|---------|
+|:---------|:--------|
+| `t2f()` | Convert object to PDF table |
+| `t2f_regression()` | Compare regression models |
 | `t2f_theme_set()` | Set global theme |
 | `t2f_theme_get()` | Get current theme |
-| `t2f_theme_nejm()` | NEJM journal theme |
-| `t2f_theme_apa()` | APA style theme |
-| `t2f_theme_nature()` | Nature journal theme |
-| `t2f_theme_minimal()` | Minimal clean theme |
-| `t2f_regression()` | Compare regression models |
-| `t2f_batch()` | Process multiple tables |
-| `t2f_format()` | Create formatting specs |
-| `t2f_highlight()` | Conditional highlighting |
-| `t2f_bold_col()` | Bold columns |
-| `t2f_cache_clear()` | Clear cached files |
+| `t2f_list_themes()` | List available themes |
 
 ### S3 Methods
 
 | Object Type | Method |
-|-------------|--------|
+|:------------|:-------|
 | `data.frame` | `t2f.data.frame()` |
 | `matrix` | `t2f.matrix()` |
-| `table` | `t2f.table()` |
 | `lm` | `t2f.lm()` |
 | `glm` | `t2f.glm()` |
-| `anova` | `t2f.anova()` |
-| `aov` | `t2f.aov()` |
+| `anova` / `aov` | `t2f.anova()` / `t2f.aov()` |
 | `htest` | `t2f.htest()` |
+
+### Theme Presets
+
+| Function | Style |
+|:---------|:------|
+| `t2f_theme_nejm()` | NEJM (medical journals) |
+| `t2f_theme_apa()` | APA (psychology) |
+| `t2f_theme_nature()` | Nature (scientific) |
+| `t2f_theme_minimal()` | Clean, minimal |
+
 
 ## System Requirements
 
 - R >= 4.0
 - LaTeX distribution (TeX Live, MiKTeX, or MacTeX)
-- pdflatex and pdfcrop executables
-- Optional: ImageMagick (for PNG), pdf2svg (for SVG)
+- `pdflatex` and `pdfcrop` executables
+- Optional: ImageMagick (for PNG output)

@@ -10,15 +10,33 @@ vignette: >
 
 # Introduction
 
-The `zztab2fig` package provides a streamlined workflow to transform R dataframes into publication-ready LaTeX tables and generate cropped PDF outputs. With built-in options for styling, directory management, and verbose logging, the package is ideal for researchers, analysts, and data scientists who need professional table outputs for reports, presentations, or publications.
+The `zztab2fig` package provides a streamlined workflow to transform R objects
+into publication-ready LaTeX tables and generate cropped PDF outputs. With
+built-in options for styling, directory management, and verbose logging, the
+package is ideal for researchers, analysts, and data scientists who need
+professional table outputs for reports, presentations, or publications.
 
-This vignette will cover:
+## What's New in v0.2.0
 
-1. Installing and loading the package.
-2. Key functions and their usage.
-3. A complete example of generating LaTeX tables and PDFs.
-4. Customization options.
-5. Troubleshooting and tips.
+Version 0.2.0 introduced substantial enhancements:
+
+- **S3 method dispatch**: `t2f()` now works directly with `lm`, `glm`, `anova`,
+  `aov`, `htest`, `matrix`, and `table` objects
+- **Theme system**: Built-in themes for NEJM, APA, Nature, and minimal styles
+- **t2f_regression()**: Side-by-side regression model comparison tables
+- **Advanced formatting**: Table footnotes, spanning headers, multi-row cells,
+  and decimal alignment via siunitx
+- **Caption and label support**: LaTeX captions with short captions and
+  cross-reference labels
+
+For detailed coverage of these features, see the companion vignettes:
+
+- *Quickstart Guide* - Concise reference for common operations
+- *Object Types and Themes* - S3 methods and theme demonstrations
+- *Advanced Features* - Footnotes, headers, alignment, and placement helpers
+- *Why zztab2fig?* - Practical comparison with pander
+
+This vignette covers the foundational workflow and customization options.
 
 # Installation
 
@@ -43,19 +61,39 @@ library(dplyr)
 # Key Functions
 
 ## `t2f()`
-The primary function for converting a dataframe to a LaTeX table and generating a cropped PDF.
 
-### Arguments
-- `df`: A dataframe to be converted.
-- `filename`: Base name of the output files (without extensions). Defaults to the dataframe name.
-- `sub_dir`: Subdirectory to store the output files. Default: `"output"`.
-- `scolor`: A LaTeX color for alternating row shading (e.g., `"blue!10"`). Default: `"blue!10"`.
-- `verbose`: Logical. If `TRUE`, prints progress messages. Default: `FALSE`.
-- `extra_packages`: A list of LaTeX package specifications. Can include helper functions or raw LaTeX strings. Default: `NULL`.
-- `document_class`: LaTeX document class to use. Default: `"article"`.
+The primary function for converting R objects to LaTeX tables. In v0.2.0, `t2f()`
+is an S3 generic with methods for data frames, matrices, tables, and statistical
+objects.
+
+### Core Arguments
+
+- `x`: Object to convert (data frame, matrix, lm, glm, etc.)
+- `filename`: Base name for output files. Defaults to the object name.
+- `sub_dir`: Output subdirectory. Default: `"output"`.
+- `scolor`: LaTeX color for row shading (e.g., `"blue!10"`). Default: `"blue!10"`.
+- `verbose`: Print progress messages. Default: `FALSE`.
+- `extra_packages`: List of LaTeX package specifications.
+- `document_class`: LaTeX document class. Default: `"article"`.
+
+### New Parameters (v0.2.0)
+
+- `caption`: LaTeX table caption.
+- `caption_short`: Short caption for List of Tables.
+- `label`: LaTeX label for cross-referencing.
+- `align`: Column alignment vector or list (supports siunitx).
+- `longtable`: Enable multi-page tables. Default: `FALSE`.
+- `crop`: Crop PDF output. Default: `TRUE`.
+- `crop_margin`: Margin size in points. Default: `10`.
+- `theme`: Theme name (`"nejm"`, `"apa"`, `"nature"`, `"minimal"`) or
+  `t2f_theme` object.
+- `footnote`: A `t2f_footnote` object for table footnotes.
+- `header_above`: A `t2f_header_above` object for spanning column headers.
+- `collapse_rows`: A `t2f_collapse_rows` object for multi-row cells.
 
 ### Returns
-- Invisibly returns the path to the cropped PDF.
+
+Invisibly returns the path to the generated PDF file.
 
 ## LaTeX Package Helper Functions
 
@@ -745,7 +783,7 @@ sales_summary <- data.frame(
   Revenue = c("$125K", "$143K", "$158K", "$171K"),
   Growth = c("—", "+14.4%", "+10.5%", "+8.2%"),
   Target = c("$120K", "$140K", "$155K", "$165K"),
-  Status = c("✓", "✓", "✓", "✓"),
+  Status = c("Yes", "Yes", "Yes", "Yes"),
   stringsAsFactors = FALSE
 )
 

@@ -28,9 +28,19 @@ include_table <- function(filename) {
 }
 ```
 
-This vignette demonstrates the advanced table formatting capabilities in
-zztab2fig v0.2.0, including table footnotes, spanning headers, multi-row cells,
-decimal alignment, and LaTeX figure placement helpers.
+zztab2fig v0.2.0 introduced substantial enhancements for publication-quality
+table formatting. This vignette demonstrates the advanced capabilities that
+distinguish zztab2fig from simpler table packages:
+
+- **Table footnotes** with multiple notation types (general, numbered,
+  alphabetic, symbol)
+- **Spanning headers** for grouped column layouts common in clinical tables
+- **Multi-row cells** for hierarchical data presentation
+- **Decimal alignment** via siunitx integration
+- **LaTeX figure placement helpers** for precise document integration
+
+These features address requirements frequently encountered in medical, scientific,
+and social science publications.
 
 ## Setup
 

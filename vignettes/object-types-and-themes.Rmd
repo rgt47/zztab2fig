@@ -10,30 +10,42 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
- collapse = TRUE,
+  collapse = TRUE,
   comment = "#>",
-  fig.width = 7,
-  fig.height = 5
+  fig.align = "center"
 )
+
+has_latex <- nzchar(Sys.which("pdflatex")) && nzchar(Sys.which("pdfcrop"))
+
+output_dir <- tempdir()
+
+include_table <- function(filename) {
+  pdf_path <- file.path(output_dir, paste0(filename, "_cropped.pdf"))
+  if (!file.exists(pdf_path)) return(invisible(NULL))
+  png_path <- sub("\\.pdf$", ".png", pdf_path)
+  convert_pdf_to_png(pdf_path, png_path, dpi = 150)
+  knitr::include_graphics(png_path)
+}
 ```
 
-This vignette demonstrates how `t2f()` handles different R object types and
-how themes affect table appearance. The S3 method dispatch system in v0.2.0
-automatically selects the appropriate rendering method based on the input
-object class.
+zztab2fig v0.2.0 introduced S3 method dispatch for `t2f()`, enabling direct
+conversion of statistical objects to publication-quality tables. This vignette
+demonstrates how different R object types are handled and how themes affect
+table appearance.
 
 ```{r load-package, message=FALSE, warning=FALSE}
 library(zztab2fig)
 ```
+
 
 # Object Types
 
 ## Data Frames
 
 Data frames are the most common input type. The `t2f.data.frame()` method
-handles standard data frame objects.
-```{r dataframe-example, eval=FALSE}
-# Basic data frame
+handles standard data frame objects with full formatting support.
+
+```{r dataframe-example, eval=has_latex}
 df <- data.frame(
   Variable = c("Age", "Weight", "Height"),
   Mean = c(45.2, 72.5, 168.3),
@@ -41,12 +53,17 @@ df <- data.frame(
   N = c(150, 148, 150)
 )
 
-t2f(df, filename = "descriptive_stats", sub_dir = "demo_output")
+t2f(df, filename = "descriptive_stats", sub_dir = output_dir,
+    caption = "Descriptive Statistics")
+```
+
+```{r dataframe-display, echo=FALSE, eval=has_latex, out.width="50%"}
+include_table("descriptive_stats")
 ```
 
 Data frames from dplyr pipelines work seamlessly:
 
-```{r dplyr-example, eval=FALSE}
+```{r dplyr-example, eval=has_latex, message=FALSE}
 library(dplyr)
 
 summary_table <- mtcars |>
@@ -62,16 +79,20 @@ summary_table <- mtcars |>
 t2f(summary_table,
     filename = "cylinder_summary",
     caption = "Vehicle Statistics by Cylinder Count",
-    sub_dir = "demo_output")
+    sub_dir = output_dir)
 ```
+
+```{r dplyr-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("cylinder_summary")
+```
+
 
 ## Matrices
 
 Matrices are converted to data frames with optional row names as the first
-column.
+column via the `t2f.matrix()` method.
 
-```{r matrix-example, eval=FALSE}
-# Correlation matrix
+```{r matrix-example, eval=has_latex}
 cor_mat <- cor(mtcars[, c("mpg", "cyl", "disp", "hp", "wt")])
 cor_mat <- round(cor_mat, 2)
 
@@ -79,318 +100,215 @@ t2f(cor_mat,
     filename = "correlation_matrix",
     caption = "Correlation Matrix of Vehicle Characteristics",
     rownames = TRUE,
-    sub_dir = "demo_output")
+    sub_dir = output_dir)
 ```
 
-```{r matrix-no-rownames, eval=FALSE}
-# Matrix without row names
-simple_mat <- matrix(1:12, nrow = 3, ncol = 4)
-colnames(simple_mat) <- c("Q1", "Q2", "Q3", "Q4")
-
-t2f(simple_mat,
-    filename = "quarterly_data",
-    rownames = FALSE,
-    sub_dir = "demo_output")
+```{r matrix-display, echo=FALSE, eval=has_latex, out.width="65%"}
+include_table("correlation_matrix")
 ```
+
 
 ## Contingency Tables
 
-Base R `table` objects are supported directly.
+Base R `table` objects are supported directly via the `t2f.table()` method.
 
-```{r table-example, eval=FALSE}
-# Cross-tabulation
+```{r table-example, eval=has_latex}
 gear_cyl_table <- table(mtcars$gear, mtcars$cyl)
 
 t2f(gear_cyl_table,
     filename = "gear_cylinder_crosstab",
     caption = "Cross-tabulation of Gears and Cylinders",
-    sub_dir = "demo_output")
+    sub_dir = output_dir)
 ```
 
-```{r table-proportions, eval=FALSE}
-# Proportions table
-prop_table <- prop.table(gear_cyl_table, margin = 1)
-prop_table <- round(prop_table * 100, 1)
-
-t2f(prop_table,
-    filename = "gear_cylinder_proportions",
-    caption = "Row Proportions (\\%)",
-    sub_dir = "demo_output")
+```{r table-display, echo=FALSE, eval=has_latex, out.width="45%"}
+include_table("gear_cylinder_crosstab")
 ```
+
 
 ## Linear Models
 
 The `t2f.lm()` method extracts coefficient tables from linear model objects.
+Control which statistics appear using the `include` parameter.
 
-```{r lm-example, eval=FALSE}
-# Simple linear regression
-model_simple <- lm(mpg ~ wt, data = mtcars)
+```{r lm-example, eval=has_latex}
+model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
 
-t2f(model_simple,
-    filename = "simple_regression",
-    caption = "Simple Linear Regression: MPG on Weight",
-    sub_dir = "demo_output")
-```
-
-```{r lm-multiple, eval=FALSE}
-# Multiple regression with confidence intervals
-model_full <- lm(mpg ~ cyl + hp + wt + gear, data = mtcars)
-
-t2f(model_full,
-    filename = "multiple_regression",
-    caption = "Multiple Regression Results",
-    include = c("estimate", "std.error", "p.value", "conf.int"),
-    conf.level = 0.95,
+t2f(model,
+    filename = "regression_table",
+    caption = "Multiple Regression: MPG Predictors",
+    include = c("estimate", "std.error", "p.value"),
     digits = 3,
-    sub_dir = "demo_output")
+    sub_dir = output_dir)
 ```
 
-Control which statistics appear in the output:
-
-```{r lm-custom-include, eval=FALSE}
-# Minimal output (estimates and p-values only)
-t2f(model_full,
-    filename = "regression_minimal",
-    include = c("estimate", "p.value"),
-    sub_dir = "demo_output")
-
-# Full output with t-statistics
-t2f(model_full,
-    filename = "regression_full",
-    include = c("estimate", "std.error", "statistic", "p.value"),
-    sub_dir = "demo_output")
+```{r lm-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("regression_table")
 ```
+
+Add confidence intervals (code only - full statistics):
+
+```{r lm-ci-example, eval=FALSE}
+t2f(model,
+    filename = "regression_with_ci",
+    include = c("estimate", "std.error", "conf.int", "p.value"),
+    conf.level = 0.95,
+    sub_dir = output_dir)
+```
+
 
 ## Generalized Linear Models
 
 The `t2f.glm()` method supports logistic, Poisson, and other GLM families.
+Use `exponentiate = TRUE` to display odds ratios or rate ratios.
 
-```{r glm-logistic, eval=FALSE}
-# Logistic regression
+```{r glm-example, eval=has_latex}
 logit_model <- glm(am ~ mpg + hp + wt,
                    data = mtcars,
                    family = binomial)
 
-# Coefficients on log-odds scale
-t2f(logit_model,
-    filename = "logistic_coefficients",
-    caption = "Logistic Regression Coefficients",
-    sub_dir = "demo_output")
-```
-
-```{r glm-odds-ratios, eval=FALSE}
-# Exponentiated coefficients (odds ratios)
 t2f(logit_model,
     filename = "logistic_odds_ratios",
-    caption = "Logistic Regression Odds Ratios",
+    caption = "Logistic Regression: Odds Ratios",
     exponentiate = TRUE,
     include = c("estimate", "conf.int", "p.value"),
-    sub_dir = "demo_output")
+    sub_dir = output_dir)
 ```
 
-```{r glm-poisson, eval=FALSE}
-# Poisson regression example
-count_data <- data.frame(
-  y = c(18, 17, 15, 20, 10, 20, 25, 13, 12),
-  x1 = c(1, 2, 3, 1, 2, 3, 1, 2, 3),
-  x2 = c(1, 1, 1, 2, 2, 2, 3, 3, 3)
-)
-
-poisson_model <- glm(y ~ x1 + x2, data = count_data, family = poisson)
-
-t2f(poisson_model,
-    filename = "poisson_regression",
-    caption = "Poisson Regression Results",
-    exponentiate = TRUE,
-    sub_dir = "demo_output")
+```{r glm-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("logistic_odds_ratios")
 ```
+
 
 ## ANOVA Tables
 
-Both `aov` and `anova` objects are supported.
+Both `aov` and `anova` objects are supported via `t2f.aov()` and `t2f.anova()`.
 
-```{r aov-example, eval=FALSE}
-# One-way ANOVA
-aov_model <- aov(mpg ~ factor(cyl), data = mtcars)
+```{r aov-example, eval=has_latex}
+aov_model <- aov(mpg ~ factor(cyl) + factor(gear), data = mtcars)
 
 t2f(aov_model,
-    filename = "oneway_anova",
-    caption = "One-way ANOVA: MPG by Cylinder",
-    sub_dir = "demo_output")
-```
-
-```{r anova-twoway, eval=FALSE}
-# Two-way ANOVA
-aov_twoway <- aov(mpg ~ factor(cyl) * factor(gear), data = mtcars)
-
-t2f(aov_twoway,
-    filename = "twoway_anova",
+    filename = "anova_table",
     caption = "Two-way ANOVA: MPG by Cylinder and Gear",
-    sub_dir = "demo_output")
+    sub_dir = output_dir)
 ```
 
-```{r anova-comparison, eval=FALSE}
-# Model comparison ANOVA
-model1 <- lm(mpg ~ wt, data = mtcars)
-model2 <- lm(mpg ~ wt + hp, data = mtcars)
-model3 <- lm(mpg ~ wt + hp + cyl, data = mtcars)
-
-comparison <- anova(model1, model2, model3)
-
-t2f(comparison,
-    filename = "model_comparison_anova",
-    caption = "Nested Model Comparison",
-    sub_dir = "demo_output")
+```{r aov-display, echo=FALSE, eval=has_latex, out.width="65%"}
+include_table("anova_table")
 ```
+
 
 ## Hypothesis Tests
 
 The `t2f.htest()` method handles output from t-tests, chi-square tests, and
 other hypothesis testing functions.
 
-```{r ttest-one, eval=FALSE}
-# One-sample t-test
-ttest_one <- t.test(mtcars$mpg, mu = 20)
+```{r ttest-example, eval=has_latex}
+ttest <- t.test(mpg ~ am, data = mtcars)
 
-t2f(ttest_one,
-    filename = "ttest_onesample",
-    caption = "One-sample t-test: MPG vs. 20",
-    sub_dir = "demo_output")
-```
-
-```{r ttest-two, eval=FALSE}
-# Two-sample t-test
-ttest_two <- t.test(mpg ~ am, data = mtcars)
-
-t2f(ttest_two,
-    filename = "ttest_twosample",
+t2f(ttest,
+    filename = "ttest_result",
     caption = "Two-sample t-test: MPG by Transmission",
-    sub_dir = "demo_output")
+    sub_dir = output_dir)
 ```
 
-```{r ttest-paired, eval=FALSE}
-# Paired t-test
-set.seed(42)
-before <- rnorm(20, mean = 100, sd = 15)
-after <- before + rnorm(20, mean = 5, sd = 8)
-
-ttest_paired <- t.test(before, after, paired = TRUE)
-
-t2f(ttest_paired,
-    filename = "ttest_paired",
-    caption = "Paired t-test: Before vs. After",
-    sub_dir = "demo_output")
+```{r ttest-display, echo=FALSE, eval=has_latex, out.width="70%"}
+include_table("ttest_result")
 ```
 
-```{r chisq-test, eval=FALSE}
-# Chi-square test
-chisq_result <- chisq.test(table(mtcars$cyl, mtcars$am))
-
-t2f(chisq_result,
-    filename = "chisq_test",
-    caption = "Chi-square Test: Cylinder by Transmission",
-    sub_dir = "demo_output")
-```
-
-```{r cor-test, eval=FALSE}
-# Correlation test
-cor_result <- cor.test(mtcars$mpg, mtcars$wt)
-
-t2f(cor_result,
-    filename = "correlation_test",
-    caption = "Correlation Test: MPG and Weight",
-    sub_dir = "demo_output")
-```
 
 ## Regression Model Comparisons
 
-The `t2f_regression()` function creates side-by-side model comparison tables.
+The `t2f_regression()` function creates side-by-side model comparison tables
+with significance stars.
 
-```{r regression-comparison, eval=FALSE}
-# Build progressively complex models
+```{r regression-comparison, eval=has_latex}
 m1 <- lm(mpg ~ wt, data = mtcars)
 m2 <- lm(mpg ~ wt + hp, data = mtcars)
 m3 <- lm(mpg ~ wt + hp + cyl, data = mtcars)
-m4 <- lm(mpg ~ wt + hp + cyl + gear, data = mtcars)
 
 t2f_regression(
   `(1)` = m1,
   `(2)` = m2,
   `(3)` = m3,
-  `(4)` = m4,
   stars = TRUE,
   digits = 3,
   filename = "model_progression",
-  t2f_args = list(
-    caption = "Regression Model Comparison",
-    sub_dir = "demo_output"
-  )
+  sub_dir = output_dir
 )
 ```
 
-```{r regression-custom-stars, eval=FALSE}
-# Custom significance thresholds
-t2f_regression(
-  Simple = m1,
-  Full = m3,
-  stars = c(0.10, 0.05, 0.01),
-  se_in_parens = TRUE,
-  filename = "custom_stars",
-  t2f_args = list(sub_dir = "demo_output")
-)
+```{r regression-comparison-display, echo=FALSE, eval=has_latex, out.width="65%"}
+include_table("model_progression")
 ```
+
 
 # Theme Demonstrations
 
-## Built-in Themes
+Each built-in theme provides distinct styling appropriate for different
+publication contexts. Below are side-by-side comparisons using the same data.
 
-Each theme provides distinct styling appropriate for different contexts.
+```{r theme-data}
+demo_data <- mtcars[1:6, c("mpg", "cyl", "hp", "wt")]
+```
 
-### Default Theme
+## Default Theme
 
 The default styling uses blue row shading with booktabs rules.
 
-```{r theme-default, eval=FALSE}
-demo_data <- mtcars[1:8, c("mpg", "cyl", "hp", "wt")]
-
+```{r theme-default, eval=has_latex}
 t2f(demo_data,
     filename = "theme_default",
     caption = "Default Theme",
-    sub_dir = "theme_demo")
+    sub_dir = output_dir)
 ```
 
-### NEJM Theme
+```{r theme-default-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("theme_default")
+```
+
+
+## NEJM Theme
 
 The New England Journal of Medicine theme provides clean, professional medical
-journal styling with no row shading and sans-serif fonts.
+journal styling with light yellow shading and sans-serif fonts.
 
-```{r theme-nejm, eval=FALSE}
+```{r theme-nejm, eval=has_latex}
 t2f(demo_data,
     filename = "theme_nejm",
     caption = "NEJM Theme",
     theme = "nejm",
-    sub_dir = "theme_demo")
+    sub_dir = output_dir)
+```
+
+```{r theme-nejm-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("theme_nejm")
 ```
 
 NEJM theme characteristics:
 
-- No alternating row colors
+- Light yellow alternating row colors
 - Sans-serif font (Helvetica)
 - Booktabs horizontal rules
 - Compact column spacing (4pt)
 - Footnotesize font
 
-### APA Theme
+
+## APA Theme
 
 The American Psychological Association theme follows APA 7th edition table
 guidelines.
 
-```{r theme-apa, eval=FALSE}
+```{r theme-apa, eval=has_latex}
 t2f(demo_data,
     filename = "theme_apa",
     caption = "APA Theme",
     theme = "apa",
-    sub_dir = "theme_demo")
+    sub_dir = output_dir)
+```
+
+```{r theme-apa-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("theme_apa")
 ```
 
 APA theme characteristics:
@@ -400,16 +318,21 @@ APA theme characteristics:
 - Letter paper with 1-inch margins
 - Booktabs rules
 
-### Nature Theme
+
+## Nature Theme
 
 The Nature journal theme uses Helvetica with subtle gray shading.
 
-```{r theme-nature, eval=FALSE}
+```{r theme-nature, eval=has_latex}
 t2f(demo_data,
     filename = "theme_nature",
     caption = "Nature Theme",
     theme = "nature",
-    sub_dir = "theme_demo")
+    sub_dir = output_dir)
+```
+
+```{r theme-nature-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("theme_nature")
 ```
 
 Nature theme characteristics:
@@ -419,245 +342,83 @@ Nature theme characteristics:
 - Small font size
 - 15mm margins
 
-### Minimal Theme
 
-The minimal theme provides clean, unobtrusive styling.
+## Minimal Theme
 
-```{r theme-minimal, eval=FALSE}
+The minimal theme provides clean, unobtrusive styling suitable for general
+use.
+
+```{r theme-minimal, eval=has_latex}
 t2f(demo_data,
     filename = "theme_minimal",
     caption = "Minimal Theme",
     theme = "minimal",
-    sub_dir = "theme_demo")
+    sub_dir = output_dir)
 ```
 
-## Theme Comparison by Object Type
-
-### Linear Model with Different Themes
-
-```{r lm-themes, eval=FALSE}
-model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
-
-# Default
-t2f(model, filename = "lm_default", sub_dir = "lm_themes")
-
-# NEJM
-t2f(model, filename = "lm_nejm", theme = "nejm", sub_dir = "lm_themes")
-
-# APA
-t2f(model, filename = "lm_apa", theme = "apa", sub_dir = "lm_themes")
-
-# Nature
-t2f(model, filename = "lm_nature", theme = "nature", sub_dir = "lm_themes")
+```{r theme-minimal-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("theme_minimal")
 ```
 
-### ANOVA with Different Themes
 
-```{r anova-themes, eval=FALSE}
-aov_result <- aov(mpg ~ factor(cyl) + factor(gear), data = mtcars)
+# Custom Themes
 
-t2f(aov_result, filename = "anova_default", sub_dir = "anova_themes")
-t2f(aov_result, filename = "anova_nejm", theme = "nejm", sub_dir = "anova_themes")
-t2f(aov_result, filename = "anova_apa", theme = "apa", sub_dir = "anova_themes")
-```
+Create custom themes for specific requirements using `t2f_theme()`.
 
-### Correlation Matrix with Different Themes
-
-```{r cormat-themes, eval=FALSE}
-cor_mat <- round(cor(mtcars[, 1:5]), 2)
-
-t2f(cor_mat, filename = "cor_default", sub_dir = "cor_themes")
-t2f(cor_mat, filename = "cor_nejm", theme = "nejm", sub_dir = "cor_themes")
-t2f(cor_mat, filename = "cor_minimal", theme = "minimal", sub_dir = "cor_themes")
-```
-
-## Custom Themes
-
-Create custom themes for specific requirements.
-
-```{r custom-theme-create, eval=FALSE}
-# Corporate theme with brand colors
-corporate_theme <- t2f_theme(
-  name = "corporate",
-  scolor = "blue!12",
-  header_bold = TRUE,
-  font_size = "normalsize",
-  striped = TRUE,
-  extra_packages = list(
-    geometry(margin = "20mm", paper = "a4paper")
-  )
-)
-
-t2f(demo_data,
-    filename = "corporate_style",
-    theme = corporate_theme,
-    sub_dir = "custom_themes")
-```
-
-```{r custom-theme-presentation, eval=FALSE}
-# Presentation theme (larger, more contrast)
+```{r custom-theme-create, eval=has_latex}
 presentation_theme <- t2f_theme(
   name = "presentation",
-  scolor = "blue!18",
+  scolor = "blue!15",
   header_bold = TRUE,
   font_size = "large",
   striped = TRUE,
   extra_packages = list(
-    geometry(margin = "10mm", landscape = TRUE),
+    geometry(margin = "10mm"),
     "\\renewcommand{\\arraystretch}{1.3}"
   )
 )
 
 t2f(demo_data,
-    filename = "presentation_style",
+    filename = "theme_presentation",
+    caption = "Custom Presentation Theme",
     theme = presentation_theme,
-    sub_dir = "custom_themes")
+    sub_dir = output_dir)
 ```
 
-```{r custom-theme-minimal-academic, eval=FALSE}
-# Academic minimal (no frills)
-academic_theme <- t2f_theme(
-  name = "academic",
-  scolor = "white",
-  header_bold = TRUE,
-  font_size = NULL,
-  striped = FALSE,
-  booktabs = TRUE,
-  extra_packages = list(
-    geometry(margin = "1in", paper = "letterpaper"),
-    "\\usepackage{times}"
-  )
-)
-
-t2f(demo_data,
-    filename = "academic_style",
-    theme = academic_theme,
-    sub_dir = "custom_themes")
+```{r custom-theme-display, echo=FALSE, eval=has_latex, out.width="70%"}
+include_table("theme_presentation")
 ```
 
-## Global Theme Setting
 
-Set a theme globally for consistent styling across multiple tables.
+# Global Theme Setting
+
+Set a theme globally for consistent styling across multiple tables in an
+analysis.
 
 ```{r global-theme-workflow, eval=FALSE}
-# Set NEJM as the default for all tables
 t2f_theme_set("nejm")
 
-# All subsequent calls use NEJM styling
-t2f(mtcars[1:5, 1:4], filename = "table1", sub_dir = "global_demo")
-t2f(iris[1:5, ], filename = "table2", sub_dir = "global_demo")
+t2f(mtcars[1:5, 1:4], filename = "table1", sub_dir = "output")
+t2f(iris[1:5, ], filename = "table2", sub_dir = "output")
 
 model <- lm(mpg ~ wt + hp, data = mtcars)
-t2f(model, filename = "table3", sub_dir = "global_demo")
+t2f(model, filename = "table3", sub_dir = "output")
 
-# Override global theme for specific table
 t2f(mtcars[1:5, 1:4],
     filename = "table4_apa",
     theme = "apa",
-    sub_dir = "global_demo")
+    sub_dir = "output")
 
-# Reset to no global theme
 t2f_theme_set(NULL)
 ```
 
-# Complete Workflow Example
-
-This example demonstrates a complete analysis workflow using multiple object
-types and appropriate themes.
-
-```{r complete-workflow, eval=FALSE}
-library(dplyr)
-
-# Set up output directory
-output_dir <- "complete_analysis"
-
-# Set global theme for the analysis
-t2f_theme_set("nejm")
-
-# 1. Descriptive statistics table
-descriptives <- mtcars |>
-  group_by(cyl) |>
-  summarise(
-    N = n(),
-    `MPG Mean` = round(mean(mpg), 1),
-    `MPG SD` = round(sd(mpg), 1),
-    `HP Mean` = round(mean(hp), 0),
-    `HP SD` = round(sd(hp), 0),
-    .groups = "drop"
-  )
-
-t2f(descriptives,
-    filename = "table1_descriptives",
-    caption = "Table 1. Descriptive Statistics by Cylinder Count",
-    label = "tab:descriptives",
-    sub_dir = output_dir)
-
-# 2. Correlation matrix
-cor_vars <- mtcars[, c("mpg", "hp", "wt", "qsec")]
-cor_matrix <- round(cor(cor_vars), 2)
-
-t2f(cor_matrix,
-    filename = "table2_correlations",
-    caption = "Table 2. Correlation Matrix",
-    label = "tab:correlations",
-    sub_dir = output_dir)
-
-# 3. Group comparison (t-test)
-group_test <- t.test(mpg ~ am, data = mtcars)
-
-t2f(group_test,
-    filename = "table3_ttest",
-    caption = "Table 3. MPG Comparison by Transmission Type",
-    label = "tab:ttest",
-    sub_dir = output_dir)
-
-# 4. ANOVA
-anova_result <- aov(mpg ~ factor(cyl) + factor(gear), data = mtcars)
-
-t2f(anova_result,
-    filename = "table4_anova",
-    caption = "Table 4. Two-way ANOVA Results",
-    label = "tab:anova",
-    sub_dir = output_dir)
-
-# 5. Regression models
-m1 <- lm(mpg ~ wt, data = mtcars)
-m2 <- lm(mpg ~ wt + hp, data = mtcars)
-m3 <- lm(mpg ~ wt + hp + cyl, data = mtcars)
-
-t2f_regression(
-  `Model 1` = m1,
-  `Model 2` = m2,
-  `Model 3` = m3,
-  stars = TRUE,
-  filename = "table5_regression",
-  t2f_args = list(
-    caption = "Table 5. Hierarchical Regression Analysis",
-    label = "tab:regression",
-    sub_dir = output_dir
-  )
-)
-
-# 6. Final model details
-t2f(m3,
-    filename = "table6_final_model",
-    caption = "Table 6. Final Model Coefficients",
-    label = "tab:final",
-    include = c("estimate", "std.error", "conf.int", "p.value"),
-    sub_dir = output_dir)
-
-# Reset global theme
-t2f_theme_set(NULL)
-
-message("Analysis complete. Tables saved to: ", output_dir)
-```
 
 # Summary
 
 ## Object Type Support
 
 | Object Class | Method | Key Parameters |
-|--------------|--------|----------------|
+|:-------------|:-------|:---------------|
 | `data.frame` | `t2f.data.frame()` | Standard t2f parameters |
 | `matrix` | `t2f.matrix()` | `rownames` |
 | `table` | `t2f.table()` | Standard t2f parameters |
@@ -670,9 +431,9 @@ message("Analysis complete. Tables saved to: ", output_dir)
 ## Theme Comparison
 
 | Theme | Row Shading | Font | Use Case |
-|-------|-------------|------|----------|
+|:------|:------------|:-----|:---------|
 | Default | blue!10 | Serif | General purpose |
-| NEJM | None | Helvetica | Medical journals |
+| NEJM | yellow!8 | Helvetica | Medical journals |
 | APA | None | Times | Psychology/social sciences |
 | Nature | gray!8 | Helvetica | Scientific journals |
 | Minimal | gray!5 | Serif | Clean, simple tables |
@@ -680,7 +441,7 @@ message("Analysis complete. Tables saved to: ", output_dir)
 ## Theme Functions
 
 | Function | Purpose |
-|----------|---------|
+|:---------|:--------|
 | `t2f_theme()` | Create custom theme |
 | `t2f_theme_set()` | Set global theme |
 | `t2f_theme_get()` | Get current global theme |
