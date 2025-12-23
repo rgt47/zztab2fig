@@ -13,12 +13,16 @@ t2f_internal(
   extra_packages = NULL,
   document_class = NULL,
   caption = NULL,
+  caption_short = NULL,
   label = NULL,
   align = NULL,
   longtable = FALSE,
   crop = TRUE,
   crop_margin = 10,
-  theme = NULL
+  theme = NULL,
+  footnote = NULL,
+  header_above = NULL,
+  collapse_rows = NULL
 )
 }
 \arguments{
@@ -45,12 +49,16 @@ Overrides theme setting if provided.}
 \item{caption}{A character string. LaTeX caption for the table. Defaults to
 NULL (no caption).}
 
+\item{caption_short}{A character string. Short caption for List of Tables.
+Defaults to NULL (uses full caption).}
+
 \item{label}{A character string. LaTeX label for cross-referencing (e.g.,
 "tab:mytable"). Defaults to NULL (no label).}
 
 \item{align}{Column alignment specification. Can be NULL (auto-detect),
-a single character ("l", "c", "r") applied to all columns, or a character
-vector with one alignment per column.}
+a single character ("l", "c", "r") applied to all columns, a character
+vector with one alignment per column, or a list that may include
+t2f_siunitx objects for decimal alignment.}
 
 \item{longtable}{Logical. If TRUE, uses longtable package for tables
 spanning multiple pages. Defaults to FALSE.}
@@ -64,6 +72,15 @@ right, bottom). Defaults to 10.}
 \item{theme}{A t2f_theme object or character string naming a built-in theme
 ("minimal", "apa", "nature", "nejm"). Theme settings are used as defaults
 but can be overridden by explicit arguments.}
+
+\item{footnote}{A t2f_footnote object created by t2f_footnote(). Specifies
+table footnotes with various notation styles.}
+
+\item{header_above}{A t2f_header object or list of them, created by
+t2f_header_above(). Specifies spanning column headers.}
+
+\item{collapse_rows}{A t2f_collapse object created by t2f_collapse_rows().
+Specifies columns to merge into multi-row cells.}
 }
 \value{
 Invisibly returns the path to the cropped PDF file (or full PDF if

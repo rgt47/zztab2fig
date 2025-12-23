@@ -14,12 +14,16 @@
   extra_packages = NULL,
   document_class = NULL,
   caption = NULL,
+  caption_short = NULL,
   label = NULL,
   align = NULL,
   longtable = FALSE,
   crop = TRUE,
   crop_margin = 10,
   theme = NULL,
+  footnote = NULL,
+  header_above = NULL,
+  collapse_rows = NULL,
   ...
 )
 
@@ -42,9 +46,11 @@
 
 \item{caption}{Table caption.}
 
+\item{caption_short}{Short caption for List of Tables.}
+
 \item{label}{LaTeX label for cross-referencing.}
 
-\item{align}{Column alignment.}
+\item{align}{Column alignment (can include t2f_siunitx for decimal align).}
 
 \item{longtable}{Use longtable for multi-page tables.}
 
@@ -53,6 +59,12 @@
 \item{crop_margin}{Crop margin size.}
 
 \item{theme}{Theme name or t2f_theme object.}
+
+\item{footnote}{A t2f_footnote object for table footnotes.}
+
+\item{header_above}{A t2f_header object or list for spanning headers.}
+
+\item{collapse_rows}{A t2f_collapse object for multi-row cells.}
 
 \item{...}{Additional arguments (ignored).}
 }

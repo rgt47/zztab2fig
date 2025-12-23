@@ -45,12 +45,16 @@ t2f <- function(x, ...) {
 #' @param extra_packages Additional LaTeX packages.
 #' @param document_class LaTeX document class.
 #' @param caption Table caption.
+#' @param caption_short Short caption for List of Tables.
 #' @param label LaTeX label for cross-referencing.
-#' @param align Column alignment.
+#' @param align Column alignment (can include t2f_siunitx for decimal align).
 #' @param longtable Use longtable for multi-page tables.
 #' @param crop Crop the PDF output.
 #' @param crop_margin Crop margin size.
 #' @param theme Theme name or t2f_theme object.
+#' @param footnote A t2f_footnote object for table footnotes.
+#' @param header_above A t2f_header object or list for spanning headers.
+#' @param collapse_rows A t2f_collapse object for multi-row cells.
 #' @param ... Additional arguments (ignored).
 #'
 #' @return Invisibly returns the path to the generated PDF.
@@ -62,12 +66,16 @@ t2f.default <- function(x, filename = NULL,
                         extra_packages = NULL,
                         document_class = NULL,
                         caption = NULL,
+                        caption_short = NULL,
                         label = NULL,
                         align = NULL,
                         longtable = FALSE,
                         crop = TRUE,
                         crop_margin = 10,
                         theme = NULL,
+                        footnote = NULL,
+                        header_above = NULL,
+                        collapse_rows = NULL,
                         ...) {
   if (!is.data.frame(x)) {
     stop("No t2f method for class '", class(x)[1],
@@ -91,12 +99,16 @@ t2f.default <- function(x, filename = NULL,
     extra_packages = extra_packages,
     document_class = document_class,
     caption = caption,
+    caption_short = caption_short,
     label = label,
     align = align,
     longtable = longtable,
     crop = crop,
     crop_margin = crop_margin,
-    theme = theme
+    theme = theme,
+    footnote = footnote,
+    header_above = header_above,
+    collapse_rows = collapse_rows
   )
 }
 

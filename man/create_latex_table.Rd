@@ -11,10 +11,14 @@ create_latex_table(
   extra_packages = NULL,
   document_class = "article",
   caption = NULL,
+  caption_short = NULL,
   label = NULL,
   align = NULL,
   longtable = FALSE,
-  striped = TRUE
+  striped = TRUE,
+  footnote = NULL,
+  header_above = NULL,
+  collapse_rows = NULL
 )
 }
 \arguments{
@@ -31,13 +35,21 @@ NULL.}
 
 \item{caption}{Table caption. Defaults to NULL.}
 
+\item{caption_short}{Short caption for List of Tables. Defaults to NULL.}
+
 \item{label}{LaTeX label for cross-referencing. Defaults to NULL.}
 
-\item{align}{Column alignment vector. Defaults to NULL (auto).}
+\item{align}{Column alignment vector or string. Defaults to NULL (auto).}
 
 \item{longtable}{Logical. Use longtable for multi-page tables.}
 
 \item{striped}{Logical. Apply alternating row colors.}
+
+\item{footnote}{A t2f_footnote object for table footnotes.}
+
+\item{header_above}{A t2f_header object or list for spanning headers.}
+
+\item{collapse_rows}{A t2f_collapse object for multi-row cells.}
 }
 \description{
 Create a LaTeX table with alternating row colors using kableExtra

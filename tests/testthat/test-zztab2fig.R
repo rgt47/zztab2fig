@@ -113,8 +113,9 @@ test_that("t2f input validation works", {
 
 test_that("sanitize_column_names works correctly", {
   test_names <- c("col #1", "col%2", "col&3")
-  expected <- c("col__1", "col_2", "col_3")  # Changed to match actual function output
-  
+  # Underscores are escaped for LaTeX since we use escape = FALSE in kable
+  expected <- c("col\\_\\_1", "col\\_2", "col\\_3")
+
   expect_equal(sanitize_column_names(test_names), expected)
 })
 

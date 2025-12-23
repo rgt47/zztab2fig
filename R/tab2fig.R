@@ -18,11 +18,14 @@
 #'   Overrides theme setting if provided.
 #' @param caption A character string. LaTeX caption for the table. Defaults to
 #'   NULL (no caption).
+#' @param caption_short A character string. Short caption for List of Tables.
+#'   Defaults to NULL (uses full caption).
 #' @param label A character string. LaTeX label for cross-referencing (e.g.,
 #'   "tab:mytable"). Defaults to NULL (no label).
 #' @param align Column alignment specification. Can be NULL (auto-detect),
-#'   a single character ("l", "c", "r") applied to all columns, or a character
-#'   vector with one alignment per column.
+#'   a single character ("l", "c", "r") applied to all columns, a character
+#'   vector with one alignment per column, or a list that may include
+#'   t2f_siunitx objects for decimal alignment.
 #' @param longtable Logical. If TRUE, uses longtable package for tables
 #'   spanning multiple pages. Defaults to FALSE.
 #' @param crop Logical. If TRUE (default), crops the PDF to remove margins.
@@ -32,6 +35,12 @@
 #' @param theme A t2f_theme object or character string naming a built-in theme
 #'   ("minimal", "apa", "nature", "nejm"). Theme settings are used as defaults
 #'   but can be overridden by explicit arguments.
+#' @param footnote A t2f_footnote object created by t2f_footnote(). Specifies
+#'   table footnotes with various notation styles.
+#' @param header_above A t2f_header object or list of them, created by
+#'   t2f_header_above(). Specifies spanning column headers.
+#' @param collapse_rows A t2f_collapse object created by t2f_collapse_rows().
+#'   Specifies columns to merge into multi-row cells.
 #'
 #' @return Invisibly returns the path to the cropped PDF file (or full PDF if
 #'   crop=FALSE).
@@ -44,12 +53,16 @@ t2f_internal <- function(df, filename = NULL,
                 extra_packages = NULL,
                 document_class = NULL,
                 caption = NULL,
+                caption_short = NULL,
                 label = NULL,
                 align = NULL,
                 longtable = FALSE,
                 crop = TRUE,
                 crop_margin = 10,
-                theme = NULL) {
+                theme = NULL,
+                footnote = NULL,
+                header_above = NULL,
+                collapse_rows = NULL) {
 
   # Validate inputs
   if (is.null(filename)) filename <- deparse(substitute(df))
@@ -74,14 +87,19 @@ t2f_internal <- function(df, filename = NULL,
   if (!is.null(caption) && (!is.character(caption) || length(caption) != 1)) {
     stop("`caption` must be a single character string or NULL.", call. = FALSE)
   }
+  if (!is.null(caption_short) &&
+      (!is.character(caption_short) || length(caption_short) != 1)) {
+    stop("`caption_short` must be a single character string or NULL.",
+      call. = FALSE)
+  }
   if (!is.null(label) && (!is.character(label) || length(label) != 1)) {
     stop("`label` must be a single character string or NULL.", call. = FALSE)
   }
 
-  # Validate alignment
-  if (!is.null(align)) {
+  # Validate alignment (can be character vector or list with siunitx specs)
+  if (!is.null(align) && !is.list(align)) {
     if (!is.character(align)) {
-      stop("`align` must be a character vector or NULL.", call. = FALSE)
+      stop("`align` must be a character vector, list, or NULL.", call. = FALSE)
     }
     valid_aligns <- c("l", "c", "r")
     if (!all(align %in% valid_aligns)) {
@@ -90,6 +108,20 @@ t2f_internal <- function(df, filename = NULL,
     if (length(align) != 1 && length(align) != ncol(df)) {
       stop("`align` must be length 1 or match number of columns.", call. = FALSE)
     }
+  }
+
+  # Validate advanced features
+  if (!is.null(footnote) && !inherits(footnote, "t2f_footnote")) {
+    stop("`footnote` must be a t2f_footnote object or NULL.", call. = FALSE)
+  }
+  if (!is.null(header_above) &&
+      !inherits(header_above, "t2f_header") &&
+      !is.list(header_above)) {
+    stop("`header_above` must be a t2f_header object, list, or NULL.",
+      call. = FALSE)
+  }
+  if (!is.null(collapse_rows) && !inherits(collapse_rows, "t2f_collapse")) {
+    stop("`collapse_rows` must be a t2f_collapse object or NULL.", call. = FALSE)
   }
 
   # Resolve theme and apply settings
@@ -150,11 +182,21 @@ t2f_internal <- function(df, filename = NULL,
   pdf_file <- file.path(sub_dir, paste0(filename, ".pdf"))
   cropped_pdf_file <- file.path(sub_dir, paste0(filename, "_cropped.pdf"))
 
-  # Auto-detect alignment if not specified
+  # Process alignment (may include siunitx specs)
+  siunitx_packages <- NULL
   if (is.null(align)) {
     align <- auto_align(df)
-  } else if (length(align) == 1) {
+  } else if (is.list(align)) {
+    align_result <- process_alignment(align)
+    align <- align_result$align
+    siunitx_packages <- align_result$packages
+  } else if (length(align) == 1 && is.character(align)) {
     align <- rep(align, ncol(df))
+  }
+
+  # Combine siunitx packages with extra_packages
+  if (!is.null(siunitx_packages)) {
+    extra_packages <- c(siunitx_packages, extra_packages)
   }
 
   # Create LaTeX table
@@ -166,10 +208,14 @@ t2f_internal <- function(df, filename = NULL,
     extra_packages = extra_packages,
     document_class = document_class,
     caption = caption,
+    caption_short = caption_short,
     label = label,
     align = align,
     longtable = longtable,
-    striped = striped
+    striped = striped,
+    footnote = footnote,
+    header_above = header_above,
+    collapse_rows = collapse_rows
   )
 
   # Compile LaTeX to PDF
@@ -307,7 +353,10 @@ create_latex_template <- function(document_class = "article",
 #' @param colnames A character vector of column names.
 #' @return A sanitized character vector of column names.
 sanitize_column_names <- function(colnames) {
-  gsub("[^a-zA-Z0-9_]", "_", make.names(colnames))
+  # First make valid R names
+  clean <- gsub("[^a-zA-Z0-9_]", "_", make.names(colnames))
+  # Escape underscores for LaTeX (since we use escape = FALSE for footnotes)
+  gsub("_", "\\_", clean, fixed = TRUE)
 }
 
 #' Sanitize table cells to be LaTeX-safe
@@ -347,20 +396,26 @@ auto_align <- function(df) {
 #'   NULL.
 #' @param document_class LaTeX document class to use. Defaults to "article".
 #' @param caption Table caption. Defaults to NULL.
+#' @param caption_short Short caption for List of Tables. Defaults to NULL.
 #' @param label LaTeX label for cross-referencing. Defaults to NULL.
-#' @param align Column alignment vector. Defaults to NULL (auto).
+#' @param align Column alignment vector or string. Defaults to NULL (auto).
 #' @param longtable Logical. Use longtable for multi-page tables.
 #' @param striped Logical. Apply alternating row colors.
+#' @param footnote A t2f_footnote object for table footnotes.
+#' @param header_above A t2f_header object or list for spanning headers.
+#' @param collapse_rows A t2f_collapse object for multi-row cells.
 #' @keywords internal
 create_latex_table <- function(df, tex_file, scolor, extra_packages = NULL,
                                document_class = "article", caption = NULL,
-                               label = NULL, align = NULL, longtable = FALSE,
-                               striped = TRUE) {
+                               caption_short = NULL, label = NULL,
+                               align = NULL, longtable = FALSE, striped = TRUE,
+                               footnote = NULL, header_above = NULL,
+                               collapse_rows = NULL) {
   if (!requireNamespace("kableExtra", quietly = TRUE)) {
     stop("The 'kableExtra' package is required but not installed.")
   }
 
-  # Sanitize table cells
+  # Sanitize table cells (but preserve footnote markers)
   df[] <- lapply(df, function(col) {
     if (is.character(col)) {
       sanitize_table_cells(col)
@@ -369,35 +424,78 @@ create_latex_table <- function(df, tex_file, scolor, extra_packages = NULL,
     }
   })
 
-  # Build alignment string
-  align_str <- if (!is.null(align)) paste(align, collapse = "") else NULL
+  # Build alignment string (may already be a string from siunitx processing)
+  if (is.character(align) && length(align) > 1) {
+    align_str <- paste(align, collapse = "")
+  } else {
+    align_str <- align
+  }
 
-  # Generate LaTeX table
-  latex_table <- kableExtra::kable(
-    df,
+  # Determine if we need threeparttable
+  use_threeparttable <- !is.null(footnote) &&
+    inherits(footnote, "t2f_footnote") &&
+    isTRUE(footnote$threeparttable)
+
+  # Add threeparttablex package if needed
+  if (use_threeparttable) {
+    extra_packages <- c("\\usepackage{threeparttablex}", extra_packages)
+  }
+
+  # Add multirow package if collapse_rows is used
+  if (!is.null(collapse_rows)) {
+    extra_packages <- c("\\usepackage{multirow}", extra_packages)
+  }
+
+  # Build kable arguments
+  kable_args <- list(
+    x = df,
     format = "latex",
     booktabs = TRUE,
     longtable = longtable,
     caption = caption,
     label = label,
-    align = align_str
+    align = align_str,
+    escape = FALSE
   )
+
+  # Only add caption.short if provided (kable doesn't handle NULL well)
+  if (!is.null(caption_short)) {
+    kable_args$caption.short <- caption_short
+  }
+
+  # Generate LaTeX table with kable
+  # Note: escape = FALSE needed when using footnote markers
+  latex_table <- do.call(kableExtra::kable, kable_args)
 
   # Apply header styling
   latex_table <- kableExtra::row_spec(latex_table, 0, bold = TRUE)
 
   # Apply row styling based on striped setting
-  if (striped) {
+  latex_options <- character(0)
+  if (striped) latex_options <- c(latex_options, "striped")
+  if (longtable) latex_options <- c(latex_options, "repeat_header")
+
+  if (length(latex_options) > 0) {
     latex_table <- kableExtra::kable_styling(
       latex_table,
-      latex_options = c("striped", if (longtable) "repeat_header" else NULL),
-      stripe_color = scolor
+      latex_options = latex_options,
+      stripe_color = if (striped) scolor else NULL
     )
-  } else if (longtable) {
-    latex_table <- kableExtra::kable_styling(
-      latex_table,
-      latex_options = "repeat_header"
-    )
+  }
+
+  # Apply spanning headers
+  if (!is.null(header_above)) {
+    latex_table <- apply_header_above(latex_table, header_above)
+  }
+
+  # Apply collapse rows (multi-row cells)
+  if (!is.null(collapse_rows)) {
+    latex_table <- apply_collapse_rows(latex_table, collapse_rows)
+  }
+
+  # Apply footnotes (must be last kableExtra operation)
+  if (!is.null(footnote)) {
+    latex_table <- apply_footnotes(latex_table, footnote)
   }
 
   # Create LaTeX document with template
