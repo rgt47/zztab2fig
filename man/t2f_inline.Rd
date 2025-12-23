@@ -87,7 +87,7 @@ This function streamlines the workflow for including tables in R Markdown:
 }
 
 The table is placed exactly where the code chunk appears (no float).
-Captions use \\captionof{table}{...} which requires the LaTeX \code{caption}
+Captions use \verb{\\\\captionof\\\{table\\\}\\\{...\\\}} which requires the LaTeX \code{caption}
 package. Add to your R Markdown YAML header:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{header-includes:

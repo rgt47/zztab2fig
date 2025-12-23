@@ -46,6 +46,8 @@
 #'   crop=FALSE).
 #'
 #' @importFrom kableExtra kable row_spec kable_styling column_spec
+#' @importFrom stats coef confint nobs
+#' @importFrom utils methods
 #' @keywords internal
 t2f_internal <- function(df, filename = NULL,
                 sub_dir = "figures",
