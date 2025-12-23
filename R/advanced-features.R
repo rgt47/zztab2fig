@@ -100,6 +100,11 @@ t2f_mark <- function(text, mark, type = c("symbol", "number", "alphabet")) {
 
   type <- match.arg(type)
 
+  # Escape special LaTeX characters in the text before adding marker
+  # This ensures % & # $ are properly escaped even though the cell will contain
+  # LaTeX commands that would otherwise skip sanitization
+  safe_text <- gsub("([#%&$])", "\\\\\\1", text)
+
   # Use text-mode superscript to avoid escaping issues with math mode $
   symbols <- c("*", "\\dag", "\\ddag", "\\S", "\\P")
 
@@ -109,7 +114,7 @@ t2f_mark <- function(text, mark, type = c("symbol", "number", "alphabet")) {
     alphabet = letters[mark]
   )
 
-  paste0(text, "\\textsuperscript{", marker, "}")
+  paste0(safe_text, "\\textsuperscript{", marker, "}")
 }
 
 #' Print method for t2f_footnote objects
