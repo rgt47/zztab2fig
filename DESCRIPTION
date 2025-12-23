@@ -17,13 +17,19 @@ Imports:
     kableExtra
 Suggests:
     broom,
+    broom.mixed,
     digest,
     dplyr,
     future.apply,
     knitr,
+    lme4,
+    MASS,
+    nlme,
+    nnet,
     palmerpenguins,
     rmarkdown,
     stringr,
+    survival,
     testthat (>= 3.0.0)
 SystemRequirements: LaTeX, pdflatex, pdfcrop,
     ImageMagick (optional for PNG output),

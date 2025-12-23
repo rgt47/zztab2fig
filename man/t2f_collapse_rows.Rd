@@ -8,7 +8,6 @@ t2f_collapse_rows(
   columns = NULL,
   valign = c("middle", "top", "bottom"),
   latex_hline = c("full", "major", "none", "custom"),
-  row_group_label_position = c("stack", "identity"),
   custom_latex_hline = NULL,
   row_group_label_fonts = NULL
 )
@@ -20,9 +19,6 @@ t2f_collapse_rows(
 
 \item{latex_hline}{Horizontal line style: "full", "major", "none", or
 "custom".}
-
-\item{row_group_label_position}{Position of group labels: "stack" or
-"identity".}
 
 \item{custom_latex_hline}{Integer vector. Row indices for custom hlines
 (when latex_hline = "custom").}

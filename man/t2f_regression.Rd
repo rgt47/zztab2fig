@@ -11,6 +11,7 @@ t2f_regression(
   digits = 3,
   se_in_parens = TRUE,
   filename = "regression_table",
+  sub_dir = "output",
   t2f_args = list()
 )
 }
@@ -28,6 +29,8 @@ thresholds. If numeric, specifies p-value cutoffs for stars.}
 estimates.}
 
 \item{filename}{Base name for output files.}
+
+\item{sub_dir}{Output directory for generated files.}
 
 \item{t2f_args}{List of additional arguments passed to t2f().}
 }
