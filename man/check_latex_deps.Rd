@@ -17,3 +17,9 @@ A list with availability status for each component (invisibly).
 Checks that all required LaTeX tools are available and
 provides installation guidance if not.
 }
+\examples{
+\dontrun{
+check_latex_deps()
+}
+
+}
