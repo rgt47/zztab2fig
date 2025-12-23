@@ -6,7 +6,7 @@
 \usage{
 t2f_batch_advanced(
   specs,
-  sub_dir = "output",
+  sub_dir = "figures",
   theme = NULL,
   parallel = FALSE,
   verbose = FALSE,

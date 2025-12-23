@@ -14,7 +14,9 @@ License: GPL (>= 3) + file LICENSE
 URL: https://github.com/rgt47/zztab2fig
 BugReports: https://github.com/rgt47/zztab2fig/issues
 Imports:
-    kableExtra
+    kableExtra,
+    stats,
+    utils
 Suggests:
     broom,
     broom.mixed,
@@ -30,7 +32,8 @@ Suggests:
     rmarkdown,
     stringr,
     survival,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    tinytex
 SystemRequirements: LaTeX, pdflatex, pdfcrop,
     ImageMagick (optional for PNG output),
     pdf2svg (optional for SVG output)

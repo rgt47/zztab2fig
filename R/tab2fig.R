@@ -7,7 +7,7 @@
 #' @param filename A character string. The base name of the output files
 #'   (without extensions).
 #' @param sub_dir A character string. The subdirectory where output files will
-#'   be stored. Defaults to "output".
+#'   be stored. Defaults to "figures".
 #' @param scolor A LaTeX color name for alternating row shading in the table
 #'   (e.g., "blue!10"). Overrides theme setting if provided.
 #' @param verbose Logical. If TRUE, prints progress messages.
@@ -48,7 +48,7 @@
 #' @importFrom kableExtra kable row_spec kable_styling column_spec
 #' @keywords internal
 t2f_internal <- function(df, filename = NULL,
-                sub_dir = "output",
+                sub_dir = "figures",
                 scolor = NULL, verbose = FALSE,
                 extra_packages = NULL,
                 document_class = NULL,

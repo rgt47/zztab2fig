@@ -11,7 +11,7 @@ t2f_regression(
   digits = 3,
   se_in_parens = TRUE,
   filename = "regression_table",
-  sub_dir = "output",
+  sub_dir = "figures",
   t2f_args = list()
 )
 }

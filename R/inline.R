@@ -41,7 +41,7 @@
 #' 3. Wraps in LaTeX with alignment and caption using \\captionof
 #'
 #' The table is placed exactly where the code chunk appears (no float).
-#' Captions use \\captionof{table}{...} which requires the LaTeX `caption`
+#' Captions use `\\captionof\{table\}\{...\}` which requires the LaTeX `caption`
 #' package. Add to your R Markdown YAML header:
 #'
 #' ```

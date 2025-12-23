@@ -61,7 +61,7 @@ t2f <- function(x, ...) {
 #'
 #' @export
 t2f.default <- function(x, filename = NULL,
-                        sub_dir = "output",
+                        sub_dir = "figures",
                         scolor = NULL, verbose = FALSE,
                         extra_packages = NULL,
                         document_class = NULL,
@@ -390,7 +390,7 @@ t2f_regression <- function(...,
                            digits = 3,
                            se_in_parens = TRUE,
                            filename = "regression_table",
-                           sub_dir = "output",
+                           sub_dir = "figures",
                            t2f_args = list()) {
   models <- list(...)
 

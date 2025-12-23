@@ -7,7 +7,7 @@
 t2f_internal(
   df,
   filename = NULL,
-  sub_dir = "output",
+  sub_dir = "figures",
   scolor = NULL,
   verbose = FALSE,
   extra_packages = NULL,
@@ -32,7 +32,7 @@ t2f_internal(
 (without extensions).}
 
 \item{sub_dir}{A character string. The subdirectory where output files will
-be stored. Defaults to "output".}
+be stored. Defaults to "figures".}
 
 \item{scolor}{A LaTeX color name for alternating row shading in the table
 (e.g., "blue!10"). Overrides theme setting if provided.}

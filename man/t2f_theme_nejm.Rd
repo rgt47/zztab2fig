@@ -11,14 +11,14 @@ A t2f_theme object.
 }
 \description{
 Theme following New England Journal of Medicine table styling.
-Characterized by light yellow alternating row striping, sans-serif font
-(Helvetica), booktabs horizontal rules, and compact spacing.
+Characterized by light cream alternating row striping (#FEF8EA), sans-serif
+font (Helvetica), booktabs horizontal rules, and compact spacing.
 }
 \details{
 NEJM tables are designed for maximum clarity and professional
 appearance in medical publications. Key characteristics:
 \itemize{
-\item Light yellow alternating row colors
+\item Light cream alternating row colors (#FEF8EA)
 \item Sans-serif font (Helvetica/Arial family)
 \item Booktabs-style horizontal rules (\\toprule, \\midrule, \\bottomrule)
 \item Compact column spacing (4pt)

@@ -6,7 +6,7 @@
 \usage{
 t2f_batch(
   data_list,
-  sub_dir = "output",
+  sub_dir = "figures",
   theme = NULL,
   parallel = FALSE,
   verbose = FALSE,
@@ -16,7 +16,7 @@ t2f_batch(
 \arguments{
 \item{data_list}{A named list of data frames to process.}
 
-\item{sub_dir}{Output directory for all tables. Defaults to "output".}
+\item{sub_dir}{Output directory for all tables. Defaults to "figures".}
 
 \item{theme}{Theme name or t2f_theme object to apply to all tables.}
 

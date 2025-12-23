@@ -546,6 +546,5 @@ apply_theme_settings <- function(theme, scolor = NULL, document_class = NULL,
   )
 }
 
-#' Null-coalescing operator
-#' @keywords internal
+# Null-coalescing operator (internal utility)
 `%||%` <- function(x, y) if (is.null(x)) y else x
