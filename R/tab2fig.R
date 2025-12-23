@@ -364,7 +364,15 @@ sanitize_column_names <- function(colnames) {
 #' @return A sanitized character vector of table cell values.
 sanitize_table_cells <- function(cells) {
   if (!is.character(cells)) cells <- as.character(cells)
-  gsub("([#%&$])", "\\\\\\1", cells)
+
+  # Don't escape cells that already contain LaTeX commands (backslash followed
+  # by a letter), as these are intentional LaTeX markup (e.g., footnote markers)
+  needs_escape <- !grepl("\\\\[a-zA-Z]", cells)
+
+  # Only escape special characters in cells that need it
+  result <- cells
+  result[needs_escape] <- gsub("([#%&$])", "\\\\\\1", cells[needs_escape])
+  result
 }
 
 #' Sanitize filenames to be file-system safe

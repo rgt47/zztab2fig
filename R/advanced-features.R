@@ -100,7 +100,8 @@ t2f_mark <- function(text, mark, type = c("symbol", "number", "alphabet")) {
 
   type <- match.arg(type)
 
-  symbols <- c("*", "\\\\dag", "\\\\ddag", "\\\\S", "\\\\P")
+  # Use text-mode superscript to avoid escaping issues with math mode $
+  symbols <- c("*", "\\dag", "\\ddag", "\\S", "\\P")
 
   marker <- switch(type,
     symbol = if (mark <= length(symbols)) symbols[mark] else as.character(mark),
@@ -108,7 +109,7 @@ t2f_mark <- function(text, mark, type = c("symbol", "number", "alphabet")) {
     alphabet = letters[mark]
   )
 
-  paste0(text, "$^{\\textrm{", marker, "}}$")
+  paste0(text, "\\textsuperscript{", marker, "}")
 }
 
 #' Print method for t2f_footnote objects
