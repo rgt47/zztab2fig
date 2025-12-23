@@ -12,7 +12,12 @@ build_inline_latex(
   caption,
   caption_short,
   label,
-  caption_position
+  caption_position,
+  frame = FALSE,
+  frame_color = "black",
+  frame_width = "0.4pt",
+  background = NULL,
+  inner_sep = "2pt"
 )
 }
 \arguments{
@@ -31,6 +36,16 @@ build_inline_latex(
 \item{label}{LaTeX label.}
 
 \item{caption_position}{Above or below.}
+
+\item{frame}{Whether to draw a frame border.}
+
+\item{frame_color}{Color for frame border.}
+
+\item{frame_width}{Line width for frame.}
+
+\item{background}{Background color.}
+
+\item{inner_sep}{Padding inside the box.}
 }
 \value{
 Character string with LaTeX code.

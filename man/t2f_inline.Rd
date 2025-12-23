@@ -17,6 +17,11 @@ t2f_inline(
   caption_short = NULL,
   label = NULL,
   caption_position = c("above", "below"),
+  frame = FALSE,
+  frame_color = "black",
+  frame_width = "0.4pt",
+  background = NULL,
+  inner_sep = "2pt",
   ...
 )
 }
@@ -49,6 +54,18 @@ Defaults to NULL (no label).}
 \item{caption_position}{Position of caption: "above" (default, standard for
 tables) or "below".}
 
+\item{frame}{Logical. If TRUE, draw a border around the table. Default FALSE.}
+
+\item{frame_color}{Color for the frame border. Uses xcolor syntax (e.g.,
+"black", "blue!50"). Default "black".}
+
+\item{frame_width}{Line width for the frame. Default "0.4pt".}
+
+\item{background}{Background color for the table container. Uses xcolor
+syntax (e.g., "gray!10", "yellow!5"). Default NULL (no background).}
+
+\item{inner_sep}{Padding between content and frame. Default "2pt".}
+
 \item{...}{Additional arguments passed to t2f().}
 }
 \value{
@@ -58,7 +75,8 @@ code. When called outside knitr, returns the file path invisibly.
 \description{
 Generate a table and include it inline in an R Markdown
 document. Automatically handles PDF vs HTML output and provides
-control over size, alignment, and captioning without using floats.
+control over size, alignment, captioning, and visual styling without
+using floats.
 }
 \details{
 This function streamlines the workflow for including tables in R Markdown:
@@ -93,6 +111,26 @@ t2f_inline(model,
            width = "3in",
            caption = "Results",
            caption_position = "below")
+
+# With frame border:
+t2f_inline(model,
+           width = "3in",
+           frame = TRUE,
+           frame_color = "gray",
+           frame_width = "0.5pt")
+
+# With background color:
+t2f_inline(model,
+           width = "3in",
+           background = "gray!5")
+
+# With both frame and background:
+t2f_inline(model,
+           width = "3in",
+           frame = TRUE,
+           frame_color = "blue!50",
+           background = "blue!5",
+           inner_sep = "4pt")
 
 # With explicit format:
 t2f_inline(mtcars[1:5,], width = "4in", format = "png", dpi = 300)

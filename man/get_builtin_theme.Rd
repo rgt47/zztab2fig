@@ -2,17 +2,18 @@
 % Please edit documentation in R/themes.R
 \name{get_builtin_theme}
 \alias{get_builtin_theme}
-\title{Get a built-in theme by name}
+\title{Get a theme by name}
 \usage{
 get_builtin_theme(name)
 }
 \arguments{
-\item{name}{Character string. Name of the built-in theme.}
+\item{name}{Character string. Name of the theme.}
 }
 \value{
 A t2f_theme object.
 }
 \description{
-Get a built-in theme by name
+Look up a theme by name, checking both built-in themes and
+registered custom themes.
 }
 \keyword{internal}

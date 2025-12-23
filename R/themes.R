@@ -10,6 +10,7 @@ NULL
 # Theme environment for global state
 .t2f_env <- new.env(parent = emptyenv())
 .t2f_env$current_theme <- NULL
+.t2f_env$custom_themes <- list()
 
 #' Create a t2f theme
 #'
@@ -111,6 +112,114 @@ t2f_theme_get <- function() {
   .t2f_env$current_theme
 }
 
+#' Register a custom theme
+#'
+#' @description Register a custom theme so it can be referenced by name in
+#'   t2f() calls and t2f_theme_set(). This allows you to define journal-specific
+#'   themes once and reuse them throughout your project.
+#'
+#' @param theme A t2f_theme object created with t2f_theme().
+#' @param name Optional name to register the theme under. If NULL, uses the
+#'   theme's internal name.
+#' @param overwrite Logical. If TRUE, overwrites any existing theme with the
+#'   same name. Default FALSE.
+#'
+#' @return Invisibly returns the theme object.
+#'
+#' @examples
+#' \dontrun{
+#' # Create and register a custom JAMA theme
+#' jama <- t2f_theme(
+#'   name = "jama",
+#'   scolor = "white",
+#'   header_bold = TRUE,
+#'   font_size = "small",
+#'   booktabs = TRUE,
+#'   striped = FALSE
+#' )
+#' t2f_theme_register(jama)
+#'
+#' # Now use it by name
+#' t2f(mtcars, theme = "jama")
+#'
+#' # Or set it globally
+#' t2f_theme_set("jama")
+#' }
+#'
+#' @export
+t2f_theme_register <- function(theme, name = NULL, overwrite = FALSE) {
+  if (!inherits(theme, "t2f_theme")) {
+    stop("`theme` must be a t2f_theme object", call. = FALSE)
+  }
+
+  reg_name <- name %||% theme$name
+  reg_name <- tolower(reg_name)
+
+  # Check for built-in theme name collision
+
+  builtin_names <- c("minimal", "apa", "nature", "nejm")
+  if (reg_name %in% builtin_names) {
+    stop("Cannot register theme with built-in name '", reg_name,
+         "'. Choose a different name.", call. = FALSE)
+  }
+
+  # Check for existing custom theme
+
+  if (reg_name %in% names(.t2f_env$custom_themes) && !overwrite) {
+    stop("Theme '", reg_name, "' is already registered. ",
+         "Use overwrite = TRUE to replace it.", call. = FALSE)
+  }
+
+  .t2f_env$custom_themes[[reg_name]] <- theme
+  message("Theme '", reg_name, "' registered successfully.")
+  invisible(theme)
+}
+
+#' Unregister a custom theme
+#'
+#' @description Remove a previously registered custom theme.
+#'
+#' @param name Character string. Name of the theme to unregister.
+#'
+#' @return Invisibly returns TRUE if the theme was removed, FALSE if it was not
+#'   found.
+#'
+#' @examples
+#' \dontrun{
+#' t2f_theme_unregister("jama")
+#' }
+#'
+#' @export
+t2f_theme_unregister <- function(name) {
+  name <- tolower(name)
+
+  if (name %in% names(.t2f_env$custom_themes)) {
+    .t2f_env$custom_themes[[name]] <- NULL
+    message("Theme '", name, "' unregistered.")
+    invisible(TRUE)
+  } else {
+    message("Theme '", name, "' not found in registry.")
+    invisible(FALSE)
+  }
+}
+
+#' Clear all custom themes
+#'
+#' @description Remove all registered custom themes, restoring only built-in
+#'   themes.
+#'
+#' @return Invisibly returns the number of themes removed.
+#'
+#' @export
+t2f_theme_clear <- function() {
+  n <- length(.t2f_env$custom_themes)
+  .t2f_env$custom_themes <- list()
+  if (n > 0) {
+    message("Cleared ", n, " custom theme(s).")
+  }
+  invisible(n)
+}
+
 #' Resolve theme from argument or global setting
 #'
 #' @param theme Theme argument from t2f() call (can be NULL, character, or
@@ -132,31 +241,64 @@ resolve_theme <- function(theme) {
   )
 }
 
-#' Get a built-in theme by name
+#' Get a theme by name
 #'
-#' @param name Character string. Name of the built-in theme.
+#' @description Look up a theme by name, checking both built-in themes and
+#'   registered custom themes.
+#'
+#' @param name Character string. Name of the theme.
 #' @return A t2f_theme object.
 #' @keywords internal
 get_builtin_theme <- function(name) {
   name <- tolower(name)
-  switch(name,
+
+ # Check built-in themes first
+  builtin <- switch(name,
     "minimal" = t2f_theme_minimal(),
     "apa" = t2f_theme_apa(),
     "nature" = t2f_theme_nature(),
     "nejm" = t2f_theme_nejm(),
-    stop("Unknown theme: ", name,
-      ". Available themes: minimal, apa, nature, nejm",
-      call. = FALSE
-    )
+    NULL
   )
+
+  if (!is.null(builtin)) {
+    return(builtin)
+  }
+
+ # Check custom theme registry
+  if (name %in% names(.t2f_env$custom_themes)) {
+    return(.t2f_env$custom_themes[[name]])
+  }
+
+ # Theme not found
+  available <- t2f_list_themes()
+  stop("Unknown theme: '", name, "'. Available themes: ",
+       paste(available, collapse = ", "),
+       call. = FALSE)
 }
 
-#' List available built-in themes
+#' List available themes
+#'
+#' @description List all available themes, including both built-in themes and
+#'   registered custom themes.
+#'
+#' @param builtin_only Logical. If TRUE, only list built-in themes. Default
+#'   FALSE.
 #'
 #' @return Character vector of available theme names.
+#'
+#' @examples
+#' t2f_list_themes()
+#' t2f_list_themes(builtin_only = TRUE)
+#'
 #' @export
-t2f_list_themes <- function() {
-  c("minimal", "apa", "nature", "nejm")
+t2f_list_themes <- function(builtin_only = FALSE) {
+  builtin <- c("minimal", "apa", "nature", "nejm")
+  if (builtin_only) {
+    return(builtin)
+  }
+  custom <- names(.t2f_env$custom_themes)
+  c(builtin, custom)
 }
 
 # Built-in Themes

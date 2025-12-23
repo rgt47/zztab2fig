@@ -2,13 +2,23 @@
 % Please edit documentation in R/themes.R
 \name{t2f_list_themes}
 \alias{t2f_list_themes}
-\title{List available built-in themes}
+\title{List available themes}
 \usage{
-t2f_list_themes()
+t2f_list_themes(builtin_only = FALSE)
+}
+\arguments{
+\item{builtin_only}{Logical. If TRUE, only list built-in themes. Default
+FALSE.}
 }
 \value{
 Character vector of available theme names.
 }
 \description{
-List available built-in themes
+List all available themes, including both built-in themes and
+registered custom themes.
+}
+\examples{
+t2f_list_themes()
+t2f_list_themes(builtin_only = TRUE)
+
 }

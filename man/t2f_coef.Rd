@@ -15,6 +15,11 @@ t2f_coef(
   caption_short = NULL,
   label = NULL,
   caption_position = "above",
+  frame = FALSE,
+  frame_color = "black",
+  frame_width = "0.4pt",
+  background = NULL,
+  inner_sep = "2pt",
   ...
 )
 }
@@ -39,6 +44,16 @@ t2f_coef(
 
 \item{caption_position}{Position of caption: "above" (default) or "below".}
 
+\item{frame}{Logical. If TRUE, draw a border around the table. Default FALSE.}
+
+\item{frame_color}{Color for the frame border. Default "black".}
+
+\item{frame_width}{Line width for the frame. Default "0.4pt".}
+
+\item{background}{Background color for the table container. Default NULL.}
+
+\item{inner_sep}{Padding between content and frame. Default "2pt".}
+
 \item{...}{Additional arguments passed to t2f_inline().}
 }
 \value{
@@ -52,6 +67,9 @@ table from a regression model with sensible defaults.
 \dontrun{
 model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
 t2f_coef(model)
+
+# With frame and background
+t2f_coef(model, frame = TRUE, background = "gray!5")
 }
 
 }
