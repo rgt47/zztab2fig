@@ -372,6 +372,12 @@ sanitize_table_cells <- function(cells) {
   # Only escape special characters in cells that need it
   result <- cells
   result[needs_escape] <- gsub("([#%&$])", "\\\\\\1", cells[needs_escape])
+
+
+  # Escape < and > to prevent T1 encoding ligatures (¡ and ¿)
+  result <- gsub("<", "\\\\textless{}", result)
+  result <- gsub(">", "\\\\textgreater{}", result)
+
   result
 }
 
@@ -432,12 +438,8 @@ create_latex_table <- function(df, tex_file, scolor, extra_packages = NULL,
     }
   })
 
-  # Build alignment string (may already be a string from siunitx processing)
-  if (is.character(align) && length(align) > 1) {
-    align_str <- paste(align, collapse = "")
-  } else {
-    align_str <- align
-  }
+  # Keep alignment as vector for kable (don't collapse - kableExtra handles vectors correctly)
+  align_str <- align
 
   # Determine if we need threeparttable
   use_threeparttable <- !is.null(footnote) &&

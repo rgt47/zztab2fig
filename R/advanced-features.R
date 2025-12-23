@@ -527,7 +527,7 @@ process_alignment <- function(align) {
   }
 
   list(
-    align = paste(processed_align, collapse = ""),
+    align = processed_align,
     packages = unique(packages)
   )
 }
