@@ -540,6 +540,62 @@ include_table("complex_table")
 ```
 
 
+# Part 3: R Markdown Workflow
+
+## Challenge 12: Inline Tables Without Floats
+
+**Task**: Insert a coefficient table exactly where the code chunk appears, with
+proper caption and cross-reference but without LaTeX float positioning.
+
+### pander
+
+```r
+model <- lm(mpg ~ cyl + hp, data = mtcars)
+pander::pander(model)
+```
+
+pander tables appear inline, but captions use Markdown syntax that may not
+produce proper table numbering or cross-references in PDF output.
+
+### zztab2fig
+
+The `t2f_inline()` function is designed for exactly this use case:
+
+```r
+model <- lm(mpg ~ cyl + hp, data = mtcars)
+t2f_inline(model,
+           width = "3in",
+           align = "left",
+           caption = "Linear model coefficients",
+           label = "tab:model",
+           caption_position = "above")
+```
+
+**Key features**:
+
+- Table appears exactly at code chunk location (no float)
+- Uses `\captionof{table}{...}` for proper "Table 1:" numbering
+- Cross-references work with `\ref{tab:model}`
+- `caption_position`: "above" (default, standard for tables) or "below"
+- Auto-detects PDF vs HTML output format
+
+**Convenience function for models**:
+
+```r
+t2f_coef(model, caption = "Model results", label = "tab:coef")
+```
+
+This is equivalent to `t2f_inline()` with sensible defaults for coefficient
+tables (width = "3in", align = "left").
+
+**Note**: When using captions with `t2f_inline()`, add to your R Markdown YAML:
+
+```yaml
+header-includes:
+  - \usepackage{caption}
+```
+
+
 # Summary
 
 ## Feature Comparison
@@ -551,14 +607,17 @@ include_table("complex_table")
 | Decimal alignment | No | Yes (siunitx) |
 | Captions | Yes | Yes + short captions |
 | Cross-reference labels | No | Yes |
+| Non-float captions | No | Yes (captionof) |
+| Caption position control | No | Yes (above/below) |
 | Table footnotes | No | Yes (4 notation types) |
 | Spanning headers | No | Yes |
 | Multi-row cells | No | Yes |
 | Multi-page tables | No | Yes (longtable) |
 | Journal themes | No | Yes (NEJM, APA, Nature) |
 | Model comparison | No | Yes |
-| Statistical object S3 methods | Partial | Yes (lm, glm, anova, htest) |
+| Statistical object S3 methods | Partial | Yes (20+ types via broom) |
 | Output formats | Markdown | PDF, PNG, SVG, TEX |
+| Inline R Markdown workflow | Yes | Yes (t2f_inline) |
 
 ## When to Use Each Package
 
@@ -579,12 +638,15 @@ include_table("complex_table")
 - Want consistent journal-specific styling (NEJM, APA, Nature)
 - Need cropped PDF tables for inclusion in external documents
 - Building model comparison tables
+- Want proper table numbering without float positioning
 
 ## v0.2.0 Features Used in This Vignette
 
 This vignette demonstrates several features introduced in zztab2fig v0.2.0:
-
-- **S3 methods**: `t2f.lm()` for linear models
+- **t2f_inline()**: Inline tables for R Markdown without floats
+- **t2f_coef()**: Quick coefficient tables with sensible defaults
+- **caption_position**: Control caption placement (above/below)
+- **S3 methods**: Support for 20+ object types via broom integration
 - **Theme system**: Built-in NEJM theme (`theme = "nejm"`)
 - **t2f_regression()**: Side-by-side model comparison
 - **t2f_footnote()**: Structured footnotes with multiple notation types

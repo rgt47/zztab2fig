@@ -20,20 +20,26 @@ professional table outputs for reports, presentations, or publications.
 
 Version 0.2.0 introduced substantial enhancements:
 
-- **S3 method dispatch**: `t2f()` now works directly with `lm`, `glm`, `anova`,
-  `aov`, `htest`, `matrix`, and `table` objects
+- **S3 method dispatch**: `t2f()` now works directly with 20+ object types:
+  - Base: `lm`, `glm`, `anova`, `aov`, `htest`, `matrix`, `table`
+  - Via broom: `coxph`, `survreg`, `survfit`, `nls`, `polr`, `prcomp`, `kmeans`,
+    `lmerMod`, `glmerMod`, `lme`, `Arima`, and more
 - **Theme system**: Built-in themes for NEJM, APA, Nature, and minimal styles
+- **Inline workflow**: `t2f_inline()` for R Markdown without float positioning,
+  with `\captionof` for proper table numbering
 - **t2f_regression()**: Side-by-side regression model comparison tables
 - **Advanced formatting**: Table footnotes, spanning headers, multi-row cells,
   and decimal alignment via siunitx
-- **Caption and label support**: LaTeX captions with short captions and
+- **Caption control**: `caption_position` (above/below), short captions, and
   cross-reference labels
+- **Dependency helpers**: `check_latex_deps()`, `ensure_pdfcrop()` for setup
 
 For detailed coverage of these features, see the companion vignettes:
 
 - *Quickstart Guide* - Concise reference for common operations
 - *Object Types and Themes* - S3 methods and theme demonstrations
-- *Advanced Features* - Footnotes, headers, alignment, and placement helpers
+- *Advanced Features* - Footnotes, headers, alignment, placement helpers, and
+  inline workflow
 - *Why zztab2fig?* - Practical comparison with pander
 
 This vignette covers the foundational workflow and customization options.
@@ -474,7 +480,42 @@ lapply(names(datasets), function(name) {
 
 ## Integration Strategies
 
-### With R Markdown
+### Inline Tables with t2f_inline()
+
+For tables that should appear exactly where the code chunk is placed (without
+LaTeX float positioning), use `t2f_inline()`:
+
+```r
+model <- lm(mpg ~ cyl + hp, data = mtcars)
+t2f_inline(model,
+           width = "3in",
+           align = "left",
+           caption = "Linear Model Results",
+           label = "tab:model",
+           caption_position = "above")
+```
+
+Key features:
+
+- Table appears exactly at code chunk location (no float)
+- Uses `\captionof{table}{...}` for proper "Table 1:" numbering
+- Cross-references work with `\ref{tab:model}`
+- `caption_position`: "above" (default) or "below"
+
+**Note**: Add `\usepackage{caption}` to your R Markdown YAML:
+
+```yaml
+header-includes:
+  - \usepackage{caption}
+```
+
+For coefficient tables, use the convenience function:
+
+```r
+t2f_coef(model, caption = "Coefficients")  # defaults: width="3in", align="left"
+```
+
+### Traditional Workflow with t2f()
 
 Include generated PDFs in R Markdown documents. Here's a working example:
 
@@ -555,9 +596,43 @@ output$download_table <- downloadHandler(
 
 ## Common Installation Issues
 
+### Checking Dependencies
+
+Use the built-in helper to check your LaTeX setup:
+
+```r
+check_latex_deps()
+```
+
+Output:
+```
+Checking LaTeX dependencies for zztab2fig...
+
+pdflatex: OK
+pdfcrop:  OK
+
+All dependencies available. zztab2fig is ready to use.
+```
+
 ### Error: `pdflatex` or `pdfcrop` not found
 
+**For TinyTeX users** (recommended for R users):
+
+```r
+# If pdfcrop is missing
+ensure_pdfcrop(auto_install = TRUE)
+
+# This will attempt to install via tinytex::tlmgr_install("pdfcrop")
+```
+
 **Solution by Platform:**
+
+- **TinyTeX (recommended):**
+  ```r
+  install.packages("tinytex")
+  tinytex::install_tinytex()
+  tinytex::tlmgr_install("pdfcrop")
+  ```
 - **Ubuntu/Debian:** `sudo apt-get install texlive texlive-extra-utils`
 - **macOS:** Install MacTeX from [https://www.tug.org/mactex/](https://www.tug.org/mactex/)
 - **Windows:** Install MiKTeX from [https://miktex.org/](https://miktex.org/)

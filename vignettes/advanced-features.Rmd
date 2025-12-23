@@ -446,7 +446,106 @@ include_table("clinical_efficacy")
 
 ---
 
-## 7. LaTeX Figure Placement Helpers
+## 7. Inline Tables for R Markdown
+
+The `t2f_inline()` function provides a streamlined workflow for including
+tables directly in R Markdown documents without LaTeX float positioning.
+
+### Basic Inline Usage
+
+```{r inline-basic, eval=FALSE}
+model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+
+t2f_inline(model,
+           width = "3in",
+           align = "left")
+```
+
+The table appears exactly where the code chunk is placed, rather than being
+positioned by LaTeX's float algorithm.
+
+### Inline with Caption and Cross-Reference
+
+```{r inline-caption, eval=FALSE}
+t2f_inline(model,
+           width = "3in",
+           align = "left",
+           caption = "Linear Model Results",
+           label = "tab:model",
+           caption_position = "above")
+```
+
+Key parameters:
+
+- `caption`: Table caption using `\captionof{table}{...}` (no float required)
+- `label`: LaTeX label for cross-referencing with `\ref{tab:model}`
+- `caption_position`: "above" (default, standard for tables) or "below"
+- `width`/`height`: Figure dimensions in LaTeX units
+- `align`: "left", "center", or "right"
+
+**Note**: When using captions, add to your R Markdown YAML:
+
+```yaml
+header-includes:
+  - \usepackage{caption}
+```
+
+### Convenience Function for Models
+
+`t2f_coef()` provides sensible defaults for coefficient tables:
+
+```{r coef-example, eval=FALSE}
+model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+t2f_coef(model, caption = "Model Coefficients", label = "tab:coef")
+```
+
+Defaults: `width = "3in"`, `align = "left"`, `caption_position = "above"`
+
+---
+
+## 8. Dependency Checking
+
+zztab2fig requires LaTeX tools (`pdflatex`, `pdfcrop`) to generate PDFs. Helper
+functions assist with checking and installing these dependencies.
+
+### Check All Dependencies
+
+```{r check-deps, eval=FALSE}
+check_latex_deps()
+```
+
+Output shows status of each component:
+
+```
+Checking LaTeX dependencies for zztab2fig...
+
+pdflatex: OK
+pdfcrop:  OK
+
+All dependencies available. zztab2fig is ready to use.
+```
+
+### Install pdfcrop via TinyTeX
+
+If pdfcrop is missing and you use TinyTeX:
+
+```{r ensure-pdfcrop, eval=FALSE}
+ensure_pdfcrop(auto_install = TRUE)
+```
+This checks for the `tinytex` R package and TinyTeX distribution, then runs
+`tinytex::tlmgr_install("pdfcrop")` if available.
+
+### Check pdflatex
+
+```{r ensure-pdflatex, eval=FALSE}
+ensure_pdflatex()
+```
+
+Provides installation guidance if pdflatex is not found.
+
+---
+
+## 9. LaTeX Figure Placement Helpers
 
 After generating tables, use these helpers to include them in LaTeX documents
 with precise placement control. These functions output raw LaTeX code for use
@@ -522,7 +621,7 @@ t2f_include_wrap("tables/demo_table",
 
 ---
 
-## 8. Cross-References
+## 10. Cross-References
 
 Generate LaTeX cross-reference commands from R:
 
@@ -542,12 +641,15 @@ cat(ref_text)
 
 zztab2fig v0.2.0 provides comprehensive support for publication-quality tables:
 
+- **Inline tables**: `t2f_inline()` for R Markdown without float positioning
+- **Caption control**: `caption_position` (above/below) with `\captionof`
 - **Footnotes**: General, numbered, alphabetic, and symbol notation
 - **Spanning headers**: Single or multiple levels of grouped columns
 - **Multi-row cells**: Automatic collapsing of hierarchical data
 - **Decimal alignment**: siunitx integration for precise number formatting
 - **Short captions**: For List of Tables entries
 - **Figure placement**: Float, inline, margin, wrap, and side-by-side options
+- **Dependency helpers**: `check_latex_deps()`, `ensure_pdfcrop()`
 
 These features can be combined to create tables meeting the most demanding
 journal requirements while maintaining a clean R-based workflow.

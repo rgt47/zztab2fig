@@ -150,3 +150,95 @@ test_that("t2f_coef accepts caption and label", {
 
   expect_true(file.exists(result))
 })
+
+test_that("build_inline_latex generates correct LaTeX for caption above", {
+  result <- zztab2fig:::build_inline_latex(
+    path = "test.pdf",
+    width = "3in",
+    height = NULL,
+    align = "center",
+    caption = "Test caption",
+    caption_short = NULL,
+    label = "tab:test",
+    caption_position = "above"
+  )
+
+  expect_match(result, "\\\\begin\\{center\\}")
+  expect_match(result, "\\\\captionof\\{table\\}\\{Test caption\\}")
+  expect_match(result, "\\\\label\\{tab:test\\}")
+  expect_match(result, "\\\\includegraphics\\[width=3in\\]\\{test.pdf\\}")
+
+  lines <- strsplit(result, "\n")[[1]]
+  caption_line <- grep("captionof", lines)
+  include_line <- grep("includegraphics", lines)
+  expect_true(caption_line < include_line)
+})
+
+test_that("build_inline_latex generates correct LaTeX for caption below", {
+  result <- zztab2fig:::build_inline_latex(
+    path = "test.pdf",
+    width = "2in",
+    height = NULL,
+    align = "left",
+    caption = "Below caption",
+    caption_short = NULL,
+    label = NULL,
+    caption_position = "below"
+  )
+
+  expect_match(result, "\\\\begin\\{flushleft\\}")
+  expect_match(result, "\\\\captionof\\{table\\}\\{Below caption\\}")
+  expect_match(result, "\\\\includegraphics\\[width=2in\\]\\{test.pdf\\}")
+
+  lines <- strsplit(result, "\n")[[1]]
+  caption_line <- grep("captionof", lines)
+  include_line <- grep("includegraphics", lines)
+  expect_true(caption_line > include_line)
+})
+
+test_that("build_inline_latex handles short caption", {
+  result <- zztab2fig:::build_inline_latex(
+    path = "test.pdf",
+    width = NULL,
+    height = NULL,
+    align = "center",
+    caption = "A very long caption for the table",
+    caption_short = "Short caption",
+    label = "tab:short",
+    caption_position = "above"
+  )
+
+  expect_match(result, "\\\\captionof\\{table\\}\\[Short caption\\]\\{A very long caption")
+})
+
+test_that("build_inline_latex works without caption", {
+  result <- zztab2fig:::build_inline_latex(
+    path = "test.pdf",
+    width = "4in",
+    height = NULL,
+    align = "right",
+    caption = NULL,
+    caption_short = NULL,
+    label = NULL,
+    caption_position = "above"
+  )
+
+  expect_match(result, "\\\\begin\\{flushright\\}")
+  expect_match(result, "\\\\includegraphics\\[width=4in\\]\\{test.pdf\\}")
+  expect_false(grepl("captionof", result))
+})
+
+test_that("t2f_inline accepts caption_position parameter", {
+  output_dir <- tempdir()
+
+  result <- t2f_inline(
+    mtcars[1:3, 1:2],
+    caption = "Test",
+    caption_position = "below",
+    format = "pdf",
+    filename = "inline_caption_below",
+    sub_dir = output_dir
+  )
+
+  expect_true(file.exists(result))
+})

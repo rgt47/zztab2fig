@@ -16,6 +16,7 @@ t2f_inline(
   caption = NULL,
   caption_short = NULL,
   label = NULL,
+  caption_position = c("above", "below"),
   ...
 )
 }
@@ -37,37 +38,43 @@ t2f_inline(
 
 \item{sub_dir}{Directory for output files. If NULL (default), uses tempdir().}
 
-\item{caption}{Table caption. Defaults to NULL (no caption).}
+\item{caption}{Table caption. Uses \\captionof for non-float placement.
+Defaults to NULL (no caption).}
 
 \item{caption_short}{Short caption for List of Tables. Defaults to NULL.}
 
 \item{label}{LaTeX label for cross-referencing (e.g., "tab:model").
 Defaults to NULL (no label).}
 
+\item{caption_position}{Position of caption: "above" (default, standard for
+tables) or "below".}
+
 \item{...}{Additional arguments passed to t2f().}
 }
 \value{
-For knitr, returns the result of knitr::include_graphics().
-When called outside knitr, returns the file path invisibly.
+For knitr, returns the result of knitr::asis_output() with LaTeX
+code. When called outside knitr, returns the file path invisibly.
 }
 \description{
 Generate a table and include it inline in an R Markdown
 document. Automatically handles PDF vs HTML output and provides
-control over size and alignment.
+control over size, alignment, and captioning without using floats.
 }
 \details{
 This function streamlines the workflow for including tables in R Markdown:
 \enumerate{
-\item Generates the table PDF via t2f()
+\item Generates the table PDF via t2f() (without embedded caption)
 \item For HTML output, converts to PNG
-\item Returns appropriate include for knitr
+\item Wraps in LaTeX with alignment and caption using \\captionof
 }
 
-The alignment is handled via:
-\itemize{
-\item PDF output: LaTeX commands (flushleft, center, flushright)
-\item HTML output: knitr chunk options or CSS
-}
+The table is placed exactly where the code chunk appears (no float).
+Captions use \\captionof{table}{...} which requires the LaTeX \code{caption}
+package. Add to your R Markdown YAML header:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{header-includes:
+  - \\\\usepackage\{caption\}
+}\if{html}{\out{</div>}}
 }
 \examples{
 \dontrun{
@@ -80,6 +87,12 @@ t2f_inline(model,
            width = "3in",
            caption = "Linear model coefficients",
            label = "tab:model")
+
+# Caption below the table:
+t2f_inline(model,
+           width = "3in",
+           caption = "Results",
+           caption_position = "below")
 
 # With explicit format:
 t2f_inline(mtcars[1:5,], width = "4in", format = "png", dpi = 300)

@@ -243,6 +243,85 @@ include_table("model_progression")
 ```
 
 
+## Additional Object Types via broom
+
+zztab2fig v0.2.0 adds support for 13 additional statistical object types through
+broom integration. These methods use `broom::tidy()` to extract model
+information, then format the results.
+
+### Survival Analysis (survival package)
+
+```{r survival-example, eval=FALSE}
+library(survival)
+
+cox_model <- coxph(Surv(time, status) ~ age + sex, data = lung)
+t2f(cox_model, exponentiate = TRUE, filename = "cox_hr")
+
+survreg_model <- survreg(Surv(time, status) ~ age + sex, data = lung)
+t2f(survreg_model, filename = "parametric_survival")
+
+km_fit <- survfit(Surv(time, status) ~ sex, data = lung)
+t2f(km_fit, filename = "kaplan_meier")
+```
+
+### Mixed Effects Models (lme4, nlme packages)
+
+```{r mixed-example, eval=FALSE}
+library(lme4)
+
+lmer_model <- lmer(mpg ~ cyl + (1 | gear), data = mtcars)
+t2f(lmer_model, filename = "mixed_effects")
+
+library(nlme)
+lme_model <- lme(mpg ~ cyl, random = ~ 1 | gear, data = mtcars)
+t2f(lme_model, filename = "nlme_model")
+```
+
+### Other Statistical Models
+
+```{r other-models-example, eval=FALSE}
+nls_model <- nls(mpg ~ a * exp(b * wt), data = mtcars,
+                 start = list(a = 40, b = -0.5))
+t2f(nls_model, filename = "nonlinear")
+
+library(MASS)
+polr_model <- polr(factor(gear) ~ mpg + hp, data = mtcars)
+t2f(polr_model, filename = "ordinal_logistic")
+```
+
+### Exploratory Analysis
+
+```{r exploratory-example, eval=FALSE}
+pca_result <- prcomp(mtcars[, 1:5], scale. = TRUE)
+t2f(pca_result, matrix = "rotation", filename = "pca_loadings")
+t2f(pca_result, matrix = "summary", filename = "pca_summary")
+
+km_result <- kmeans(mtcars[, 1:5], centers = 3)
+t2f(km_result, matrix = "centers", filename = "cluster_centers")
+```
+
+### Complete List of broom-Based Methods
+
+| Object Class | Package | Method | Key Parameters |
+|:-------------|:--------|:-------|:---------------|
+| `coxph` | survival | `t2f.coxph()` | `exponentiate`, `conf.int` |
+| `survreg` | survival | `t2f.survreg()` | `digits` |
+| `survfit` | survival | `t2f.survfit()` | `times` |
+| `survdiff` | survival | `t2f.survdiff()` | `digits` |
+| `Arima` | stats | `t2f.Arima()` | `digits` |
+| `nls` | stats | `t2f.nls()` | `conf.int` |
+| `polr` | MASS | `t2f.polr()` | `exponentiate`, `conf.int` |
+| `multinom` | nnet | `t2f.multinom()` | `exponentiate`, `conf.int` |
+| `prcomp` | stats | `t2f.prcomp()` | `matrix` (rotation/summary) |
+| `kmeans` | stats | `t2f.kmeans()` | `matrix` (centers/summary) |
+| `lmerMod` | lme4 | `t2f.lmerMod()` | `effects`, `conf.int` |
+| `glmerMod` | lme4 | `t2f.glmerMod()` | `effects`, `exponentiate` |
+| `lme` | nlme | `t2f.lme()` | `effects` |
+
+**Note**: These methods require the `broom` package (or `broom.mixed` for
+lme4/nlme models) and the respective model packages to be installed.
+
+
 # Theme Demonstrations
 
 Each built-in theme provides distinct styling appropriate for different
@@ -415,7 +494,7 @@ t2f_theme_set(NULL)
 
 # Summary
 
-## Object Type Support
+## Object Type Support (Base Methods)
 
 | Object Class | Method | Key Parameters |
 |:-------------|:-------|:---------------|
@@ -427,6 +506,18 @@ t2f_theme_set(NULL)
 | `aov` | `t2f.aov()` | `digits` |
 | `anova` | `t2f.anova()` | `digits` |
 | `htest` | `t2f.htest()` | `digits` |
+
+## Object Type Support (via broom)
+
+| Object Class | Package | Key Parameters |
+|:-------------|:--------|:---------------|
+| `coxph`, `survreg`, `survfit`, `survdiff` | survival | `exponentiate` |
+| `nls` | stats | `conf.int` |
+| `polr`, `multinom` | MASS, nnet | `exponentiate` |
+| `prcomp`, `kmeans` | stats | `matrix` |
+| `lmerMod`, `glmerMod` | lme4 | `effects` |
+| `lme` | nlme | `effects` |
+| `Arima` | stats | `digits` |
 
 ## Theme Comparison
 

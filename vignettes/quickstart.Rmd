@@ -100,7 +100,32 @@ t2f(model, filename = "regression", sub_dir = output_dir,
 include_table("regression")
 ```
 
-Supported object types: `lm`, `glm`, `anova`, `aov`, `htest`, `matrix`, `table`
+Supported object types include `lm`, `glm`, `anova`, `aov`, `htest`, `matrix`,
+`table`, plus 13 additional types via broom integration (coxph, survreg, nls,
+polr, prcomp, kmeans, lmerMod, and more).
+
+
+## Inline Tables for R Markdown
+
+Insert tables directly in R Markdown without LaTeX float positioning:
+
+```{r inline-example, eval=FALSE}
+model <- lm(mpg ~ cyl + hp, data = mtcars)
+t2f_inline(model,
+           width = "3in",
+           align = "left",
+           caption = "Model Results",
+           label = "tab:model",
+           caption_position = "above")
+```
+
+Or use the convenience function for coefficient tables:
+
+```{r coef-example, eval=FALSE}
+t2f_coef(model, caption = "Coefficients")
+```
+
+**Note**: Add `\usepackage{caption}` to your R Markdown YAML for captions.
 
 
 ## Model Comparison
@@ -195,17 +220,31 @@ t2f(mtcars,
 | `crop_margin` | Margin size (pts) | 10 |
 | `theme` | Theme name or object | NULL |
 
+### Key t2f_inline() Parameters
+
+| Parameter | Description | Default |
+|:----------|:------------|:--------|
+| `width` | Figure width (LaTeX units) | NULL |
+| `align` | left, center, right | "center" |
+| `caption` | Uses \\captionof (no float) | NULL |
+| `label` | LaTeX cross-reference label | NULL |
+| `caption_position` | "above" or "below" | "above" |
+| `format` | "auto", "pdf", "png" | "auto" |
+
 ### Core Functions
 
 | Function | Purpose |
 |:---------|:--------|
 | `t2f()` | Convert object to PDF table |
+| `t2f_inline()` | Inline tables for R Markdown |
+| `t2f_coef()` | Quick coefficient tables |
 | `t2f_regression()` | Compare regression models |
 | `t2f_theme_set()` | Set global theme |
 | `t2f_theme_get()` | Get current theme |
-| `t2f_list_themes()` | List available themes |
+| `check_latex_deps()` | Check LaTeX dependencies |
+| `ensure_pdfcrop()` | Install pdfcrop via TinyTeX |
 
-### S3 Methods
+### S3 Methods (Base)
 
 | Object Type | Method |
 |:------------|:-------|
@@ -215,6 +254,18 @@ t2f(mtcars,
 | `glm` | `t2f.glm()` |
 | `anova` / `aov` | `t2f.anova()` / `t2f.aov()` |
 | `htest` | `t2f.htest()` |
+
+### S3 Methods (via broom)
+
+| Object Type | Package |
+|:------------|:--------|
+| `coxph`, `survreg`, `survfit` | survival |
+| `nls` | stats |
+| `polr`, `multinom` | MASS, nnet |
+| `prcomp`, `kmeans` | stats |
+| `lmerMod`, `glmerMod` | lme4 |
+| `lme` | nlme |
+| `Arima` | stats |
 
 ### Theme Presets
 
@@ -229,6 +280,18 @@ t2f(mtcars,
 ## System Requirements
 
 - R >= 4.0
-- LaTeX distribution (TeX Live, MiKTeX, or MacTeX)
+- LaTeX distribution (TeX Live, MiKTeX, TinyTeX, or MacTeX)
 - `pdflatex` and `pdfcrop` executables
 - Optional: ImageMagick (for PNG output)
+
+Check your setup:
+
+```{r check-deps, eval=FALSE}
+check_latex_deps()
+```
+
+If pdfcrop is missing with TinyTeX:
+
+```{r ensure-pdfcrop, eval=FALSE}
+ensure_pdfcrop(auto_install = TRUE)
+```

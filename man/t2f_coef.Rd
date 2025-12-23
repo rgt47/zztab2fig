@@ -14,6 +14,7 @@ t2f_coef(
   caption = NULL,
   caption_short = NULL,
   label = NULL,
+  caption_position = "above",
   ...
 )
 }
@@ -35,6 +36,8 @@ t2f_coef(
 \item{caption_short}{Short caption for List of Tables. Defaults to NULL.}
 
 \item{label}{LaTeX label for cross-referencing. Defaults to NULL.}
+
+\item{caption_position}{Position of caption: "above" (default) or "below".}
 
 \item{...}{Additional arguments passed to t2f_inline().}
 }
