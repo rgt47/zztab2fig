@@ -402,6 +402,97 @@ auto_align <- function(df) {
   }, character(1))
 }
 
+#' Detect siunitx columns from alignment specification
+#' @param align Alignment specification (vector or list).
+#' @return Integer vector of column indices that use siunitx (S columns).
+#' @keywords internal
+detect_siunitx_columns <- function(align) {
+  if (is.null(align)) return(integer(0))
+
+  siunitx_cols <- integer(0)
+  for (i in seq_along(align)) {
+    col_align <- if (is.list(align)) align[[i]] else align[i]
+    if (is.character(col_align) && grepl("^S\\[", col_align)) {
+      siunitx_cols <- c(siunitx_cols, i)
+    }
+  }
+  siunitx_cols
+}
+
+#' Protect siunitx column headers with braces
+#'
+#' @description For siunitx S columns, non-numeric content in the header must
+#'   be wrapped in braces to prevent siunitx from trying to parse it as a
+#'   number. This function post-processes the LaTeX table to add braces around
+#'   headers in S columns.
+#'
+#' @param latex_table The LaTeX table string (or kable object).
+#' @param siunitx_cols Integer vector of column indices with siunitx alignment.
+#' @return Modified LaTeX table with protected headers.
+#' @keywords internal
+protect_siunitx_headers <- function(latex_table, siunitx_cols) {
+  if (length(siunitx_cols) == 0) return(latex_table)
+
+  # Convert kable object to character if needed
+  latex_str <- as.character(latex_table)
+
+  # Find the header row (first row after \toprule or \hline)
+  lines <- strsplit(latex_str, "\n")[[1]]
+
+  # Find the line with column headers (typically after \toprule)
+  header_idx <- NULL
+  for (i in seq_along(lines)) {
+    if (grepl("\\\\toprule|\\\\hline", lines[i])) {
+      if (i < length(lines)) {
+        header_idx <- i + 1
+        break
+      }
+    }
+  }
+
+  if (is.null(header_idx)) return(latex_table)
+
+  # Parse the header line and wrap siunitx columns in braces
+  header_line <- lines[header_idx]
+
+  # Split on & to get individual cells
+  cells <- strsplit(header_line, "&")[[1]]
+
+  # Wrap siunitx column headers in braces
+  for (col_idx in siunitx_cols) {
+    if (col_idx <= length(cells)) {
+      cell <- cells[col_idx]
+      # Remove leading/trailing whitespace for processing
+      trimmed <- trimws(cell)
+      # Check if already wrapped in outer braces
+      if (!grepl("^\\{.*\\}$", trimmed) && !grepl("^\\{.*\\}\\\\\\\\$", trimmed)) {
+        # Wrap in braces, preserving any trailing \\
+        if (grepl("\\\\\\\\$", trimmed)) {
+          # Has trailing \\
+          content <- sub("\\\\\\\\$", "", trimmed)
+          cells[col_idx] <- paste0(" {", content, "}\\\\")
+        } else {
+          cells[col_idx] <- paste0(" {", trimmed, "}")
+        }
+      }
+    }
+  }
+
+  # Reconstruct the header line
+  lines[header_idx] <- paste(cells, collapse = "&")
+
+  # Reconstruct the LaTeX string
+  result <- paste(lines, collapse = "\n")
+
+  # Preserve the kable class if it was a kable object
+  if (inherits(latex_table, "knitr_kable")) {
+    class(result) <- class(latex_table)
+    attr(result, "format") <- attr(latex_table, "format")
+  }
+
+  result
+}
+
 #' Create a LaTeX table with alternating row colors using kableExtra
 #' @param df A dataframe to convert to a LaTeX table.
 #' @param tex_file Path to the output LaTeX file.
@@ -440,6 +531,9 @@ create_latex_table <- function(df, tex_file, scolor, extra_packages = NULL,
 
   # Keep alignment as vector for kable (don't collapse - kableExtra handles vectors correctly)
   align_str <- align
+
+  # Detect siunitx columns for header protection
+  siunitx_cols <- detect_siunitx_columns(align)
 
   # Determine if we need threeparttable
   use_threeparttable <- !is.null(footnote) &&
@@ -506,6 +600,11 @@ create_latex_table <- function(df, tex_file, scolor, extra_packages = NULL,
   # Apply footnotes (must be last kableExtra operation)
   if (!is.null(footnote)) {
     latex_table <- apply_footnotes(latex_table, footnote)
+  }
+
+  # Protect siunitx column headers with braces
+  if (length(siunitx_cols) > 0) {
+    latex_table <- protect_siunitx_headers(latex_table, siunitx_cols)
   }
 
   # Create LaTeX document with template
