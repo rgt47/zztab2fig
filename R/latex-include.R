@@ -367,6 +367,160 @@ t2f_ref <- function(label, type = c("ref", "autoref", "pageref", "nameref"),
   }
 }
 
+#' Include a t2f table in the margin
+#'
+#' @description Generate LaTeX code to place a table in the right margin.
+#'   Multiple methods supported depending on document class.
+#'
+#' @param path Path to the PDF file.
+#' @param caption Optional caption.
+#' @param label Optional label.
+#' @param width Width of graphic. Default "\\marginparwidth".
+#' @param offset Vertical offset (e.g., "-2em", "0pt"). Default "0pt".
+#' @param method Method for margin placement: "sidenotes", "marginpar",
+#'   "tufte", or "marginnote".
+#' @param cat Logical. If TRUE (default), prints via cat().
+#'
+#' @return LaTeX code (invisibly if cat=TRUE).
+#'
+#' @details
+#' Methods and their requirements:
+#'
+#' - **sidenotes**: Uses `marginfigure` environment. Requires
+#'   `\\usepackage{sidenotes}`. Best for standard document classes.
+#'
+#' - **marginpar**: Basic LaTeX `\\marginpar{}`. No extra packages needed but
+#'   limited functionality (no captions).
+#'
+#' - **tufte**: Uses `marginfigure` from tufte-latex classes. Only works with
+#'   tufte-book or tufte-handout document classes.
+#'
+#' - **marginnote**: Uses `\\marginnote{}` from marginnote package. Better
+#'   positioning than marginpar. Requires `\\usepackage{marginnote}`.
+#'
+#' @examples
+#' \dontrun{
+#' # With sidenotes package (recommended)
+#' t2f_include_margin("tables/summary",
+#'                    caption = "Summary statistics",
+#'                    method = "sidenotes")
+#'
+#' # Simple marginpar (no packages needed)
+#' t2f_include_margin("tables/summary", method = "marginpar")
+#'
+#' # For tufte document classes
+#' t2f_include_margin("tables/summary",
+#'                    caption = "Summary",
+#'                    method = "tufte")
+#' }
+#'
+#' @export
+t2f_include_margin <- function(path,
+                                caption = NULL,
+                                label = NULL,
+                                width = "\\marginparwidth",
+                                offset = "0pt",
+                                method = c("sidenotes", "marginpar",
+                                           "tufte", "marginnote"),
+                                cat = TRUE) {
+
+  method <- match.arg(method)
+  pdf_path <- resolve_pdf_path(path)
+
+  result <- switch(method,
+    sidenotes = margin_sidenotes(pdf_path, caption, label, width, offset),
+    marginpar = margin_marginpar(pdf_path, width),
+    tufte = margin_tufte(pdf_path, caption, label, width, offset),
+    marginnote = margin_marginnote(pdf_path, caption, width, offset)
+  )
+
+  if (cat) {
+    cat(result, "\n")
+    invisible(result)
+  } else {
+    result
+  }
+}
+
+#' @keywords internal
+margin_sidenotes <- function(path, caption, label, width, offset) {
+  lines <- character(0)
+
+  if (offset != "0pt") {
+    lines <- c(lines, sprintf("\\begin{marginfigure}[%s]", offset))
+  } else {
+    lines <- c(lines, "\\begin{marginfigure}")
+  }
+
+  lines <- c(lines, "  \\centering")
+  lines <- c(lines, sprintf("  \\includegraphics[width=%s]{%s}", width, path))
+
+  if (!is.null(caption)) {
+    lines <- c(lines, sprintf("  \\caption{%s}", caption))
+  }
+  if (!is.null(label)) {
+    lines <- c(lines, sprintf("  \\label{%s}", label))
+  }
+
+  lines <- c(lines, "\\end{marginfigure}")
+  paste(lines, collapse = "\n")
+}
+
+#' @keywords internal
+margin_marginpar <- function(path, width) {
+  sprintf("\\marginpar{\\includegraphics[width=%s]{%s}}", width, path)
+}
+
+#' @keywords internal
+margin_tufte <- function(path, caption, label, width, offset) {
+  # Tufte uses same marginfigure syntax as sidenotes
+  margin_sidenotes(path, caption, label, width, offset)
+}
+
+#' @keywords internal
+margin_marginnote <- function(path, caption, width, offset) {
+  graphic <- sprintf("\\includegraphics[width=%s]{%s}", width, path)
+
+  if (!is.null(caption)) {
+    content <- sprintf("%s\\\\\\small %s", graphic, caption)
+  } else {
+    content <- graphic
+  }
+
+  if (offset != "0pt") {
+    sprintf("\\marginnote{%s}[%s]", content, offset)
+  } else {
+    sprintf("\\marginnote{%s}", content)
+  }
+}
+
+#' Get required LaTeX packages for margin methods
+#'
+#' @description Returns the LaTeX package requirements for each margin
+#'   placement method.
+#'
+#' @param method The margin method: "sidenotes", "marginpar", "tufte",
+#'   or "marginnote".
+#'
+#' @return Character string with the required \\usepackage command(s),
+#'   or NULL if no packages needed.
+#'
+#' @examples
+#' t2f_margin_packages("sidenotes")
+#'
+#' @export
+t2f_margin_packages <- function(method = c("sidenotes", "marginpar",
+                                            "tufte", "marginnote")) {
+  method <- match.arg(method)
+
+  switch(method,
+    sidenotes = "\\usepackage{sidenotes}",
+    marginpar = NULL,
+    tufte = NULL,  # Built into tufte document classes
+    marginnote = "\\usepackage{marginnote}"
+  )
+}
+
 # Helper Functions ----
 
 #' Resolve PDF path for inclusion
@@ -374,11 +528,11 @@ t2f_ref <- function(label, type = c("ref", "autoref", "pageref", "nameref"),
 #' @return Resolved path with _cropped.pdf
 #' @keywords internal
 resolve_pdf_path <- function(path) {
-  # Remove .pdf extension if present
+ # Remove .pdf extension if present
   path <- sub("\\.pdf$", "", path)
 
   # Add _cropped if not already there
- if (!grepl("_cropped$", path)) {
+  if (!grepl("_cropped$", path)) {
     path <- paste0(path, "_cropped")
   }
 
