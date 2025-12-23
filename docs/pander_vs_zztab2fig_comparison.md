@@ -145,7 +145,7 @@ geometry, fonts, longtable).
 | Theme | Row Shading | Font | Target Use |
 |-------|-------------|------|------------|
 | Default | blue!10 | Serif | General purpose |
-| NEJM | None | Helvetica | Medical journals |
+| NEJM | yellow!8 | Helvetica | Medical journals |
 | APA | None | Times | Psychology/Social sciences |
 | Nature | gray!8 | Helvetica | Scientific journals |
 | Minimal | gray!5 | Serif | Clean, simple output |

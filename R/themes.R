@@ -240,13 +240,13 @@ t2f_theme_nature <- function() {
 #' NEJM theme
 #'
 #' @description Theme following New England Journal of Medicine table styling.
-#'   Characterized by clean design with no row shading, sans-serif font
+#'   Characterized by light yellow alternating row striping, sans-serif font
 #'   (Helvetica), booktabs horizontal rules, and compact spacing.
 #'
 #' @details NEJM tables are designed for maximum clarity and professional
 #'   appearance in medical publications. Key characteristics:
 #'
-#' - No alternating row colors (clean, minimal design)
+#' - Light yellow alternating row colors
 #' - Sans-serif font (Helvetica/Arial family)
 #' - Booktabs-style horizontal rules (\\toprule, \\midrule, \\bottomrule)
 #' - Compact column spacing (4pt)
@@ -265,9 +265,9 @@ t2f_theme_nature <- function() {
 t2f_theme_nejm <- function() {
   t2f_theme(
     name = "nejm",
-    scolor = "white",
+    scolor = "yellow!8",
     header_bold = TRUE,
-    header_color = NULL,
+    header_color = "yellow!15",
     font_size = "footnotesize",
     document_class = "article",
     extra_packages = list(
@@ -279,7 +279,7 @@ t2f_theme_nejm <- function() {
       "\\renewcommand{\\arraystretch}{1.15}"
     ),
     booktabs = TRUE,
-    striped = FALSE
+    striped = TRUE
   )
 }
 
