@@ -2,603 +2,693 @@
 
 ## Abstract
 
-This document presents a comprehensive architectural analysis of the `zztab2fig` R package, examining its design patterns, component interactions, data flow, and system integration points. The architecture follows a pipeline-based design with clear separation of concerns between data processing, LaTeX generation, and system integration layers.
+This document presents a comprehensive architectural analysis of the
+`zztab2fig` R package (v0.2.0), examining its design patterns, component
+interactions, data flow, and system integration points. The architecture
+implements S3 generic dispatch with a pipeline-based processing model,
+theme system, caching layer, and multiple output format support.
 
 ## System Architecture
 
 ### Architectural Pattern
 
-The `zztab2fig` package implements a **Pipeline Architecture** with **Layered Components**, combining the benefits of sequential data transformation with modular component design. This hybrid approach enables:
+The `zztab2fig` package implements a **Pipeline Architecture** with
+**S3 Dispatch** and **Layered Components**:
 
-- Sequential processing stages with clear data transformation points
-- Modular components that can be tested and maintained independently
-- Error isolation between processing stages
-- Extensible design for future enhancements
+- S3 generic dispatch for type-specific table generation
+- Sequential processing stages with clear transformation points
+- Theme system for consistent styling across tables
+- Caching layer for performance optimization
+- Modular components for independent testing and maintenance
 
 ### Component Hierarchy
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    User Interface Layer                     │
-├─────────────────────────────────────────────────────────────┤
-│                  Primary Interface (t2f)                   │
-├─────────────────────────────────────────────────────────────┤
-│               Data Processing Layer                         │
-│  ┌───────────────┐ ┌──────────────┐ ┌─────────────────────┐ │
-│  │ Validation    │ │ Sanitization │ │ LaTeX Generation    │ │
-│  │ Components    │ │ Components   │ │ Components          │ │
-│  └───────────────┘ └──────────────┘ └─────────────────────┘ │
-├─────────────────────────────────────────────────────────────┤
-│                System Integration Layer                     │
-│  ┌───────────────┐ ┌──────────────┐ ┌─────────────────────┐ │
-│  │ File System   │ │ LaTeX Engine │ │ PDF Processing      │ │
-│  │ Management    │ │ Interface    │ │ Tools               │ │
-│  └───────────────┘ └──────────────┘ └─────────────────────┘ │
-├─────────────────────────────────────────────────────────────┤
-│                   External Dependencies                     │
-│  ┌───────────────┐ ┌──────────────┐ ┌─────────────────────┐ │
-│  │ R Environment │ │ kableExtra   │ │ LaTeX Distribution  │ │
-│  │ & Base System │ │ Package      │ │ (pdflatex/pdfcrop)  │ │
-│  └───────────────┘ └──────────────┘ └─────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    User Interface Layer                          │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────┐ │
+│  │ t2f()       │  │ t2f_inline()│  │ t2f_batch() │  │t2f_reg- │ │
+│  │ S3 Generic  │  │ R Markdown  │  │ Batch Proc  │  │ression()│ │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────┘ │
+├─────────────────────────────────────────────────────────────────┤
+│                    S3 Dispatch Layer                             │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ t2f.lm │ t2f.glm │ t2f.coxph │ t2f.data.frame │ ...     │   │
+│  └──────────────────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────────────────┤
+│                    Theme System Layer                            │
+│  ┌───────────────┐  ┌──────────────┐  ┌───────────────────────┐ │
+│  │ Theme Objects │  │ Theme        │  │ Theme                 │ │
+│  │ (t2f_theme)   │  │ Registry     │  │ Resolution            │ │
+│  └───────────────┘  └──────────────┘  └───────────────────────┘ │
+├─────────────────────────────────────────────────────────────────┤
+│                    Processing Layer                              │
+│  ┌───────────────┐  ┌──────────────┐  ┌───────────────────────┐ │
+│  │ Validation    │  │ Sanitization │  │ LaTeX Generation      │ │
+│  │ Components    │  │ Components   │  │ Components            │ │
+│  └───────────────┘  └──────────────┘  └───────────────────────┘ │
+├─────────────────────────────────────────────────────────────────┤
+│                    System Integration Layer                      │
+│  ┌───────────────┐  ┌──────────────┐  ┌───────────────────────┐ │
+│  │ File System   │  │ LaTeX Engine │  │ Output Format         │ │
+│  │ Management    │  │ Interface    │  │ Converters            │ │
+│  └───────────────┘  └──────────────┘  └───────────────────────┘ │
+├─────────────────────────────────────────────────────────────────┤
+│                    Caching Layer                                 │
+│  ┌───────────────┐  ┌──────────────┐  ┌───────────────────────┐ │
+│  │ Hash          │  │ Cache        │  │ Cache                 │ │
+│  │ Computation   │  │ Storage      │  │ Retrieval             │ │
+│  └───────────────┘  └──────────────┘  └───────────────────────┘ │
+├─────────────────────────────────────────────────────────────────┤
+│                    External Dependencies                         │
+│  ┌───────────────┐  ┌──────────────┐  ┌───────────────────────┐ │
+│  │ R Environment │  │ kableExtra   │  │ LaTeX Distribution    │ │
+│  │ broom/stats   │  │ Package      │  │ (pdflatex/pdfcrop)    │ │
+│  └───────────────┘  └──────────────┘  └───────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## S3 Dispatch Architecture
+
+### Generic Function Design
+
+The `t2f()` function implements S3 method dispatch:
+
+```r
+t2f <- function(x, ...) UseMethod("t2f")
+```
+
+### Method Resolution
+
+```
+Input Object
+    │
+    ▼
+┌─────────────────────────────────────┐
+│ Class Detection                      │
+│ class(x) = c("lm", "lmList", ...)   │
+└─────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────┐
+│ Method Lookup                        │
+│ 1. t2f.lm() - Exact match           │
+│ 2. t2f.lmList() - Parent class      │
+│ 3. t2f.default() - Fallback         │
+└─────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────┐
+│ Method Execution                     │
+│ - Object-specific extraction        │
+│ - Common pipeline invocation        │
+└─────────────────────────────────────┘
+```
+
+### Method Categories
+
+```
+S3 Methods:
+├── Base R Types
+│   ├── t2f.data.frame()  → Direct table conversion
+│   ├── t2f.matrix()      → Convert to data.frame first
+│   └── t2f.table()       → Contingency table formatting
+│
+├── Statistical Models
+│   ├── t2f.lm()          → Coefficient extraction via broom
+│   ├── t2f.glm()         → With exponentiate option
+│   ├── t2f.anova()       → ANOVA table formatting
+│   ├── t2f.aov()         → AOV summary
+│   └── t2f.htest()       → Hypothesis test results
+│
+├── Survival Models
+│   ├── t2f.coxph()       → Hazard ratios
+│   ├── t2f.survreg()     → Parametric survival
+│   ├── t2f.survfit()     → Survival curves summary
+│   └── t2f.survdiff()    → Log-rank test
+│
+├── Mixed Effects Models
+│   ├── t2f.lmerMod()     → lme4 linear mixed
+│   ├── t2f.glmerMod()    → lme4 generalized mixed
+│   └── t2f.lme()         → nlme mixed effects
+│
+└── Other Models
+    ├── t2f.nls()         → Nonlinear least squares
+    ├── t2f.Arima()       → Time series
+    ├── t2f.polr()        → Ordinal regression
+    ├── t2f.multinom()    → Multinomial regression
+    ├── t2f.prcomp()      → PCA results
+    └── t2f.kmeans()      → Clustering results
 ```
 
 ## Data Flow Architecture
 
 ### Primary Processing Pipeline
 
-The package implements a five-stage data transformation pipeline:
-
 ```
-Input Data Frame
-       ↓
-[1] Validation & Preprocessing
-       ↓
-[2] Data Sanitization
-       ↓
-[3] LaTeX Table Generation
-       ↓
-[4] PDF Compilation
-       ↓
-[5] PDF Cropping & Finalization
-       ↓
-Output: {.tex, .pdf, _cropped.pdf}
-```
-
-### Detailed Data Flow
-
-#### Stage 1: Validation & Preprocessing
-```
-User Input → Input Validation → Directory Management → Configuration Setup
-    ↓              ↓                     ↓                    ↓
-df, params → Type Checking → Create/Verify Dirs → Sanitize Filenames
-    ↓              ↓                     ↓                    ↓
-Validated  → Error Handling → File Permissions → Ready for Processing
-```
-
-#### Stage 2: Data Sanitization
-```
-Raw Data Frame → Column Name Processing → Cell Content Processing → Clean Data
-      ↓                   ↓                        ↓                   ↓
-Original Names → sanitize_column_names() → sanitize_table_cells() → LaTeX-Safe Data
-      ↓                   ↓                        ↓                   ↓
-Special Chars → R-Compatible Names → Escaped Characters → Ready for LaTeX
-```
-
-#### Stage 3: LaTeX Generation
-```
-Clean Data → Template Generation → Table Creation → Document Assembly
-    ↓              ↓                     ↓               ↓
-Parameters → create_latex_template() → kableExtra → Complete .tex File
-    ↓              ↓                     ↓               ↓
-Packages → Document Class Setup → Styled Table → Written to Disk
+Input Object
+    │
+    ▼
+[1] S3 Dispatch
+    │
+    ▼
+[2] Object Tidying (broom/custom)
+    │
+    ▼
+[3] Theme Resolution
+    │
+    ▼
+[4] Cache Check
+    │    │
+    │    └── Cache Hit → Return cached result
+    │
+    ▼
+[5] Data Sanitization
+    │
+    ▼
+[6] LaTeX Generation
+    │
+    ▼
+[7] PDF Compilation
+    │
+    ▼
+[8] PDF Cropping
+    │
+    ▼
+[9] Format Conversion (optional)
+    │
+    ▼
+[10] Cache Storage
+    │
+    ▼
+Output: {.tex, .pdf, _cropped.pdf, .png, .svg}
 ```
 
-#### Stage 4: PDF Compilation
+### Stage Details
+
+#### Stage 1: S3 Dispatch
+
 ```
-LaTeX Source → Compilation Setup → pdflatex Execution → Error Handling
-     ↓              ↓                      ↓                ↓
-.tex File → Working Directory → System Command → Log Analysis
-     ↓              ↓                      ↓                ↓
-Ready → compile_latex() → PDF Generation → Success/Failure
+User Input → Class Detection → Method Selection → Parameter Merging
+    ↓             ↓                  ↓                  ↓
+Object x   → class(x)        → t2f.{class}()   → ... arguments
 ```
 
-#### Stage 5: PDF Processing
+#### Stage 2: Object Tidying
+
 ```
-Compiled PDF → Cropping Setup → pdfcrop Execution → Final Output
-     ↓              ↓                 ↓                ↓
-Full PDF → crop_pdf() → System Command → Cropped PDF
-     ↓              ↓                 ↓                ↓
-Source → Margin Config → File Generation → User Result
+Model Object → Tidying Function → Formatted Data Frame
+    ↓                ↓                    ↓
+lm(y ~ x)    → broom::tidy()     → term|estimate|std.error|...
+    ↓                ↓                    ↓
+coxph(...)   → broom::tidy()     → term|estimate|conf.low|conf.high|...
+```
+
+#### Stage 3: Theme Resolution
+
+```
+┌─────────────────────────────────────────────┐
+│ Priority Order:                              │
+│ 1. Explicit theme= parameter                 │
+│ 2. Global theme (t2f_theme_get())           │
+│ 3. Built-in defaults                         │
+└─────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────┐
+│ Parameter Extraction:                        │
+│ - scolor from theme                          │
+│ - extra_packages from theme                  │
+│ - font_size, booktabs, striped               │
+└─────────────────────────────────────────────┘
+```
+
+#### Stage 4: Cache Check
+
+```
+Input + Parameters → Hash Computation → Cache Lookup → Hit/Miss
+        ↓                   ↓               ↓            ↓
+digest(list(x,     → SHA256 hash     → cache_dir    → Return/
+       theme,                                           Continue
+       ...))
+```
+
+## Theme System Architecture
+
+### Theme Object Structure
+
+```r
+t2f_theme <- list(
+  name = "theme_name",           # Identifier
+  scolor = "blue!10",            # Row shading color
+  header_bold = TRUE,            # Bold headers
+  font_size = "small",           # LaTeX font size
+  booktabs = TRUE,               # Use booktabs rules
+  striped = TRUE,                # Alternating colors
+  extra_packages = list(...)     # Additional LaTeX
+)
+```
+
+### Theme Registry
+
+```
+Package Environment (.t2f_env):
+├── current_theme     → Currently active global theme
+├── theme_registry    → Named list of registered themes
+│   ├── "minimal"     → t2f_theme_minimal()
+│   ├── "apa"         → t2f_theme_apa()
+│   ├── "nature"      → t2f_theme_nature()
+│   ├── "nejm"        → t2f_theme_nejm()
+│   ├── "lancet"      → t2f_theme_lancet()
+│   └── {user themes} → Custom registered themes
+└── cache_dir         → Cache directory location
+```
+
+### Theme Application Flow
+
+```
+t2f() Call
+    │
+    ▼
+┌─────────────────────────────────────┐
+│ Resolve Theme                        │
+│ theme = theme %||% t2f_theme_get()  │
+└─────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────┐
+│ Extract Parameters                   │
+│ if (is.character(theme))            │
+│   theme = get_theme(theme)          │
+└─────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────┐
+│ Merge with Explicit Parameters       │
+│ scolor = scolor %||% theme$scolor   │
+│ extra = c(extra, theme$extra)       │
+└─────────────────────────────────────┘
+```
+
+## Caching Architecture
+
+### Cache Key Computation
+
+```r
+compute_cache_key <- function(x, params) {
+  digest::digest(
+    list(
+      data = x,
+      theme = params$theme,
+      scolor = params$scolor,
+      align = params$align,
+      caption = params$caption,
+      ...
+    ),
+    algo = "sha256"
+  )
+}
+```
+
+### Cache Storage Structure
+
+```
+~/.zztab2fig_cache/
+├── a1b2c3d4.pdf           # Full PDF
+├── a1b2c3d4_cropped.pdf   # Cropped PDF
+├── a1b2c3d4.meta          # Metadata (JSON)
+├── e5f6g7h8.pdf
+├── e5f6g7h8_cropped.pdf
+└── e5f6g7h8.meta
+```
+
+### Cache Flow
+
+```
+                    ┌─────────────────┐
+Input + Params ────→│ Compute Hash    │
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │ Cache Lookup    │
+                    └────────┬────────┘
+                             │
+            ┌────────────────┴────────────────┐
+            │                                 │
+            ▼                                 ▼
+    ┌───────────────┐                ┌───────────────┐
+    │ Cache Hit     │                │ Cache Miss    │
+    └───────┬───────┘                └───────┬───────┘
+            │                                │
+            ▼                                ▼
+    ┌───────────────┐                ┌───────────────┐
+    │ Return Cached │                │ Generate New  │
+    │ PDF Path      │                │ → Store Cache │
+    └───────────────┘                └───────────────┘
 ```
 
 ## Component Design
 
 ### Core Components
 
-#### 1. Primary Interface Component (`t2f`)
+#### 1. S3 Generic Interface
 
-**Responsibilities:**
-- User interface abstraction
-- Parameter validation and preprocessing
-- Pipeline orchestration
-- Error aggregation and reporting
+**Pattern:** Template Method + Strategy
 
-**Design Pattern:** Facade Pattern
-- Provides simplified interface to complex subsystem
-- Coordinates multiple internal components
-- Handles cross-cutting concerns (logging, error handling)
-
-**Architecture:**
 ```r
-t2f() {
-    // Input validation layer
-    validate_inputs(df, parameters)
+t2f.lm <- function(x, include, conf.int, stars, ...) {
+  # Strategy: Model-specific extraction
+  tidy_data <- t2f_tidy(x, conf.int = conf.int, ...)
 
-    // Resource management
-    setup_environment(sub_dir, filename)
+  # Template: Common formatting
+  if (stars) {
+    tidy_data <- add_significance_stars(tidy_data)
+  }
 
-    // Pipeline execution
-    sanitized_data = sanitize_data(df)
-    tex_file = generate_latex(sanitized_data, styling)
-    pdf_file = compile_latex(tex_file)
-    final_output = crop_pdf(pdf_file)
-
-    // Cleanup and return
-    return(final_output)
+  # Delegation: Common processing
+  t2f.data.frame(tidy_data, ...)
 }
 ```
 
-#### 2. Data Sanitization Components
+#### 2. Theme System Component
 
-**Design Pattern:** Strategy Pattern
-- Interchangeable sanitization algorithms
-- Consistent interface across different data types
-- Extensible for additional sanitization requirements
+**Pattern:** Registry + Factory
 
-**Component Structure:**
 ```r
-// Abstract sanitization interface
-sanitize_data(data) {
-    columns = sanitize_column_names(names(data))
-    cells = apply(data, sanitize_table_cells)
-    return(sanitized_dataframe)
+# Registry
+.t2f_env$theme_registry <- list()
+
+# Factory
+t2f_theme <- function(name, scolor, ...) {
+  structure(
+    list(name = name, scolor = scolor, ...),
+    class = "t2f_theme"
+  )
 }
 
-// Specific sanitization strategies
-sanitize_column_names(names) -> LaTeX-safe column identifiers
-sanitize_table_cells(cells) -> Escaped special characters
-sanitize_filename(name) -> File-system safe names
-```
-
-#### 3. LaTeX Generation Components
-
-**Design Pattern:** Template Method Pattern
-- Defines skeleton of LaTeX document creation
-- Allows customization of specific steps
-- Ensures consistent document structure
-
-**Template Structure:**
-```r
-create_latex_table() {
-    // Template method implementation
-    template = create_latex_template(document_class, packages)
-    table_content = generate_table_content(data, styling)
-    document = assemble_document(template, table_content)
-    write_document(document, output_file)
-}
-
-// Customizable components
-create_latex_template() -> Document preamble generation
-generate_table_content() -> kableExtra integration
-assemble_document() -> Template + content combination
-```
-
-#### 4. System Integration Components
-
-**Design Pattern:** Adapter Pattern
-- Bridges R environment with external LaTeX tools
-- Provides consistent interface regardless of system differences
-- Handles platform-specific variations
-
-**Integration Architecture:**
-```r
-// File system adapter
-FileSystemAdapter {
-    create_directory(path)
-    verify_permissions(path)
-    write_file(content, path)
-}
-
-// LaTeX engine adapter
-LaTeXEngineAdapter {
-    compile(tex_file) -> system("pdflatex")
-    parse_log(log_file) -> error extraction
-    handle_errors(exit_code, log) -> user feedback
-}
-
-// PDF processing adapter
-PDFProcessorAdapter {
-    crop(input, output) -> system("pdfcrop")
-    verify_output(file) -> existence check
+# Registration
+t2f_theme_register <- function(theme) {
+  .t2f_env$theme_registry[[theme$name]] <- theme
 }
 ```
 
-### Helper Function Architecture
+#### 3. Inline Table Component
 
-#### LaTeX Package Helpers
-
-**Design Pattern:** Builder Pattern
-- Constructs complex LaTeX package specifications
-- Provides fluent interface for configuration
-- Validates parameter combinations
+**Pattern:** Adapter
 
 ```r
-// Builder implementation
-geometry() {
-    builder = GeometryBuilder()
-    if (margin) builder.add_margin(margin)
-    if (paper) builder.add_paper(paper)
-    if (landscape) builder.add_landscape()
-    return builder.build_package_string()
-}
+t2f_inline <- function(x, width, caption, frame, ...) {
+  # Generate table via standard pipeline
+  pdf_path <- t2f(x, ...)
 
-babel() {
-    return BabelBuilder(language).build_package_string()
+  # Adapt for R Markdown context
+  if (knitr_in_progress()) {
+    latex_code <- build_inline_latex(pdf_path, width, caption, frame)
+    knitr::asis_output(latex_code)
+  } else {
+    pdf_path
+  }
 }
+```
 
-fontspec() {
-    builder = FontspecBuilder()
-    if (main_font) builder.add_main_font(main_font)
-    if (sans_font) builder.add_sans_font(sans_font)
-    return builder.build_package_array()
+#### 4. Batch Processing Component
+
+**Pattern:** Iterator + Decorator
+
+```r
+t2f_batch <- function(data_list, theme, sub_dir, ...) {
+  # Iterator over named list
+  paths <- lapply(names(data_list), function(name) {
+    # Decorator: Apply common settings
+    t2f(
+      data_list[[name]],
+      filename = name,
+      theme = theme,
+      sub_dir = sub_dir,
+      ...
+    )
+  })
+  names(paths) <- names(data_list)
+  paths
 }
+```
+
+### Formatting System
+
+```
+Formatting Pipeline:
+├── t2f_siunitx()       → Decimal alignment specification
+├── t2f_decimal()       → Convenience wrapper
+├── t2f_footnote()      → Table footnotes
+├── t2f_header_above()  → Spanning column headers
+├── t2f_collapse_rows() → Row grouping
+├── t2f_bold_col()      → Column bold formatting
+├── t2f_italic_col()    → Column italic formatting
+└── t2f_highlight()     → Conditional cell highlighting
 ```
 
 ## Error Handling Architecture
 
-### Error Classification System
+### Error Classification
 
 ```
-Error Categories:
+Error Hierarchy:
 ├── Input Validation Errors
-│   ├── Type Validation Failures
-│   ├── Range/Constraint Violations
-│   └── Null/Empty Value Errors
-├── System Integration Errors
-│   ├── File System Errors
-│   ├── Permission Errors
-│   └── External Tool Failures
+│   ├── Invalid object class
+│   ├── Missing required parameters
+│   └── Invalid parameter values
+│
+├── Theme Errors
+│   ├── Unknown theme name
+│   ├── Invalid theme structure
+│   └── Theme registration conflicts
+│
 ├── Processing Errors
-│   ├── LaTeX Compilation Errors
-│   ├── PDF Generation Failures
-│   └── Data Sanitization Issues
-└── Resource Errors
-    ├── Memory Limitations
-    ├── Disk Space Issues
-    └── Dependency Availability
+│   ├── Model tidying failures
+│   ├── Data sanitization issues
+│   └── Formatting conflicts
+│
+├── System Errors
+│   ├── LaTeX compilation failures
+│   ├── PDF cropping errors
+│   ├── Format conversion failures
+│   └── File system errors
+│
+└── Cache Errors
+    ├── Cache corruption
+    ├── Storage failures
+    └── Hash computation errors
 ```
 
-### Error Handling Patterns
+### Error Handling Strategy
 
-#### 1. Fail-Fast Validation
 ```r
-// Early validation prevents cascading failures
-validate_inputs() {
-    if (!is.data.frame(df))
-        stop("Input validation failed", call. = FALSE)
-    if (nrow(df) == 0)
-        stop("Empty dataframe", call. = FALSE)
-    // Additional validations...
+# Tier 1: Immediate validation
+if (!inherits(x, supported_classes)) {
+  stop("Unsupported object class", call. = FALSE)
 }
-```
 
-#### 2. Graceful Degradation
-```r
-// System attempts recovery before failure
-compile_latex() {
-    result = system(latex_command)
-    if (result != 0) {
-        error_details = parse_latex_log()
-        stop("Compilation failed: ", error_details, call. = FALSE)
-    }
-}
-```
-
-#### 3. Resource Cleanup
-```r
-// Ensures cleanup regardless of execution path
-compile_latex() {
-    old_wd = setwd(sub_dir)
-    on.exit(setwd(old_wd))  // Guaranteed cleanup
-    // Processing logic...
-}
-```
-
-## Extensibility Architecture
-
-### Plugin Points
-
-The architecture provides several extension points for future enhancement:
-
-#### 1. LaTeX Package System
-```r
-// Current: Fixed set of helper functions
-geometry(), babel(), fontspec()
-
-// Extension point: Plugin architecture
-register_latex_helper("custom_package", custom_package_builder)
-```
-
-#### 2. Output Format Extensions
-```r
-// Current: PDF-only output
-crop_pdf() -> Single format
-
-// Extension point: Multiple output formats
-process_output(format = c("pdf", "png", "svg"))
-```
-
-#### 3. Styling System Extensions
-```r
-// Current: Basic row coloring
-scolor parameter
-
-// Extension point: Complex styling
-styling_config = list(
-    row_colors = "alternating",
-    header_style = "bold",
-    border_style = "booktabs"
+# Tier 2: Graceful degradation
+tryCatch(
+  broom::tidy(x),
+  error = function(e) {
+    warning("broom::tidy failed, using fallback")
+    fallback_tidy(x)
+  }
 )
-```
 
-### Interface Stability
-
-#### Stable Interfaces (Guaranteed Compatibility)
-- `t2f()` primary function signature
-- Helper function basic signatures (`geometry()`, `babel()`, `fontspec()`)
-- Return value format (cropped PDF path)
-
-#### Extension Interfaces (Subject to Evolution)
-- Internal helper functions
-- Error message formats
-- System integration methods
-
-## Performance Architecture
-
-### Performance Characteristics
-
-#### Memory Usage Patterns
-```
-Memory Allocation:
-├── Input Data Frame: O(n×m) where n=rows, m=columns
-├── Sanitized Data: O(n×m) - Temporary duplication
-├── LaTeX Content: O(n×m) - String representation
-└── System Buffers: O(1) - Fixed overhead
-```
-
-#### Processing Time Complexity
-```
-Time Complexity Analysis:
-├── Validation: O(1) - Constant time checks
-├── Sanitization: O(n×m) - Linear in data size
-├── LaTeX Generation: O(n×m) - Table creation overhead
-├── PDF Compilation: O(n×m log(n×m)) - LaTeX typesetting
-└── PDF Cropping: O(1) - Fixed processing time
-```
-
-### Optimization Strategies
-
-#### 1. Lazy Evaluation
-```r
-// Package specifications built only when needed
-create_latex_template() {
-    processed_packages = lapply(extra_packages, function(pkg) {
-        if (is.function(pkg)) pkg() else pkg
-    })
-}
-```
-
-#### 2. Streaming Operations
-```r
-// Large tables processed without full memory loading
-write_latex_table() {
-    writeLines(header, con)
-    for (chunk in data_chunks) {
-        writeLines(process_chunk(chunk), con)
-    }
-    writeLines(footer, con)
-}
-```
-
-#### 3. Caching Opportunities
-```r
-// Future enhancement: Template caching
-get_template(document_class, packages) {
-    cache_key = hash(document_class, packages)
-    if (cache_exists(cache_key)) {
-        return(get_cached_template(cache_key))
-    }
-    template = create_latex_template(document_class, packages)
-    cache_template(cache_key, template)
-    return(template)
-}
+# Tier 3: Resource cleanup
+on.exit(setwd(old_wd), add = TRUE)
 ```
 
 ## Integration Architecture
 
-### External System Dependencies
+### R Markdown Integration
 
-#### R Ecosystem Integration
 ```
-R Environment:
-├── Base R: Core language features
-├── kableExtra: Table generation
-├── glue: String templating (minimal usage)
-└── Suggested: dplyr, stringr (user workflows)
-```
-
-#### LaTeX Ecosystem Integration
-```
-LaTeX Distribution:
-├── pdflatex: Core compilation engine
-├── pdfcrop: PDF processing utility
-├── Standard Packages: booktabs, xcolor, geometry
-└── Optional Packages: babel, fontspec, microtype
-```
-
-#### File System Integration
-```
-File System Operations:
-├── Directory Creation: Recursive path creation
-├── File Writing: UTF-8 encoded LaTeX source
-├── Permission Management: Read/write validation
-└── Cleanup: Temporary file management
-```
-
-### Cross-Platform Considerations
-
-#### Platform-Specific Adaptations
-```
-Platform Differences:
-├── Windows: Path separators, command execution
-├── macOS: LaTeX distribution locations
-├── Linux: Package manager variations
-└── Containerized: Dependency availability
+R Markdown Document
+        │
+        ▼
+┌─────────────────────────────────────┐
+│ Code Chunk                           │
+│ ```{r, results='asis'}              │
+│ t2f_inline(model, width = "3in")    │
+│ ```                                  │
+└─────────────────────────────────────┘
+        │
+        ▼
+┌─────────────────────────────────────┐
+│ knitr Processing                     │
+│ - Detect latex output               │
+│ - Generate PDF                       │
+│ - Build \includegraphics            │
+└─────────────────────────────────────┘
+        │
+        ▼
+┌─────────────────────────────────────┐
+│ LaTeX Document                       │
+│ \begin{center}                      │
+│ \captionof{table}{...}              │
+│ \includegraphics[width=3in]{...}    │
+│ \end{center}                        │
+└─────────────────────────────────────┘
 ```
 
-#### Compatibility Strategies
+### knitr Engine Integration
+
+```r
+# Engine registration in .onLoad()
+knitr::knit_engines$set(t2f = t2f_engine)
+
+# Engine function
+t2f_engine <- function(options) {
+  code <- paste(options$code, collapse = "\n")
+  result <- eval(parse(text = code))
+  t2f_inline(
+    result,
+    width = options$t2f.width,
+    caption = options$t2f.caption,
+    theme = options$t2f.theme
+  )
+}
 ```
-Compatibility Layer:
-├── File path normalization
-├── Command execution standardization
-├── Error message harmonization
-└── Dependency detection logic
+
+### Batch Processing Integration
+
+```
+Data Sources                      Output
+    │                                │
+    ├── data_list$table1 ──────────► tables/table1_cropped.pdf
+    ├── data_list$table2 ──────────► tables/table2_cropped.pdf
+    └── data_list$table3 ──────────► tables/table3_cropped.pdf
+                                     │
+                                     └── All with consistent theme
+```
+
+## Performance Architecture
+
+### Complexity Analysis
+
+| Operation | Time | Space |
+|-----------|------|-------|
+| S3 dispatch | O(1) | O(1) |
+| Model tidying | O(n) | O(n) |
+| Theme resolution | O(1) | O(1) |
+| Cache lookup | O(1) | O(1) |
+| Data sanitization | O(n*m) | O(n*m) |
+| LaTeX generation | O(n*m) | O(n*m) |
+| PDF compilation | O(n*m) | O(1) |
+| PDF cropping | O(1) | O(1) |
+
+### Optimization Strategies
+
+#### Caching
+
+```r
+# Skip expensive operations on cache hit
+if (cache_enabled && cache_exists(hash)) {
+  return(get_cached_path(hash))
+}
+```
+
+#### Batch Amortization
+
+```r
+# Amortize LaTeX startup cost across multiple tables
+t2f_batch(data_list, ...)  # Single LaTeX format setup
+```
+
+#### Lazy Theme Loading
+
+```r
+# Themes loaded only when needed
+get_theme <- function(name) {
+  if (!exists(name, envir = .t2f_env$theme_registry)) {
+    load_builtin_theme(name)
+  }
+  .t2f_env$theme_registry[[name]]
+}
 ```
 
 ## Security Architecture
 
-### Security Boundaries
+### Input Validation
 
-#### Input Sanitization Layer
 ```
-Security Controls:
-├── LaTeX Injection Prevention: Character escaping
-├── File Path Validation: Directory traversal protection
-├── Command Injection Prevention: Parameter validation
-└── Resource Limits: Memory and processing constraints
-```
-
-#### System Interaction Security
-```
-System Security:
-├── Sandboxed Execution: R system() interface
-├── Limited Privileges: No elevation required
-├── Isolated Processing: Temporary directory usage
-└── Clean Termination: Resource cleanup guarantees
+Validation Layers:
+├── Class validation     → Supported S3 classes only
+├── Parameter validation → Type and range checking
+├── Path validation      → Directory traversal prevention
+├── LaTeX sanitization   → Special character escaping
+└── Command validation   → Shell injection prevention
 ```
 
 ### Trust Boundaries
 
 ```
 Trust Levels:
-├── User Input: Untrusted - Full validation required
-├── R Environment: Trusted - Basic validation
-├── System Tools: Semi-trusted - Output validation
-└── Generated Files: Trusted - Internal creation
+├── User Input          → Untrusted (full validation)
+├── Model Objects       → Semi-trusted (class verification)
+├── Theme Objects       → Trusted (internal or registered)
+├── Generated LaTeX     → Trusted (internal generation)
+└── System Commands     → Controlled (fixed command set)
 ```
 
-## Testing Architecture
+## Extensibility Architecture
 
-### Test Strategy Layers
+### S3 Extension Points
 
-#### Unit Testing Layer
-```
-Unit Test Coverage:
-├── Individual Function Tests: Parameter validation
-├── Component Integration Tests: Module interactions
-├── Error Condition Tests: Exception handling
-└── Edge Case Tests: Boundary conditions
-```
-
-#### System Integration Testing
-```
-Integration Test Coverage:
-├── LaTeX Compilation Tests: End-to-end workflow
-├── File System Tests: Directory and file operations
-├── Cross-Platform Tests: Multi-OS validation
-└── Performance Tests: Resource usage validation
-```
-
-### Test Architecture Patterns
-
-#### Test Isolation
 ```r
-// Each test manages its own environment
-test_that("description", {
-    dir.create("test_output", showWarnings = FALSE)
-    on.exit(unlink("test_output", recursive = TRUE))
-    // Test logic
-})
-```
+# User-defined S3 method
+t2f.my_custom_model <- function(x, ...) {
+  # Extract data from custom model
+  df <- extract_my_model_data(x)
 
-#### Dependency Mocking
-```r
-// System dependency availability checks
-skip_if_not(system("pdflatex -version") == 0, "pdflatex not available")
-skip_if_not(system("pdfcrop -version") == 0, "pdfcrop not available")
-```
-
-## Future Architecture Considerations
-
-### Scalability Enhancements
-
-#### Parallel Processing Support
-```r
-// Future: Multi-core table processing
-process_tables_parallel <- function(table_list) {
-    mclapply(table_list, t2f, mc.cores = detectCores())
+  # Delegate to data.frame method
+  t2f.data.frame(df, ...)
 }
 ```
 
-#### Streaming Large Datasets
+### Theme Extension Points
+
 ```r
-// Future: Memory-efficient large table processing
-stream_large_table <- function(data_source, chunk_size = 1000) {
-    while (has_more_data(data_source)) {
-        chunk = read_chunk(data_source, chunk_size)
-        process_chunk(chunk)
-    }
+# Custom theme registration
+my_theme <- t2f_theme(
+  name = "corporate",
+  scolor = "companyblue!10",
+  extra_packages = list(
+    "\\usepackage{corporate-fonts}"
+  )
+)
+t2f_theme_register(my_theme)
+```
+
+### Formatting Extension Points
+
+```r
+# Custom formatting function
+t2f_custom_format <- function(...) {
+  structure(
+    list(...),
+    class = c("t2f_custom_format", "t2f_format")
+  )
 }
-```
-
-### Architectural Evolution
-
-#### Microservice Decomposition
-```
-Potential Service Boundaries:
-├── Data Validation Service
-├── LaTeX Generation Service
-├── PDF Processing Service
-└── File Management Service
-```
-
-#### Plugin Architecture Enhancement
-```r
-// Future: Extensible plugin system
-register_plugin("output_format", "html", html_output_plugin)
-register_plugin("styling", "corporate", corporate_style_plugin)
 ```
 
 ## Conclusion
 
-The `zztab2fig` package architecture demonstrates a well-structured approach to bridging R data processing with LaTeX typesetting systems. The pipeline-based design with layered components provides clear separation of concerns while maintaining simplicity and extensibility. The architecture effectively handles the complexity of system integration while presenting a clean, user-friendly interface.
+The `zztab2fig` v0.2.0 architecture implements a robust, extensible design
+combining S3 method dispatch with a pipeline processing model. Key
+architectural strengths include:
 
-Key architectural strengths include:
-- Clear separation between data processing and system integration
-- Comprehensive error handling with graceful degradation
-- Extensible design that accommodates future enhancements
-- Robust testing architecture ensuring reliability
-- Security-conscious design with appropriate input validation
+- **Polymorphic dispatch**: Support for 20+ object types via S3 generics
+- **Theme system**: Consistent styling with journal-specific presets
+- **Caching layer**: Performance optimization for repeated operations
+- **R Markdown integration**: Seamless inline table generation
+- **Batch processing**: Efficient multi-table workflows
+- **Extensibility**: User-defined S3 methods, themes, and formatters
 
-The architecture positions the package for continued evolution while maintaining backward compatibility and operational reliability.
+The architecture positions the package for continued evolution while
+maintaining backward compatibility and operational reliability.
