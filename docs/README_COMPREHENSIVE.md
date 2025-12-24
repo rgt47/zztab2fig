@@ -2,7 +2,11 @@
 
 ## Abstract
 
-The `zztab2fig` package provides a comprehensive solution for converting R data frames into publication-quality LaTeX tables with automated PDF generation and cropping capabilities. Designed for researchers, data scientists, and analysts who require professional table outputs for academic publications, business reports, and presentations.
+The `zztab2fig` package (v0.2.0) provides a comprehensive solution for
+converting R data frames and statistical model objects into publication-quality
+LaTeX tables with automated PDF generation and cropping capabilities. The
+package features S3 dispatch for 20+ object types, journal-specific themes,
+inline tables for R Markdown, model comparison tables, and batch processing.
 
 ## Table of Contents
 
@@ -10,285 +14,506 @@ The `zztab2fig` package provides a comprehensive solution for converting R data 
 2. [System Requirements](#system-requirements)
 3. [Quick Start](#quick-start)
 4. [Core Features](#core-features)
-5. [API Reference](#api-reference)
-6. [Advanced Usage](#advanced-usage)
-7. [Comparison with Alternatives](#comparison-with-alternatives)
-8. [Performance Considerations](#performance-considerations)
-9. [Troubleshooting](#troubleshooting)
-10. [Contributing](#contributing)
-11. [License](#license)
+5. [S3 Method Dispatch](#s3-method-dispatch)
+6. [Theme System](#theme-system)
+7. [Inline Tables](#inline-tables)
+8. [Model Comparison](#model-comparison)
+9. [Advanced Features](#advanced-features)
+10. [Comparison with Alternatives](#comparison-with-alternatives)
+11. [Performance Considerations](#performance-considerations)
+12. [Troubleshooting](#troubleshooting)
+13. [Contributing](#contributing)
+14. [License](#license)
 
 ## Installation
 
-### From CRAN (Recommended)
-```r
-install.packages("zztab2fig")
-```
+### From GitHub
 
-### Development Version
 ```r
-# Install development version from GitHub
-# install.packages("devtools")
+# Install from GitHub
 devtools::install_github("rgt47/zztab2fig")
 ```
 
 ### Verification
+
 ```r
 library(zztab2fig)
 packageVersion("zztab2fig")
+# [1] '0.2.0'
+
+# Verify LaTeX dependencies
+check_latex_deps()
 ```
 
 ## System Requirements
 
 ### R Environment
-- R version 3.5.0 or higher
-- Required packages: `kableExtra`, `glue`
-- Suggested packages: `dplyr`, `stringr` (for data manipulation)
+
+- **R Version**: >= 4.1.0 (for native pipe operator)
+- **Required Packages**: `kableExtra`, `stats`, `utils`
+- **Suggested Packages**: `broom`, `broom.mixed`, `tinytex`, `digest`
 
 ### LaTeX Distribution
-The package requires a functional LaTeX installation with `pdflatex` and `pdfcrop` utilities:
+
+The package requires a functional LaTeX installation with `pdflatex` and
+`pdfcrop` utilities:
 
 **Ubuntu/Debian:**
+
 ```bash
-sudo apt-get install texlive texlive-extra-utils
+sudo apt-get install texlive texlive-extra-utils texlive-fonts-recommended
 ```
 
 **macOS:**
-Install MacTeX from [https://www.tug.org/mactex/](https://www.tug.org/mactex/)
+
+```bash
+# Via Homebrew
+brew install --cask mactex
+
+# Or install TinyTeX from R
+tinytex::install_tinytex()
+```
 
 **Windows:**
-Install MiKTeX from [https://miktex.org/](https://miktex.org/)
+
+Install MiKTeX from [https://miktex.org/](https://miktex.org/) or TinyTeX:
+
+```r
+tinytex::install_tinytex()
+```
 
 **Verification:**
-```bash
-pdflatex --version
-pdfcrop --version
+
+```r
+check_latex_deps()
+# ✓ pdflatex found
+# ✓ pdfcrop found
 ```
 
 ## Quick Start
 
-### Basic Usage
+### Basic Data Frame Table
+
 ```r
 library(zztab2fig)
 
-# Load sample data
-data(mtcars)
+# Generate table from data frame
+t2f(mtcars[1:6, 1:4], filename = "basic_table")
 
-# Generate LaTeX table and cropped PDF
-result <- t2f(mtcars,
-              filename = "mtcars_table",
-              sub_dir = "output",
-              verbose = TRUE)
-
-# Files generated:
-# - output/mtcars_table.tex (LaTeX source)
-# - output/mtcars_table.pdf (compiled PDF)
-# - output/mtcars_table_cropped.pdf (cropped for inclusion)
+# Output files in ./figures/:
+#   basic_table.tex         (LaTeX source)
+#   basic_table.pdf         (full PDF)
+#   basic_table_cropped.pdf (cropped for inclusion)
 ```
 
-### Advanced Example
+### Statistical Model Table
+
 ```r
-# Professional table with custom formatting
-t2f(iris[1:10, ],
-    filename = "iris_professional",
-    scolor = "blue!12",
-    extra_packages = list(
-      geometry(margin = "5mm", paper = "a4paper"),
-      babel("english")
-    ),
-    document_class = "article",
-    verbose = TRUE)
+# Linear regression coefficients
+model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+t2f(model, filename = "regression")
+
+# Logistic regression with odds ratios
+logit <- glm(am ~ hp + wt, data = mtcars, family = binomial)
+t2f(logit, filename = "logistic", exponentiate = TRUE)
+```
+
+### With Journal Theme
+
+```r
+# Apply NEJM styling
+t2f(mtcars[1:6, 1:4], theme = "nejm", filename = "nejm_table")
 ```
 
 ## Core Features
 
-### 1. Automated Workflow
-- **Input**: R data frame
-- **Processing**: LaTeX table generation, PDF compilation, margin cropping
-- **Output**: Three file formats (.tex, .pdf, .pdf cropped)
+### 1. S3 Generic Dispatch
 
-### 2. Customizable Styling
-- Alternating row colors with configurable intensity
-- Multiple LaTeX document classes support
-- Custom page geometry and margins
-- Font specification for XeLaTeX/LuaLaTeX
+The `t2f()` function automatically detects object types and generates
+appropriate tables:
 
-### 3. Data Sanitization
-- Automatic LaTeX special character escaping
-- Column name standardization
-- File system safe filename generation
-
-### 4. Error Handling
-- Comprehensive input validation
-- LaTeX compilation error reporting with log details
-- System dependency verification
-
-### 5. Multilingual Support
-- Babel package integration for international typography
-- UTF-8 encoding support
-- Custom font selection capabilities
-
-## API Reference
-
-### Primary Function
-
-#### `t2f(df, filename, sub_dir, scolor, verbose, extra_packages, document_class)`
-
-**Parameters:**
-- `df`: Data frame to convert (required)
-- `filename`: Output file base name (default: variable name)
-- `sub_dir`: Output directory (default: "output")
-- `scolor`: Row shading color in LaTeX format (default: "blue!10")
-- `verbose`: Enable progress messages (default: FALSE)
-- `extra_packages`: List of LaTeX package specifications (default: NULL)
-- `document_class`: LaTeX document class (default: "article")
-
-**Returns:** Character string with path to cropped PDF file
-
-### Helper Functions
-
-#### Page Layout Functions
-
-##### `geometry(margin, paper, landscape, ...)`
-Configure page geometry and margins.
-
-**Example:**
 ```r
-geometry(margin = "5mm", paper = "a4paper", landscape = TRUE)
-# Returns: "\\usepackage[margin=5mm,paper=a4paper,landscape]{geometry}"
+# Data frames
+t2f(df)
+
+# Linear models
+t2f(lm_model)
+
+# ANOVA tables
+t2f(aov_result)
+
+# Survival models
+t2f(coxph_model)
 ```
 
-##### `babel(language)`
-Add language support for international typography.
+### 2. Theme System
 
-**Example:**
+Five built-in journal themes plus custom theme support:
+
 ```r
-babel("spanish")
-# Returns: "\\usepackage[spanish]{babel}"
+# Apply theme by name
+t2f(df, theme = "nejm")
+
+# Set session-wide theme
+t2f_theme_set("lancet")
 ```
 
-##### `fontspec(main_font, sans_font, mono_font)`
-Configure custom fonts (requires XeLaTeX/LuaLaTeX).
+### 3. Inline Tables for R Markdown
 
-**Example:**
+Generate tables inline without floats:
+
 ```r
-fontspec(main_font = "Times New Roman", sans_font = "Arial")
-# Returns: c("\\usepackage{fontspec}",
-#           "\\setmainfont{Times New Roman}",
-#           "\\setsansfont{Arial}")
+t2f_inline(model, width = "3in", caption = "Results")
 ```
 
-#### Data Processing Functions
+### 4. Model Comparison Tables
 
-##### `sanitize_column_names(colnames)`
-Convert column names to LaTeX-safe identifiers.
-
-##### `sanitize_table_cells(cells)`
-Escape LaTeX special characters in table content.
-
-##### `sanitize_filename(filename)`
-Generate file system compatible filenames.
-
-### Internal Functions
-
-#### `create_latex_table(df, tex_file, scolor, extra_packages, document_class)`
-Generate LaTeX table with specified styling options.
-
-#### `compile_latex(tex_file, sub_dir)`
-Compile LaTeX source to PDF with error handling.
-
-#### `crop_pdf(input_pdf, output_pdf)`
-Generate cropped PDF with minimal margins.
-
-#### `log_message(msg, verbose)`
-Conditional message output for progress tracking.
-
-## Advanced Usage
-
-### Custom LaTeX Packages
+Side-by-side regression comparison:
 
 ```r
-# Professional academic paper styling
-academic_packages <- list(
-  geometry(margin = "20mm", paper = "letterpaper"),
-  "\\usepackage{microtype}",  # Enhanced typography
-  "\\usepackage{booktabs}",   # Professional table rules
-  "\\usepackage{siunitx}"     # Scientific notation
+t2f_regression(
+  Model1 = m1,
+  Model2 = m2,
+  Model3 = m3,
+  stars = TRUE
+)
+```
+
+### 5. Batch Processing
+
+Process multiple tables with consistent styling:
+
+```r
+t2f_batch(
+  list(table1 = df1, table2 = df2),
+  theme = "apa",
+  sub_dir = "manuscript/tables"
+)
+```
+
+## S3 Method Dispatch
+
+### Supported Object Types
+
+| Category | Classes | Method |
+|----------|---------|--------|
+| **Base R** | data.frame, matrix, table | Direct conversion |
+| **Linear Models** | lm, glm, anova, aov | Coefficient tables |
+| **Tests** | htest | Test statistics |
+| **Survival** | coxph, survreg, survfit, survdiff | Hazard ratios |
+| **Mixed Models** | lmerMod, glmerMod, lme | Fixed/random effects |
+| **Other** | nls, Arima, polr, multinom, prcomp, kmeans | Model-specific |
+
+### Linear Model Options
+
+```r
+model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+
+# Basic coefficient table
+t2f(model)
+
+# With confidence intervals
+t2f(model, conf.int = TRUE)
+
+# Select specific terms
+t2f(model, include = c("estimate", "std.error", "p.value"))
+
+# With significance stars
+t2f(model, stars = TRUE)
+```
+
+### GLM with Exponentiation
+
+```r
+logit <- glm(am ~ hp + wt, data = mtcars, family = binomial)
+
+# Odds ratios
+t2f(logit, exponentiate = TRUE)
+```
+
+### Survival Models
+
+```r
+library(survival)
+cox <- coxph(Surv(time, status) ~ age + sex, data = lung)
+
+# Hazard ratios
+t2f(cox, exponentiate = TRUE)
+```
+
+## Theme System
+
+### Built-in Themes
+
+| Theme | Description | Font | Shading |
+|-------|-------------|------|---------|
+| `minimal` | Clean, simple | Helvetica | blue!10 |
+| `apa` | APA 7th edition | Times | gray!8 |
+| `nature` | Nature journals | Helvetica | white |
+| `nejm` | NEJM style | Helvetica | #FEF8EA |
+| `lancet` | Lancet clean | Helvetica | white |
+
+### Using Themes
+
+```r
+# By name
+t2f(df, theme = "nejm")
+
+# By function
+t2f(df, theme = t2f_theme_lancet())
+
+# Session-wide
+t2f_theme_set("apa")
+t2f(df1)  # Uses APA
+t2f(df2)  # Uses APA
+t2f_theme_set(NULL)  # Clear
+```
+
+### Custom Themes
+
+```r
+my_theme <- t2f_theme(
+  name = "corporate",
+  scolor = "companyblue!10",
+  header_bold = TRUE,
+  font_size = "small",
+  booktabs = TRUE,
+  striped = TRUE,
+  extra_packages = list(
+    geometry(margin = "15mm"),
+    "\\usepackage{helvet}",
+    "\\renewcommand{\\familydefault}{\\sfdefault}"
+  )
 )
 
-t2f(research_data,
-    filename = "research_results",
-    extra_packages = academic_packages,
-    scolor = "gray!8")
+# Register for use by name
+t2f_theme_register(my_theme)
+t2f(df, theme = "corporate")
+
+# Unregister when done
+t2f_theme_unregister("corporate")
+```
+
+## Inline Tables
+
+### Basic Usage
+
+```r
+# In R Markdown chunk with results='asis'
+model <- lm(mpg ~ cyl + hp, data = mtcars)
+t2f_inline(model, width = "3in")
+```
+
+### With Caption and Label
+
+```r
+t2f_inline(
+  model,
+  width = "4in",
+  caption = "Regression coefficients for fuel efficiency",
+  label = "tab:regression",
+  caption_position = "above"
+)
+```
+
+### Visual Styling
+
+```r
+# With frame border
+t2f_inline(df,
+  frame = TRUE,
+  frame_color = "gray",
+  frame_width = "0.5pt"
+)
+
+# With background color
+t2f_inline(df,
+  background = "gray!5",
+  inner_sep = "4pt"
+)
+
+# Both frame and background
+t2f_inline(df,
+  frame = TRUE,
+  frame_color = "blue!50",
+  background = "blue!5"
+)
+```
+
+### Quick Coefficient Table
+
+```r
+t2f_coef(model, caption = "Model Coefficients")
+```
+
+## Model Comparison
+
+### Side-by-Side Regression
+
+```r
+m1 <- lm(mpg ~ cyl, data = mtcars)
+m2 <- lm(mpg ~ cyl + hp, data = mtcars)
+m3 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+
+t2f_regression(
+  "Base" = m1,
+  "+ Horsepower" = m2,
+  "+ Weight" = m3,
+  stars = TRUE,
+  digits = 3,
+  se_in_parens = TRUE,
+  filename = "model_comparison"
+)
+```
+
+### Options
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `include` | estimate, std.error | Statistics to show |
+| `stars` | c(0.05, 0.01, 0.001) | Significance thresholds |
+| `digits` | 3 | Decimal places |
+| `se_in_parens` | TRUE | SE in parentheses below estimate |
+
+## Advanced Features
+
+### Column Alignment
+
+```r
+# Auto-detect (numeric=right, character=left)
+t2f(df, align = NULL)
+
+# Explicit per-column
+t2f(df, align = c("l", "r", "c", "r"))
+
+# Decimal alignment with siunitx
+t2f(df, align = list(
+  "l",
+  t2f_siunitx(table_format = "3.2"),
+  t2f_decimal(4, 3)
+))
+```
+
+### Captions and Labels
+
+```r
+t2f(df,
+  caption = "Summary Statistics by Group",
+  label = "tab:summary",
+  filename = "summary_table"
+)
+
+# In LaTeX: Table~\ref{tab:summary}
+```
+
+### Multi-Page Tables
+
+```r
+t2f(large_data,
+  longtable = TRUE,
+  caption = "Complete Dataset",
+  filename = "long_table"
+)
+```
+
+### Footnotes
+
+```r
+fn <- t2f_footnote(
+  general = "Data collected 2024",
+  symbol = c("p < 0.05", "p < 0.01")
+)
+
+t2f(df, footnote = fn)
+```
+
+### Spanning Headers
+
+```r
+hdr <- t2f_header_above(" " = 1, "Group A" = 2, "Group B" = 2)
+t2f(df, header_above = hdr)
+```
+
+### Row Collapsing
+
+```r
+collapse <- t2f_collapse_rows(columns = 1, valign = "top")
+t2f(grouped_data, collapse_rows = collapse)
+```
+
+### Cell Formatting
+
+```r
+# Bold specific columns
+fmt <- t2f_bold_col(c(1, 3))
+
+# Conditional highlighting
+fmt <- t2f_highlight(
+  condition = function(x) x > 0.05,
+  color = "red"
+)
+
+t2f(df, formatting = fmt)
 ```
 
 ### Batch Processing
 
 ```r
-# Process multiple datasets with consistent formatting
-datasets <- list(
-  summary = summary_stats,
-  results = analysis_results,
-  appendix = supplementary_data
+# Basic batch
+data_list <- list(
+  summary = summary_df,
+  results = results_df,
+  appendix = appendix_df
 )
 
-# Define common styling
-style_config <- list(
-  scolor = "blue!10",
-  sub_dir = "batch_output",
-  extra_packages = list(geometry(margin = "8mm"))
+t2f_batch(data_list, sub_dir = "tables", theme = "apa")
+
+# Advanced batch with individual specs
+specs <- list(
+  t2f_batch_spec(summary_df, "summary", theme = "nejm"),
+  t2f_batch_spec(results_df, "results", theme = "lancet"),
+  t2f_batch_spec(appendix_df, "appendix", longtable = TRUE)
 )
 
-# Generate all tables
-results <- lapply(names(datasets), function(name) {
-  do.call(t2f, c(list(df = datasets[[name]], filename = name), style_config))
-})
+t2f_batch_advanced(specs, sub_dir = "tables")
 ```
 
-### Integration with R Markdown
+### Output Formats
 
 ```r
-# In R Markdown chunk
-library(zztab2fig)
-library(dplyr)
+# Default: PDF
+t2f(df, filename = "table")
+# Creates: table.tex, table.pdf, table_cropped.pdf
 
-summary_data <- mtcars %>%
-  group_by(cyl) %>%
-  summarise(
-    count = n(),
-    mean_mpg = round(mean(mpg), 1),
-    .groups = "drop"
-  )
+# PNG output (via t2f_inline)
+t2f_inline(df, format = "png", dpi = 300)
 
-# Generate professional table
-table_path <- t2f(summary_data,
-                  filename = "cylinder_summary",
-                  sub_dir = "tables")
+# Direct conversion
+convert_pdf_to_png("figures/table_cropped.pdf", "figures/table.png")
+convert_pdf_to_svg("figures/table_cropped.pdf", "figures/table.svg")
 ```
 
-Then include in document:
-```markdown
-![Summary Statistics](tables/cylinder_summary_cropped.pdf)
-```
-
-### Large Dataset Optimization
+### Caching
 
 ```r
-# Memory-efficient processing for large datasets
-process_large_table <- function(df, chunk_size = 1000) {
-  if (nrow(df) <= chunk_size) {
-    return(t2f(df, filename = "large_table"))
-  }
+# Enable caching
+t2f(df, cache = TRUE, filename = "cached_table")
 
-  # Use minimal document class for reduced overhead
-  t2f(df,
-      filename = "large_table",
-      document_class = "minimal",
-      extra_packages = list(
-        geometry(margin = "2mm", landscape = TRUE)
-      ))
-}
+# Force regeneration
+t2f(df, cache = TRUE, force = TRUE, filename = "cached_table")
+
+# Cache management
+t2f_cache_info()
+t2f_cache_clear(older_than = 7)  # Days
 ```
+
+### knitr Engine
+
+````markdown
+```{t2f, t2f.caption="My Table", t2f.theme="nejm"}
+mtcars[1:5, 1:4]
+```
+````
 
 ## Comparison with Alternatives
 
@@ -296,167 +521,108 @@ process_large_table <- function(df, chunk_size = 1000) {
 
 | Feature | zztab2fig | flextable |
 |---------|-----------|-----------|
-| **Primary Use Case** | LaTeX-native PDF tables | Multi-format table export |
-| **Output Quality** | Professional LaTeX typography | R graphics system |
-| **File Types** | PDF, LaTeX | PDF, DOCX, PPTX, HTML |
-| **Learning Curve** | Minimal (single function) | Moderate (multiple functions) |
-| **LaTeX Integration** | Native (generates .tex files) | Limited |
-| **Customization** | LaTeX package system | R-based styling |
-| **Performance** | Fast for batch processing | Moderate |
-| **Dependencies** | LaTeX distribution required | Self-contained |
+| **Primary Use** | LaTeX PDF tables | Multi-format export |
+| **Output Quality** | Professional LaTeX | R graphics |
+| **File Types** | PDF, PNG, SVG, TEX | PDF, DOCX, PPTX, HTML |
+| **S3 Dispatch** | 20+ model types | Manual conversion |
+| **Journal Themes** | 5 built-in | Manual styling |
+| **Model Comparison** | Built-in | Manual |
+| **Learning Curve** | Minimal | Moderate |
+| **Dependencies** | LaTeX required | Self-contained |
 
 ### When to Choose zztab2fig
 
 **Ideal for:**
+
 - Academic papers requiring LaTeX typography
-- Batch processing of multiple tables
+- Regression and survival model tables
+- Multi-model comparison tables
+- Batch processing with consistent styling
 - Integration with existing LaTeX workflows
-- Users comfortable with LaTeX syntax
-- Minimal configuration requirements
 
 **Consider alternatives for:**
-- Microsoft Office integration requirements
-- Interactive table features
-- Complex conditional formatting
-- HTML-based outputs
+
+- Microsoft Office integration
+- Interactive HTML tables
+- No LaTeX available
 
 ## Performance Considerations
 
-### Benchmarking Results
+### Benchmarks
 
-| Dataset Size | Processing Time | Memory Usage |
-|--------------|----------------|--------------|
-| Small (≤100 cells) | <2 seconds | <50 MB |
-| Medium (100-1000 cells) | 2-10 seconds | 50-200 MB |
-| Large (>1000 cells) | Linear scaling | Minimal overhead |
+| Table Size | Total Time | LaTeX Gen | PDF Compile |
+|------------|------------|-----------|-------------|
+| 10x5 | 1.2s | 0.1s | 1.0s |
+| 100x10 | 1.8s | 0.2s | 1.4s |
+| 1000x20 | 4.5s | 0.8s | 3.2s |
 
 ### Optimization Strategies
 
-#### 1. Document Class Selection
 ```r
-# Minimal overhead for large tables
-t2f(large_data,
-    document_class = "minimal",
-    extra_packages = list(geometry(margin = "2mm")))
-```
+# Enable caching for repeated runs
+t2f(df, cache = TRUE)
 
-#### 2. Batch Processing
-```r
-# Efficient batch processing
-common_settings <- list(
-  sub_dir = "batch_output",
-  verbose = FALSE,  # Reduce console overhead
-  document_class = "minimal"
+# Use batch processing
+t2f_batch(table_list, theme = "minimal")
+
+# Minimal document class for large tables
+t2f(large_df,
+  document_class = "minimal",
+  extra_packages = list(geometry(margin = "2mm"))
 )
-
-lapply(table_list, function(df, name) {
-  do.call(t2f, c(list(df = df, filename = name), common_settings))
-}, names(table_list))
-```
-
-#### 3. Memory Management
-```r
-# Process and clean up iteratively
-for (dataset in large_dataset_list) {
-  result <- t2f(dataset, filename = paste0("table_", i))
-  rm(dataset)  # Explicit cleanup
-  gc()         # Garbage collection
-}
 ```
 
 ## Troubleshooting
 
-### Common Issues
-
-#### 1. LaTeX Not Found
-**Error:** `pdflatex` command not found
-**Solution:** Install LaTeX distribution (see System Requirements)
-
-#### 2. Compilation Errors
-**Error:** LaTeX compilation failed
-**Diagnosis:** Check generated .log file in output directory
-**Common causes:**
-- Special characters in data requiring escaping
-- Invalid LaTeX syntax in custom packages
-- Missing LaTeX packages
-
-#### 3. File Permission Errors
-**Error:** Cannot create directory or write files
-**Solution:** Verify write permissions for output directory
-
-#### 4. Large File Processing
-**Issue:** Memory exhaustion with large datasets
-**Solutions:**
-- Use `document_class = "minimal"`
-- Process in smaller chunks
-- Increase R memory limits
-
-### Debugging Workflow
+### Check Dependencies
 
 ```r
-# Enable verbose output for diagnosis
-t2f(problematic_data,
-    filename = "debug_table",
-    verbose = TRUE)
-
-# Check generated files
-list.files("output", pattern = "debug_table", full.names = TRUE)
-
-# Examine LaTeX source
-readLines("output/debug_table.tex")[1:20]
-
-# Check compilation log
-readLines("output/debug_table.log")
+check_latex_deps()
 ```
 
-### Platform-Specific Considerations
+### Missing pdfcrop
 
-#### Windows
-- Ensure MiKTeX PATH configuration
-- Use forward slashes in file paths
-- Install complete LaTeX package collection
+```r
+# With TinyTeX
+ensure_pdfcrop(auto_install = TRUE)
 
-#### macOS
-- Verify MacTeX installation completeness
-- Check PATH environment variable
-- Install Xcode command line tools if needed
+# Manual installation
+# macOS:  brew install pdfcrop
+# Ubuntu: sudo apt install texlive-extra-utils
+```
 
-#### Linux
-- Install complete texlive-full package
-- Verify binary permissions
-- Check locale settings for UTF-8 support
+### LaTeX Compilation Errors
+
+```r
+# Enable verbose mode
+t2f(df, verbose = TRUE)
+
+# Check log file
+readLines("figures/table.log")
+```
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| pdflatex not found | Install LaTeX distribution |
+| Directory not writable | Check permissions |
+| Special characters | Data is auto-sanitized |
+| Table too wide | Use `geometry(landscape = TRUE)` |
+| Memory issues | Process in batches |
 
 ## Contributing
 
-### Development Environment Setup
+### Development Setup
 
 ```bash
-# Clone repository
 git clone https://github.com/rgt47/zztab2fig.git
 cd zztab2fig
 
-# Install development dependencies
 R -e "devtools::install_dev_deps()"
-
-# Run test suite
 R -e "devtools::test()"
-
-# Build package documentation
 R -e "devtools::document()"
-```
-
-### Testing Guidelines
-
-The package maintains comprehensive test coverage:
-- **Unit Tests**: Individual function validation
-- **Integration Tests**: Complete workflow testing
-- **Edge Cases**: Boundary condition handling
-- **Error Conditions**: Exception handling verification
-
-Run tests locally:
-```r
-devtools::test()
-testthat::test_dir("tests/testthat/")
+R -e "devtools::check()"
 ```
 
 ### Code Quality Standards
@@ -464,27 +630,18 @@ testthat::test_dir("tests/testthat/")
 - Follow tidyverse style guidelines
 - Maintain >95% test coverage
 - Document all exported functions
-- Include examples in documentation
-- Validate all inputs comprehensively
-
-### Issue Reporting
-
-When reporting issues, include:
-1. R session information (`sessionInfo()`)
-2. Package version (`packageVersion("zztab2fig")`)
-3. LaTeX distribution version
-4. Minimal reproducible example
-5. Error messages and log files
+- Include working examples
+- Validate all inputs
 
 ## License
 
-This package is licensed under the GNU General Public License (GPL) version 3 or later. See LICENSE file for details.
+GNU General Public License (GPL) version 3 or later.
 
 ## Citation
 
 ```
 Thomas, R.G. (2025). zztab2fig: Generate LaTeX Tables and PDF Outputs.
-R package version 0.1.3. https://github.com/rgt47/zztab2fig
+R package version 0.2.0. https://github.com/rgt47/zztab2fig
 ```
 
 ## Contact
@@ -497,7 +654,7 @@ R package version 0.1.3. https://github.com/rgt47/zztab2fig
 
 ## Acknowledgments
 
-- The `kableExtra` package for LaTeX table generation capabilities
+- The `kableExtra` package for LaTeX table generation
+- The `broom` package for model tidying
 - The R Core Team for the R statistical computing environment
 - The LaTeX Project for the typesetting system
-- Contributors and users who provided feedback and testing

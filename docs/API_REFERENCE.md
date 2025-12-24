@@ -1,517 +1,707 @@
 # API Reference: zztab2fig Package
 
-## Overview
-
-This document provides comprehensive API documentation for the `zztab2fig` package, including function signatures, parameter specifications, return values, and usage examples. The package follows standard R documentation conventions and provides both high-level interface functions and lower-level utility functions.
-
 ## Package Information
 
-- **Version**: 0.1.3
-- **Namespace**: zztab2fig
-- **Dependencies**: kableExtra, glue
+- **Version**: 0.2.0
+- **License**: GPL (>= 3)
+- **Imports**: kableExtra, stats, utils
+- **Suggests**: broom, broom.mixed, survival, lme4, nlme, tinytex
 - **System Requirements**: LaTeX (pdflatex, pdfcrop)
 
-## Exported Functions
+## Primary Interface
 
-### Primary Interface
+### t2f()
 
-#### `t2f()`
+S3 generic for converting objects to LaTeX tables with PDF output.
 
-Convert a data frame to a LaTeX table and generate a cropped PDF.
-
-**Signature:**
 ```r
-t2f(df, filename = NULL, sub_dir = "output", scolor = "blue!10",
-    verbose = FALSE, extra_packages = NULL, document_class = "article")
+t2f(x, ...)
 ```
 
 **Parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `df` | data.frame | Required | Data frame to be converted to LaTeX table |
-| `filename` | character | NULL | Base name for output files (without extensions). If NULL, uses variable name |
-| `sub_dir` | character | "output" | Subdirectory for storing output files |
-| `scolor` | character | "blue!10" | LaTeX color specification for alternating row shading |
-| `verbose` | logical | FALSE | Enable progress message output |
-| `extra_packages` | list | NULL | List of LaTeX package specifications or helper function results |
-| `document_class` | character | "article" | LaTeX document class for template generation |
+| `x` | any | required | Object to convert (dispatches to S3 methods) |
+| `...` | various | - | Arguments passed to methods |
 
-**Return Value:**
-- **Type**: character (invisibly returned)
-- **Value**: File path to the generated cropped PDF
+**Returns:** Character string (invisible) with path to cropped PDF file.
 
-**Validation:**
-- `df` must be a non-empty data frame
-- `filename` must be a valid character string or NULL
-- `sub_dir` must be a non-empty character string with write permissions
-- `scolor` must be a single character string in LaTeX color format
-- `verbose` must be a single logical value
-- `document_class` must be a valid LaTeX document class name
+### t2f.default()
 
-**Side Effects:**
-- Creates output directory if it does not exist
-- Generates three files: .tex, .pdf, and _cropped.pdf
-- May generate auxiliary files (.log, .aux) during LaTeX compilation
+Default method for data frame conversion.
 
-**Examples:**
 ```r
-# Basic usage
-result <- t2f(mtcars, filename = "cars_table")
-
-# With custom styling
-t2f(iris[1:10, ],
-    filename = "iris_sample",
-    scolor = "green!15",
-    verbose = TRUE)
-
-# Advanced configuration
-t2f(economics_data,
-    filename = "econ_analysis",
-    sub_dir = "reports",
-    extra_packages = list(
-      geometry(margin = "5mm", landscape = TRUE),
-      babel("english")
-    ),
-    document_class = "article")
+t2f.default(x, filename = NULL, sub_dir = "figures", scolor = NULL,
+            verbose = FALSE, extra_packages = NULL, document_class = NULL,
+            caption = NULL, caption_short = NULL, label = NULL, align = NULL,
+            longtable = FALSE, crop = TRUE, crop_margin = 10,
+            striped = NULL, footnote = NULL, header_above = NULL,
+            collapse_rows = NULL, theme = NULL, cache = FALSE, force = FALSE,
+            ...)
 ```
 
-**Error Conditions:**
-- Throws error if `df` is not a data frame or is empty
-- Throws error if output directory cannot be created or is not writable
-- Throws error if LaTeX compilation fails
-- Throws error if PDF cropping fails
+**Core Parameters:**
 
----
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `x` | data.frame | required | Data frame to convert |
+| `filename` | character | NULL | Output filename (auto-generated if NULL) |
+| `sub_dir` | character | "figures" | Output directory |
+| `scolor` | character | NULL | Row shading color |
+| `verbose` | logical | FALSE | Print progress messages |
 
-### LaTeX Package Helper Functions
+**Document Parameters:**
 
-#### `geometry()`
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `extra_packages` | list | NULL | Additional LaTeX packages |
+| `document_class` | character | NULL | LaTeX document class |
+| `caption` | character | NULL | Table caption |
+| `caption_short` | character | NULL | Short caption for LoT |
+| `label` | character | NULL | LaTeX label for cross-refs |
 
-Create geometry package specification for page layout configuration.
+**Table Parameters:**
 
-**Signature:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `align` | vector/list | NULL | Column alignment specification |
+| `longtable` | logical | FALSE | Multi-page table support |
+| `striped` | logical | NULL | Alternating row colors |
+| `footnote` | t2f_footnote | NULL | Table footnotes |
+| `header_above` | t2f_header | NULL | Spanning headers |
+| `collapse_rows` | t2f_collapse | NULL | Row merging specification |
+
+**Output Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `crop` | logical | TRUE | Crop PDF margins |
+| `crop_margin` | numeric | 10 | Margin size in points |
+| `theme` | char/theme | NULL | Theme name or object |
+| `cache` | logical | FALSE | Enable caching |
+| `force` | logical | FALSE | Force regeneration |
+
+## S3 Methods: Base Types
+
+### t2f.data.frame()
+
+```r
+t2f.data.frame(x, ...)
+```
+
+Dispatches directly to `t2f.default()`.
+
+### t2f.matrix()
+
+```r
+t2f.matrix(x, rownames = TRUE, ...)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `rownames` | logical | TRUE | Include row names as column |
+
+### t2f.table()
+
+```r
+t2f.table(x, ...)
+```
+
+Converts contingency table to data frame with row names preserved.
+
+## S3 Methods: Statistical Models
+
+### t2f.lm()
+
+```r
+t2f.lm(x, digits = 3, include = c("estimate", "std.error", "statistic",
+       "p.value"), conf.int = FALSE, conf.level = 0.95, stars = FALSE, ...)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `digits` | integer | 3 | Decimal places |
+| `include` | character | see above | Statistics to include |
+| `conf.int` | logical | FALSE | Include confidence intervals |
+| `conf.level` | numeric | 0.95 | Confidence level |
+| `stars` | logical | FALSE | Significance stars |
+
+### t2f.glm()
+
+```r
+t2f.glm(x, digits = 3, include = c("estimate", "std.error", "statistic",
+        "p.value"), conf.int = FALSE, conf.level = 0.95, exponentiate = FALSE,
+        stars = FALSE, ...)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `exponentiate` | logical | FALSE | Exponentiate coefficients (odds ratios) |
+
+### t2f.anova()
+
+```r
+t2f.anova(x, digits = 3, ...)
+```
+
+### t2f.aov()
+
+```r
+t2f.aov(x, digits = 3, ...)
+```
+
+### t2f.htest()
+```r
+t2f.htest(x, digits = 3, ...)
+```
+
+Formats hypothesis test results (t.test, chisq.test, etc.).
+
+## S3 Methods: Survival Models
+
+Require `broom` and `survival` packages.
+
+### t2f.coxph()
+
+```r
+t2f.coxph(x, digits = 3, exponentiate = TRUE, conf.int = TRUE,
+          conf.level = 0.95, ...)
+```
+
+### t2f.survreg()
+
+```r
+t2f.survreg(x, digits = 3, conf.int = TRUE, conf.level = 0.95, ...)
+```
+
+### t2f.survfit()
+
+```r
+t2f.survfit(x, digits = 3, times = NULL, ...)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `times` | numeric | NULL | Specific times to report |
+
+### t2f.survdiff()
+
+```r
+t2f.survdiff(x, digits = 3, ...)
+```
+
+## S3 Methods: Additional Models
+
+### t2f.nls()
+
+```r
+t2f.nls(x, digits = 3, conf.int = TRUE, conf.level = 0.95, ...)
+```
+
+### t2f.Arima()
+
+```r
+t2f.Arima(x, digits = 3, conf.int = TRUE, conf.level = 0.95, ...)
+```
+
+### t2f.polr()
+
+```r
+t2f.polr(x, digits = 3, exponentiate = FALSE, conf.int = TRUE, ...)
+```
+
+### t2f.multinom()
+
+```r
+t2f.multinom(x, digits = 3, exponentiate = FALSE, conf.int = TRUE, ...)
+```
+
+### t2f.prcomp()
+
+```r
+t2f.prcomp(x, matrix = "rotation", digits = 3, ...)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `matrix` | character | "rotation" | "rotation" or "x" (scores) |
+
+### t2f.kmeans()
+
+```r
+t2f.kmeans(x, matrix = "centers", digits = 3, ...)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `matrix` | character | "centers" | "centers" or "cluster" |
+
+## S3 Methods: Mixed Effects Models
+
+Require `broom.mixed` package.
+
+### t2f.lmerMod()
+
+```r
+t2f.lmerMod(x, effects = "fixed", digits = 3, conf.int = TRUE,
+            conf.level = 0.95, ...)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `effects` | character | "fixed" | "fixed", "random", or "all" |
+
+### t2f.glmerMod()
+
+```r
+t2f.glmerMod(x, effects = "fixed", digits = 3, exponentiate = FALSE,
+             conf.int = TRUE, conf.level = 0.95, ...)
+```
+
+### t2f.lme()
+
+```r
+t2f.lme(x, effects = "fixed", digits = 3, conf.int = TRUE,
+        conf.level = 0.95, ...)
+```
+
+## Model Comparison
+
+### t2f_regression()
+
+```r
+t2f_regression(..., include = c("estimate", "std.error"),
+               stars = c(0.05, 0.01, 0.001), digits = 3,
+               se_in_parens = TRUE, filename = "regression_table",
+               sub_dir = "figures", theme = NULL)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `...` | models | required | Named model objects |
+| `include` | character | see above | Statistics to include |
+| `stars` | numeric | c(0.05, 0.01, 0.001) | Significance thresholds |
+| `se_in_parens` | logical | TRUE | SE in parentheses below estimate |
+
+**Example:**
+```r
+t2f_regression(
+  Model1 = lm(mpg ~ cyl, mtcars),
+  Model2 = lm(mpg ~ cyl + hp, mtcars),
+  stars = TRUE
+)
+```
+
+## Theme System
+
+### t2f_theme()
+
+```r
+t2f_theme(name = "custom", scolor = "blue!10", header_bold = TRUE,
+          header_color = NULL, font_size = NULL,
+          document_class = "article", extra_packages = NULL,
+          booktabs = TRUE, striped = TRUE)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | character | "custom" | Theme identifier |
+| `scolor` | character | "blue!10" | Row shading color |
+| `header_bold` | logical | TRUE | Bold column headers |
+| `header_color` | character | NULL | Header background color |
+| `font_size` | character | NULL | LaTeX font size command |
+| `booktabs` | logical | TRUE | Use booktabs rules |
+| `striped` | logical | TRUE | Alternating row colors |
+
+### t2f_theme_set() / t2f_theme_get()
+
+```r
+t2f_theme_set(theme)
+t2f_theme_get()
+```
+
+Set or retrieve the global theme. Pass NULL to clear.
+
+### t2f_theme_register() / t2f_theme_unregister()
+
+```r
+t2f_theme_register(theme, name = NULL, overwrite = FALSE)
+t2f_theme_unregister(name)
+```
+
+Register custom themes for use by name.
+
+### t2f_theme_clear()
+
+```r
+t2f_theme_clear()
+```
+
+Remove all registered custom themes.
+
+### t2f_list_themes()
+
+```r
+t2f_list_themes(builtin_only = FALSE)
+```
+
+List available theme names.
+
+### Built-in Theme Functions
+
+```r
+t2f_theme_minimal()   # Clean, Helvetica, blue!10 shading
+t2f_theme_apa()       # APA style, Times, gray!8 shading
+t2f_theme_nature()    # Nature journals, Helvetica, no shading
+t2f_theme_nejm()      # NEJM, Helvetica, #FEF8EA warm shading
+t2f_theme_lancet()    # Lancet, Helvetica, no shading
+```
+
+## Inline Tables
+
+### t2f_inline()
+
+```r
+t2f_inline(x, width = NULL, height = NULL,
+           align = c("center", "left", "right"), filename = NULL,
+           format = c("auto", "pdf", "png"), dpi = 150, sub_dir = NULL,
+           caption = NULL, caption_short = NULL, label = NULL,
+           caption_position = c("above", "below"),
+           frame = FALSE, frame_color = "black", frame_width = "0.4pt",
+           background = NULL, inner_sep = "2pt", ...)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `width` | character | NULL | Figure width (e.g., "3in") |
+| `height` | character | NULL | Figure height |
+| `align` | character | "center" | Horizontal alignment |
+| `format` | character | "auto" | Output format |
+| `dpi` | integer | 150 | PNG resolution |
+| `caption_position` | character | "above" | Caption placement |
+| `frame` | logical | FALSE | Draw border |
+| `frame_color` | character | "black" | Border color |
+| `background` | character | NULL | Background color |
+| `inner_sep` | character | "2pt" | Padding |
+
+### t2f_coef()
+
+```r
+t2f_coef(model, width = "3in", align = "left", digits = 3,
+         stars = TRUE, theme = "minimal", caption = NULL, ...)
+```
+
+Convenience function for inline coefficient tables.
+
+## Advanced Features
+
+### t2f_footnote()
+
+```r
+t2f_footnote(general = NULL, number = NULL, alphabet = NULL,
+             symbol = NULL, threeparttable = TRUE)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `general` | character | NULL | General notes |
+| `number` | character | NULL | Numbered footnotes |
+| `symbol` | character | NULL | Symbol footnotes (*, †, ‡) |
+| `threeparttable` | logical | TRUE | Use threeparttable package |
+
+### t2f_mark()
+
+```r
+t2f_mark(text, mark, type = c("symbol", "number", "alphabet"))
+```
+
+Add footnote marker to cell text.
+
+### t2f_header_above()
+
+```r
+t2f_header_above(..., bold = TRUE, italic = FALSE, line = TRUE)
+```
+
+Create spanning column headers. Arguments are named with column spans.
+
+**Example:**
+```r
+t2f_header_above(" " = 1, "Group A" = 2, "Group B" = 2)
+```
+
+### t2f_collapse_rows()
+
+```r
+t2f_collapse_rows(columns = NULL, valign = c("middle", "top", "bottom"),
+                  latex_hline = c("major", "none", "full"))
+```
+
+Merge repeated values in columns into multi-row cells.
+
+### t2f_siunitx()
+
+```r
+t2f_siunitx(table_format = "3.2", detect_weight = TRUE, mode = "text")
+```
+
+Create decimal-aligned column specification using siunitx package.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `table_format` | character | "3.2" | Integer.decimal format |
+| `detect_weight` | logical | TRUE | Detect bold/italic |
+| `mode` | character | "text" | siunitx mode |
+
+### t2f_decimal()
+
+```r
+t2f_decimal(integers = 3, decimals = 2)
+```
+
+Convenience wrapper for `t2f_siunitx()`.
+
+## Cell Formatting
+
+### t2f_format()
+
+```r
+t2f_format(rows = NULL, cols = NULL, bold = FALSE, italic = FALSE,
+           color = NULL, background = NULL, condition = NULL)
+```
+
+Create formatting specification for cells.
+
+### t2f_highlight()
+
+```r
+t2f_highlight(condition, color = "yellow")
+```
+
+Conditional cell highlighting.
+
+### t2f_bold_col() / t2f_italic_col()
+
+```r
+t2f_bold_col(cols)
+t2f_italic_col(cols)
+```
+
+Bold or italicize entire columns.
+
+### t2f_color_row()
+
+```r
+t2f_color_row(rows, background)
+```
+
+Apply background color to rows.
+
+## Batch Processing
+
+### t2f_batch()
+
+```r
+t2f_batch(data_list, sub_dir = "figures", theme = NULL,
+          parallel = FALSE, verbose = FALSE, ...)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `data_list` | named list | required | Data frames to process |
+| `parallel` | logical | FALSE | Use parallel processing |
+
+### t2f_batch_spec()
+
+```r
+t2f_batch_spec(df, filename, ...)
+```
+
+Create specification for advanced batch processing.
+
+### t2f_batch_advanced()
+
+```r
+t2f_batch_advanced(specs, sub_dir = "figures", theme = NULL,
+                   parallel = FALSE, verbose = FALSE, ...)
+```
+
+Process multiple tables with per-table specifications.
+
+## Caching
+
+### t2f_cache_dir()
+
+```r
+t2f_cache_dir(create = TRUE)
+```
+
+Get or create cache directory path.
+
+### t2f_cache_set_dir()
+
+```r
+t2f_cache_set_dir(path)
+```
+
+Set custom cache directory.
+
+### t2f_cache_clear()
+
+```r
+t2f_cache_clear(older_than = NULL)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `older_than` | numeric | NULL | Clear files older than N days |
+
+### t2f_cache_info()
+
+```r
+t2f_cache_info()
+```
+
+Display cache statistics.
+
+## Output Conversion
+
+### convert_pdf_to_png()
+
+```r
+convert_pdf_to_png(pdf_path, png_path = NULL, dpi = 150)
+```
+
+Requires ImageMagick.
+
+### convert_pdf_to_svg()
+
+```r
+convert_pdf_to_svg(pdf_path, svg_path = NULL)
+```
+
+Requires pdf2svg.
+
+## LaTeX Package Helpers
+
+### geometry()
+
 ```r
 geometry(margin = NULL, paper = NULL, landscape = FALSE, ...)
 ```
 
-**Parameters:**
-
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `margin` | character | NULL | Page margin specification (e.g., "5mm", "0.75in") |
-| `paper` | character | NULL | Paper size (e.g., "a4paper", "letterpaper") |
-| `landscape` | logical | FALSE | Enable landscape orientation |
-| `...` | any | - | Additional geometry package options |
+| `margin` | character | NULL | Page margins |
+| `paper` | character | NULL | Paper size |
+| `landscape` | logical | FALSE | Landscape orientation |
 
-**Return Value:**
-- **Type**: character
-- **Format**: LaTeX package specification string
+### babel()
 
-**Examples:**
-```r
-geometry()
-# Returns: "\\usepackage{geometry}"
-
-geometry(margin = "5mm")
-# Returns: "\\usepackage[margin=5mm]{geometry}"
-
-geometry(margin = "10mm", paper = "a4paper", landscape = TRUE)
-# Returns: "\\usepackage[margin=10mm,paper=a4paper,landscape]{geometry}"
-
-geometry(top = "2cm", bottom = "2cm", left = "1cm", right = "1cm")
-# Returns: "\\usepackage[top=2cm,bottom=2cm,left=1cm,right=1cm]{geometry}"
-```
-
----
-
-#### `babel()`
-
-Create babel package specification for language support.
-
-**Signature:**
 ```r
 babel(language)
 ```
 
-**Parameters:**
+### fontspec()
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `language` | character | Required | Language code (e.g., "spanish", "french", "german") |
-
-**Return Value:**
-- **Type**: character
-- **Format**: LaTeX babel package specification
-
-**Validation:**
-- `language` must be a single character string
-
-**Examples:**
-```r
-babel("spanish")
-# Returns: "\\usepackage[spanish]{babel}"
-
-babel("french")
-# Returns: "\\usepackage[french]{babel}"
-```
-
-**Error Conditions:**
-- Throws error if `language` is not a single character string
-
----
-
-#### `fontspec()`
-
-Create fontspec package specification for custom font configuration.
-
-**Signature:**
 ```r
 fontspec(main_font = NULL, sans_font = NULL, mono_font = NULL)
 ```
 
-**Parameters:**
+## Utility Functions
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `main_font` | character | NULL | Main (serif) font family name |
-| `sans_font` | character | NULL | Sans-serif font family name |
-| `mono_font` | character | NULL | Monospace font family name |
+### check_latex_deps()
 
-**Return Value:**
-- **Type**: character vector
-- **Format**: LaTeX fontspec package specifications
-
-**Note:** Requires XeLaTeX or LuaLaTeX for compilation.
-
-**Examples:**
 ```r
-fontspec()
-# Returns: "\\usepackage{fontspec}"
-
-fontspec(main_font = "Times New Roman")
-# Returns: c("\\usepackage{fontspec}", "\\setmainfont{Times New Roman}")
-
-fontspec(main_font = "Times New Roman", sans_font = "Arial", mono_font = "Courier New")
-# Returns: c("\\usepackage{fontspec}",
-#           "\\setmainfont{Times New Roman}",
-#           "\\setsansfont{Arial}",
-#           "\\setmonofont{Courier New}")
+check_latex_deps()
 ```
 
----
+Check and report LaTeX dependency status.
+
+### ensure_pdfcrop()
+
+```r
+ensure_pdfcrop(auto_install = TRUE, verbose = TRUE)
+```
+
+Attempt to install pdfcrop via TinyTeX.
+
+### register_t2f_engine()
+
+```r
+register_t2f_engine()
+```
+
+Register custom knitr engine for R Markdown.
 
 ## Internal Functions
 
-### Data Sanitization
+These functions are not exported but documented for advanced use.
 
-#### `sanitize_column_names()`
+| Function | Description |
+|----------|-------------|
+| `t2f_internal()` | Core table generation logic |
+| `create_latex_table()` | Generate LaTeX table content |
+| `create_latex_template()` | Build document preamble |
+| `compile_latex()` | Run pdflatex |
+| `crop_pdf()` | Run pdfcrop |
+| `auto_align()` | Detect column alignment |
+| `sanitize_column_names()` | Clean column names |
+| `sanitize_table_cells()` | Escape special characters |
+| `sanitize_filename()` | Clean filenames |
+| `detect_siunitx_columns()` | Find S columns |
+| `protect_siunitx_headers()` | Wrap headers in braces |
+| `process_alignment()` | Process alignment specs |
+| `apply_theme()` | Resolve theme settings |
+| `get_builtin_theme()` | Retrieve theme by name |
+| `build_inline_latex()` | Generate inline LaTeX |
 
-Sanitize column names for LaTeX compatibility.
-
-**Signature:**
-```r
-sanitize_column_names(colnames)
-```
-
-**Parameters:**
-- `colnames`: Character vector of column names
-
-**Processing:**
-1. Applies `make.names()` for R compatibility
-2. Replaces non-alphanumeric characters with underscores
-3. Preserves alphanumeric characters and underscores
-
-**Return Value:**
-- **Type**: character vector
-- **Length**: Same as input
-
-**Examples:**
-```r
-sanitize_column_names(c("col #1", "col%2", "col&3"))
-# Returns: c("col__1", "col_2", "col_3")
-
-sanitize_column_names(c("Sales $", "R&D Cost", "Profit %"))
-# Returns: c("Sales__", "R_D_Cost", "Profit__")
-```
-
----
-
-#### `sanitize_table_cells()`
-
-Escape LaTeX special characters in table cell content.
-
-**Signature:**
-```r
-sanitize_table_cells(cells)
-```
-
-**Parameters:**
-- `cells`: Character vector of table cell values
-
-**Processing:**
-Escapes the following LaTeX special characters:
-- `#` → `\#`
-- `%` → `\%`
-- `&` → `\&`
-- `$` → `\$`
-
-**Return Value:**
-- **Type**: character vector
-- **Length**: Same as input
-
-**Examples:**
-```r
-sanitize_table_cells(c("100%", "Cost $50", "R&D", "Item #1"))
-# Returns: c("100\\%", "Cost \\$50", "R\\&D", "Item \\#1")
-```
-
----
-
-#### `sanitize_filename()`
-
-Generate file system compatible filenames.
-
-**Signature:**
-```r
-sanitize_filename(filename)
-```
-
-**Parameters:**
-- `filename`: Character string representing desired filename
-
-**Processing:**
-Replaces non-alphanumeric characters with underscores, preserving only:
-- Letters (a-z, A-Z)
-- Numbers (0-9)
-- Underscores (_)
-
-**Return Value:**
-- **Type**: character
-- **Length**: 1
-
-**Examples:**
-```r
-sanitize_filename("my-table.final")
-# Returns: "my_table_final"
-
-sanitize_filename("analysis #1 (revised)")
-# Returns: "analysis__1__revised_"
-```
-
----
-
-### LaTeX Processing
-
-#### `create_latex_table()`
-
-Generate LaTeX table with specified styling options.
-
-**Signature:**
-```r
-create_latex_table(df, tex_file, scolor, extra_packages = NULL, document_class = "article")
-```
-
-**Parameters:**
-- `df`: Data frame containing table data
-- `tex_file`: Output path for LaTeX file
-- `scolor`: LaTeX color specification for row shading
-- `extra_packages`: List of additional LaTeX packages
-- `document_class`: LaTeX document class
-
-**Processing:**
-1. Applies cell sanitization to character columns
-2. Generates kableExtra table with booktabs styling
-3. Applies row specifications and stripe coloring
-4. Embeds table in LaTeX document template
-
-**Side Effects:**
-- Writes complete LaTeX document to specified file path
-
----
-
-#### `compile_latex()`
-
-Compile LaTeX source file to PDF with error handling.
-
-**Signature:**
-```r
-compile_latex(tex_file, sub_dir)
-```
-
-**Parameters:**
-- `tex_file`: Path to LaTeX source file
-- `sub_dir`: Directory containing LaTeX file
-
-**Processing:**
-1. Changes working directory to LaTeX file location
-2. Executes `pdflatex` with batch mode interaction
-3. Parses compilation log for error detection
-4. Restores original working directory
-
-**Error Handling:**
-- Captures LaTeX compilation errors from log file
-- Provides detailed error messages for debugging
-- Ensures working directory restoration via `on.exit()`
-
----
-
-#### `crop_pdf()`
-
-Generate cropped PDF with minimal margins.
-
-**Signature:**
-```r
-crop_pdf(input_pdf, output_pdf)
-```
-
-**Parameters:**
-- `input_pdf`: Path to input PDF file
-- `output_pdf`: Path for cropped output PDF
-
-**Processing:**
-1. Executes `pdfcrop` with 10-point margins
-2. Validates successful file creation
-3. Reports detailed error messages on failure
-
----
-
-### Utility Functions
-
-#### `log_message()`
-
-Conditional message output for progress tracking.
-
-**Signature:**
-```r
-log_message(msg, verbose = FALSE)
-```
-
-**Parameters:**
-- `msg`: Character string message to display
-- `verbose`: Logical flag controlling output
-
-**Behavior:**
-- Outputs message using `message()` when `verbose = TRUE`
-- Silent operation when `verbose = FALSE`
-
----
-
-#### `create_latex_template()`
-
-Generate LaTeX document template with specified packages.
-
-**Signature:**
-```r
-create_latex_template(document_class = "article", extra_packages = NULL)
-```
-
-**Parameters:**
-- `document_class`: LaTeX document class specification
-- `extra_packages`: List of package specifications
-
-**Processing:**
-1. Combines base required packages with user-specified packages
-2. Handles both character strings and function-generated specifications
-3. Constructs complete document preamble
-
-**Return Value:**
-- **Type**: character
-- **Content**: Complete LaTeX document preamble
-
----
-
-## Error Handling Specifications
+## Error Handling
 
 ### Input Validation Errors
 
-| Condition | Error Message | Function |
-|-----------|---------------|----------|
-| Non-data.frame input | "`df` must be a dataframe." | `t2f()` |
-| Empty data frame | "`df` must not be empty." | `t2f()` |
-| Invalid color specification | "`scolor` must be a single character string." | `t2f()` |
-| Invalid verbose parameter | "`verbose` must be a single logical value." | `t2f()` |
-| NULL directory name | "Directory name cannot be NULL" | `t2f()` |
-| Empty directory name | "Directory name cannot be empty" | `t2f()` |
-| Invalid language parameter | "`language` must be a single character string" | `babel()` |
+| Condition | Message |
+|-----------|---------|
+| Non-data.frame input | "`x` must be a data frame" |
+| Empty data frame | "`x` cannot be empty" |
+| Invalid theme name | "Unknown theme: {name}" |
+| Invalid alignment | "align must be character vector or list" |
 
 ### System Errors
 
-| Condition | Error Message Pattern | Function |
-|-----------|----------------------|----------|
-| Directory creation failure | "Cannot create directory: {path}\nError: {details}" | `t2f()` |
-| Write permission failure | "Directory is not writable: {path}" | `t2f()` |
-| LaTeX compilation failure | "LaTeX compilation failed. Errors found:\n{log_details}" | `compile_latex()` |
-| PDF cropping failure | "PDF cropping failed with exit code: {code}" | `crop_pdf()` |
-| Missing output file | "PDF cropping failed: output file was not created" | `crop_pdf()` |
-
-### Dependency Errors
-
-| Condition | Error Message | Function |
-|-----------|---------------|----------|
-| Missing kableExtra | "The 'kableExtra' package is required but not installed." | `create_latex_table()` |
-
-## Usage Patterns
-
-### Basic Workflow
-```r
-# 1. Prepare data
-data <- clean_and_format_data(raw_data)
-
-# 2. Generate table
-result <- t2f(data, "analysis_table", verbose = TRUE)
-
-# 3. Use output
-include_graphics(result)  # In R Markdown
-```
-
-### Advanced Configuration
-```r
-# Professional academic formatting
-academic_config <- list(
-  scolor = "gray!8",
-  extra_packages = list(
-    geometry(margin = "20mm", paper = "letterpaper"),
-    babel("english"),
-    "\\usepackage{microtype}"
-  ),
-  document_class = "article"
-)
-
-result <- do.call(t2f, c(list(df = research_data, filename = "results"), academic_config))
-```
-
-### Batch Processing
-```r
-# Process multiple datasets consistently
-process_table_batch <- function(data_list, config) {
-  results <- list()
-  for (name in names(data_list)) {
-    results[[name]] <- do.call(t2f, c(
-      list(df = data_list[[name]], filename = name),
-      config
-    ))
-  }
-  return(results)
-}
-```
+| Condition | Message |
+|-----------|---------|
+| Directory creation failure | "Cannot create directory: {path}" |
+| LaTeX compilation failure | "LaTeX compilation failed" |
+| PDF cropping failure | "pdfcrop failed with exit code: {code}" |
+| Missing pdflatex | "pdflatex not found" |
+| Missing broom | "Package 'broom' required for this object type" |
 
 ## Version History
 
-### Version 0.1.3 (2025-02-01)
-- Added LaTeX package helper functions
-- Enhanced error handling and validation
-- Improved test coverage
-- Updated documentation
+### Version 0.2.0 (2024-12)
 
-### Future API Considerations
-- Potential addition of `longtable` support for multi-page tables
-- Consideration of additional document classes
-- Possible integration with additional LaTeX packages
+- S3 generic refactor with methods for 20+ object types
+- Theme system with 5 built-in journal themes
+- Custom theme registration
+- Inline tables with frame/background styling
+- Model comparison tables (t2f_regression)
+- siunitx decimal alignment with header protection
+- Batch processing API
+- Caching system
+- PNG/SVG output conversion
+- knitr engine integration
+- Default sub_dir changed to "figures"
+
+### Version 0.1.3 (2025-02)
+
+- LaTeX package helper functions
+- Enhanced error handling
+- Improved documentation
 
 ## See Also
 
+- [User Guide](USERS_GUIDE.md)
 - [Technical Specifications](TECHNICAL_SPECIFICATIONS.md)
-- [Comprehensive README](README_COMPREHENSIVE.md)
-- Package vignette: `vignette("zztab2fig")`
-- kableExtra documentation: `help(package = "kableExtra")`
+- [Architecture Overview](ARCHITECTURE_OVERVIEW.md)
