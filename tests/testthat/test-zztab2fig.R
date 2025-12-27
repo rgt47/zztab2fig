@@ -1,5 +1,5 @@
 test_that("t2f handles basic dataframe conversion correctly", {
-  skip_if_not(system("pdflatex -version") == 0, "pdflatex not available")
+  skip_if_no_latex()
   skip_if_not(system("pdfcrop -version") == 0, "pdfcrop not available")
   
   # Setup
@@ -22,7 +22,7 @@ test_that("t2f handles basic dataframe conversion correctly", {
 })
 
 test_that("t2f handles special characters in column names", {
-  skip_if_not(system("pdflatex -version") == 0, "pdflatex not available")
+  skip_if_no_latex()
   skip_if_not(system("pdfcrop -version") == 0, "pdfcrop not available")
   
   dir.create("test_output", showWarnings = FALSE)
@@ -42,7 +42,7 @@ test_that("t2f handles special characters in column names", {
 })
 
 test_that("t2f creates directory if it doesn't exist", {
-  skip_if_not(system("pdflatex -version") == 0, "pdflatex not available")
+  skip_if_no_latex()
   skip_if_not(system("pdfcrop -version") == 0, "pdfcrop not available")
   
   on.exit(unlink("new_dir", recursive = TRUE))
@@ -55,7 +55,7 @@ test_that("t2f creates directory if it doesn't exist", {
 })
 
 test_that("t2f handles custom shading color", {
-  skip_if_not(system("pdflatex -version") == 0, "pdflatex not available")
+  skip_if_no_latex()
   skip_if_not(system("pdfcrop -version") == 0, "pdfcrop not available")
   
   dir.create("test_output", showWarnings = FALSE)
@@ -70,7 +70,7 @@ test_that("t2f handles custom shading color", {
 })
 
 test_that("t2f handles extra_packages", {
-  skip_if_not(system("pdflatex -version") == 0, "pdflatex not available")
+  skip_if_no_latex()
   skip_if_not(system("pdfcrop -version") == 0, "pdfcrop not available")
   
   dir.create("test_output", showWarnings = FALSE)
