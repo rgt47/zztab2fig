@@ -1,6 +1,7 @@
 # Tests for inline table functions
 
 test_that("t2f_inline generates PDF output", {
+  skip_if_no_latex()
   output_dir <- tempdir()
 
   result <- t2f_inline(
@@ -15,6 +16,7 @@ test_that("t2f_inline generates PDF output", {
 })
 
 test_that("t2f_inline generates PNG output", {
+  skip_if_no_latex()
   skip_if_not(nzchar(Sys.which("convert")), "ImageMagick not available")
 
   output_dir <- tempdir()
@@ -31,6 +33,7 @@ test_that("t2f_inline generates PNG output", {
 })
 
 test_that("t2f_inline accepts width parameter", {
+  skip_if_no_latex()
   output_dir <- tempdir()
 
   result <- t2f_inline(
@@ -45,6 +48,7 @@ test_that("t2f_inline accepts width parameter", {
 })
 
 test_that("t2f_inline accepts align parameter", {
+  skip_if_no_latex()
   output_dir <- tempdir()
 
   result_left <- t2f_inline(
@@ -68,6 +72,7 @@ test_that("t2f_inline accepts align parameter", {
 })
 
 test_that("t2f_inline works with lm objects", {
+  skip_if_no_latex()
   output_dir <- tempdir()
   model <- lm(mpg ~ cyl + hp, data = mtcars)
 
@@ -82,6 +87,7 @@ test_that("t2f_inline works with lm objects", {
 })
 
 test_that("t2f_coef generates coefficient table", {
+  skip_if_no_latex()
   output_dir <- tempdir()
   model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
 
@@ -95,6 +101,7 @@ test_that("t2f_coef generates coefficient table", {
 })
 
 test_that("t2f_coef uses default width", {
+  skip_if_no_latex()
   output_dir <- tempdir()
   model <- lm(mpg ~ cyl, data = mtcars)
 
@@ -108,6 +115,7 @@ test_that("t2f_coef uses default width", {
 })
 
 test_that("t2f_inline auto-generates filename if NULL", {
+  skip_if_no_latex()
   output_dir <- tempdir()
 
   result <- t2f_inline(
@@ -122,6 +130,7 @@ test_that("t2f_inline auto-generates filename if NULL", {
 })
 
 test_that("t2f_inline accepts caption and label", {
+  skip_if_no_latex()
   output_dir <- tempdir()
 
   result <- t2f_inline(
@@ -137,6 +146,7 @@ test_that("t2f_inline accepts caption and label", {
 })
 
 test_that("t2f_coef accepts caption and label", {
+  skip_if_no_latex()
   output_dir <- tempdir()
   model <- lm(mpg ~ cyl, data = mtcars)
 
@@ -152,6 +162,7 @@ test_that("t2f_coef accepts caption and label", {
 })
 
 test_that("build_inline_latex generates correct LaTeX for caption above", {
+  skip_if_no_latex()
   result <- zztab2fig:::build_inline_latex(
     path = "test.pdf",
     width = "3in",
@@ -175,6 +186,7 @@ test_that("build_inline_latex generates correct LaTeX for caption above", {
 })
 
 test_that("build_inline_latex generates correct LaTeX for caption below", {
+  skip_if_no_latex()
   result <- zztab2fig:::build_inline_latex(
     path = "test.pdf",
     width = "2in",
@@ -197,6 +209,7 @@ test_that("build_inline_latex generates correct LaTeX for caption below", {
 })
 
 test_that("build_inline_latex handles short caption", {
+  skip_if_no_latex()
   result <- zztab2fig:::build_inline_latex(
     path = "test.pdf",
     width = NULL,
@@ -212,6 +225,7 @@ test_that("build_inline_latex handles short caption", {
 })
 
 test_that("build_inline_latex works without caption", {
+  skip_if_no_latex()
   result <- zztab2fig:::build_inline_latex(
     path = "test.pdf",
     width = "4in",
@@ -229,6 +243,7 @@ test_that("build_inline_latex works without caption", {
 })
 
 test_that("t2f_inline accepts caption_position parameter", {
+  skip_if_no_latex()
   output_dir <- tempdir()
 
   result <- t2f_inline(
@@ -244,6 +259,7 @@ test_that("t2f_inline accepts caption_position parameter", {
 })
 
 test_that("build_inline_latex generates frame with fcolorbox", {
+  skip_if_no_latex()
   result <- zztab2fig:::build_inline_latex(
     path = "test.pdf",
     width = "3in",
@@ -266,6 +282,7 @@ test_that("build_inline_latex generates frame with fcolorbox", {
 })
 
 test_that("build_inline_latex generates background with colorbox", {
+  skip_if_no_latex()
   result <- zztab2fig:::build_inline_latex(
     path = "test.pdf",
     width = "3in",
@@ -288,6 +305,7 @@ test_that("build_inline_latex generates background with colorbox", {
 })
 
 test_that("build_inline_latex generates frame with background using fcolorbox", {
+  skip_if_no_latex()
   result <- zztab2fig:::build_inline_latex(
     path = "test.pdf",
     width = "3in",
@@ -310,6 +328,7 @@ test_that("build_inline_latex generates frame with background using fcolorbox", 
 })
 
 test_that("build_inline_latex without frame or background has no box commands", {
+  skip_if_no_latex()
   result <- zztab2fig:::build_inline_latex(
     path = "test.pdf",
     width = "3in",
@@ -332,6 +351,7 @@ test_that("build_inline_latex without frame or background has no box commands", 
 })
 
 test_that("t2f_inline accepts frame parameters", {
+  skip_if_no_latex()
   output_dir <- tempdir()
 
   result <- t2f_inline(
@@ -348,6 +368,7 @@ test_that("t2f_inline accepts frame parameters", {
 })
 
 test_that("t2f_inline accepts background parameter", {
+  skip_if_no_latex()
   output_dir <- tempdir()
 
   result <- t2f_inline(
@@ -362,6 +383,7 @@ test_that("t2f_inline accepts background parameter", {
 })
 
 test_that("t2f_inline accepts frame and background together", {
+  skip_if_no_latex()
   output_dir <- tempdir()
 
   result <- t2f_inline(
@@ -379,6 +401,7 @@ test_that("t2f_inline accepts frame and background together", {
 })
 
 test_that("t2f_coef accepts frame parameters", {
+  skip_if_no_latex()
   output_dir <- tempdir()
   model <- lm(mpg ~ cyl, data = mtcars)
 
