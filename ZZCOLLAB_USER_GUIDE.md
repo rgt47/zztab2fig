@@ -1,1 +1,1 @@
-docs/ZZCOLLAB_USER_GUIDE.md
+docs/zzcollab-user-guide.md
