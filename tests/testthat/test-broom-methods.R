@@ -2,6 +2,7 @@
 
 test_that("t2f_tidy requires broom package", {
   skip_if_not_installed("broom")
+  skip_if_no_latex()
 
   model <- lm(mpg ~ cyl, data = mtcars)
   output_dir <- tempdir()
@@ -12,7 +13,9 @@ test_that("t2f_tidy requires broom package", {
 
 test_that("t2f.coxph works with survival models", {
   skip_if_not_installed("broom")
+  skip_if_no_latex()
   skip_if_not_installed("survival")
+  skip_if_no_latex()
 
   library(survival)
   output_dir <- tempdir()
@@ -25,7 +28,9 @@ test_that("t2f.coxph works with survival models", {
 
 test_that("t2f.coxph supports exponentiate option", {
   skip_if_not_installed("broom")
+  skip_if_no_latex()
   skip_if_not_installed("survival")
+  skip_if_no_latex()
 
   library(survival)
   output_dir <- tempdir()
@@ -43,7 +48,9 @@ test_that("t2f.coxph supports exponentiate option", {
 
 test_that("t2f.survreg works with parametric survival models", {
   skip_if_not_installed("broom")
+  skip_if_no_latex()
   skip_if_not_installed("survival")
+  skip_if_no_latex()
 
   library(survival)
   output_dir <- tempdir()
@@ -56,7 +63,9 @@ test_that("t2f.survreg works with parametric survival models", {
 
 test_that("t2f.survfit works with survival curves", {
   skip_if_not_installed("broom")
+  skip_if_no_latex()
   skip_if_not_installed("survival")
+  skip_if_no_latex()
 
   library(survival)
   output_dir <- tempdir()
@@ -69,6 +78,7 @@ test_that("t2f.survfit works with survival curves", {
 
 test_that("t2f.nls works with nonlinear models", {
   skip_if_not_installed("broom")
+  skip_if_no_latex()
 
   output_dir <- tempdir()
 
@@ -81,7 +91,9 @@ test_that("t2f.nls works with nonlinear models", {
 
 test_that("t2f.polr works with ordinal logistic regression", {
   skip_if_not_installed("broom")
+  skip_if_no_latex()
   skip_if_not_installed("MASS")
+  skip_if_no_latex()
 
   library(MASS)
   output_dir <- tempdir()
@@ -122,7 +134,9 @@ test_that("t2f.kmeans works with clustering results", {
 
 test_that("t2f.lmerMod works with lme4 models", {
   skip_if_not_installed("broom.mixed")
+  skip_if_no_latex()
   skip_if_not_installed("lme4")
+  skip_if_no_latex()
 
   library(lme4)
   output_dir <- tempdir()
@@ -135,7 +149,9 @@ test_that("t2f.lmerMod works with lme4 models", {
 
 test_that("t2f.lme works with nlme models", {
   skip_if_not_installed("broom.mixed")
+  skip_if_no_latex()
   skip_if_not_installed("nlme")
+  skip_if_no_latex()
 
   library(nlme)
   output_dir <- tempdir()

@@ -98,7 +98,7 @@ test_that("protect_siunitx_headers preserves non-siunitx columns", {
 })
 
 test_that("t2f with siunitx alignment generates valid LaTeX", {
-  skip_if_not(nzchar(Sys.which("pdflatex")), "pdflatex not available")
+  skip_if_no_latex()
 
   df <- data.frame(
     Item = c("A", "B"),
