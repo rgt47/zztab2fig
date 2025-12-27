@@ -105,6 +105,7 @@ test_that("t2f.polr works with ordinal logistic regression", {
 })
 
 test_that("t2f.prcomp works with PCA", {
+  skip_if_no_latex()
   output_dir <- tempdir()
 
   pca <- prcomp(mtcars[, 1:5], scale. = TRUE)
@@ -119,6 +120,7 @@ test_that("t2f.prcomp works with PCA", {
 })
 
 test_that("t2f.kmeans works with clustering results", {
+  skip_if_no_latex()
   output_dir <- tempdir()
 
   km <- kmeans(mtcars[, 1:5], centers = 3)
