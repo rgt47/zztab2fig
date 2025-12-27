@@ -33,17 +33,11 @@ jobs:
           echo "Building computational environment..."
           docker build -t compendium-env .
 
-      - name: Restore R packages
+      - name: Restore packages and render report
         run: |
-          echo "Restoring R package environment..."
+          echo "Restoring packages and rendering manuscript..."
           docker run --rm -v ${{ github.workspace }}:/project -w /project \
-            compendium-env Rscript -e 'renv::restore()'
-
-      - name: Render report
-        run: |
-          echo "Rendering manuscript..."
-          docker run --rm -v ${{ github.workspace }}:/project -w /project \
-            compendium-env Rscript -e 'rmarkdown::render("analysis/report/report.Rmd")'
+            compendium-env Rscript -e 'renv::restore(); rmarkdown::render("analysis/report/report.Rmd")'
 
       - name: Check for report output
         run: |
