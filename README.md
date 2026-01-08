@@ -17,8 +17,26 @@ integration.
 ### From GitHub
 
 ```r
-# install.packages("devtools")
-devtools::install_github("rgt47/zztab2fig")
+# install.packages("pak")
+pak::pak("rgt47/zztab2fig")
+```
+
+### From Local Source
+
+If you have cloned the repository locally:
+
+```r
+# Using pak (preferred)
+pak::local_install()
+
+# Or using devtools
+devtools::install()
+```
+
+From the command line:
+
+```bash
+R CMD INSTALL .
 ```
 
 ### System Requirements
@@ -175,15 +193,99 @@ cases:
 - `vignette("object-types-and-themes")` - Supported objects and themes
 - `vignette("advanced-features")` - Advanced customization
 
-## Reproducibility
+## Development with Docker
 
-This package is developed using the zzcollab framework for reproducible
-research. To reproduce the development environment:
+This package uses Docker for reproducible development. All LaTeX dependencies
+and R packages are pre-configured in the container.
+
+### Prerequisites
+
+- Docker Desktop (or Docker Engine on Linux)
+- GNU Make
+
+### Building the Docker Image
+
+Build the image from the project root:
 
 ```bash
-git clone https://github.com/rgt47/zztab2fig.git
-cd zztab2fig
-make r  # Enter Docker container with all dependencies
+# Standard build
+make docker-build
+
+# Rebuild without cache (force fresh build)
+make docker-rebuild
+
+# Build with verbose output (for debugging)
+make docker-build-log
+```
+
+### Development Workflow
+
+Start an interactive R session inside the container:
+
+```bash
+make r
+```
+
+This command:
+
+1. Validates package dependencies before starting
+2. Launches a bash terminal with R, vim, and all tools available
+3. Mounts the project directory at `/home/rstudio/project`
+4. Validates dependencies again on exit (captures new packages)
+
+For RStudio Server instead of terminal:
+
+```bash
+make rstudio
+```
+
+Then open http://localhost:8787 (username: `rstudio`, password: `rstudio`).
+
+### Running Package Tasks in Docker
+
+```bash
+# Run tests
+make docker-test
+
+# Build vignettes
+make docker-vignettes
+
+# Full R CMD check
+make docker-check
+
+# Generate documentation
+make docker-document
+```
+
+### Installing New Packages
+
+Inside the container:
+
+```r
+renv::install("newpackage")
+```
+
+On exit, `make r` automatically runs validation to update `renv.lock`.
+
+### Available Make Targets
+
+Run `make help` to see all available targets:
+
+```
+Main workflow:
+  r                     - Start bash terminal (vim editing)
+  rstudio               - Start RStudio Server on http://localhost:8787
+
+Docker utilities:
+  docker-build          - Build image from current renv.lock
+  docker-rebuild        - Rebuild image without cache
+  docker-test           - Run tests in container
+  docker-check          - Full R CMD check in container
+  docker-vignettes      - Build vignettes in container
+
+Cleanup:
+  docker-clean          - Remove Docker image
+  docker-prune-cache    - Remove Docker build cache
 ```
 
 ## License
