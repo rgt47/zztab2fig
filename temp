@@ -1,0 +1,15 @@
+ Search PubMed for all Alzheimer's disease research published between January 3-10, 2025 from these journals:
+
+  Top-tier general/medical:
+  - Nature, Science, Cell, Lancet, NEJM, JAMA
+
+  Top-tier neurology:
+  - Lancet Neurology, JAMA Neurology, Brain, Annals of Neurology, Neurology, Nature Neuroscience, Neuron
+
+  Alzheimer's specialty:
+  - Alzheimer's & Dementia, Journal of Alzheimer's Disease, Alzheimer's Research & Therapy, Journal of Prevention of Alzheimer's Disease, Neurobiology of Aging
+
+  For each article, provide: title, journal, authors, publication date,abstract and DOI link.
+
+Generate a summary of the research results divided by Alzheimer's disease
+sub-field: clinical trials, biomarkers, etc. 
