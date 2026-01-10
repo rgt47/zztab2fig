@@ -22,8 +22,8 @@ NULL
   )
 
   # Check for required system dependencies
-  has_xelatex <- check_system_command("xelatex")
-  has_pdfcrop <- check_system_command("pdfcrop")
+  has_xelatex <- command_exists("xelatex")
+  has_pdfcrop <- command_exists("pdfcrop")
 
   if (!has_xelatex) {
     packageStartupMessage(
@@ -40,17 +40,6 @@ NULL
   invisible()
 }
 
-#' Check if a system command is available
-#'
-#' @param cmd Command name to check.
-#' @return Logical indicating if command is available.
-#' @keywords internal
-check_system_command <- function(cmd) {
-  result <- suppressWarnings(
-    system(paste(cmd, "--version"), ignore.stdout = TRUE, ignore.stderr = TRUE)
-  )
-  result == 0
-}
 
 #' Ensure pdfcrop is available
 #'

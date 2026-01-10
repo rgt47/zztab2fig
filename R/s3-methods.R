@@ -289,10 +289,7 @@ t2f.anova <- function(x, digits = 3, ...) {
   rownames(df) <- NULL
 
   # Round numeric columns
-  numeric_cols <- sapply(df, is.numeric)
-  df[numeric_cols] <- lapply(df[numeric_cols], function(col) {
-    round(col, digits)
-  })
+  df <- round_numeric_cols(df, digits)
 
   # Format p-values if present
   pval_cols <- grep("Pr|p.value|P-value", names(df), ignore.case = TRUE)
@@ -476,9 +473,7 @@ format_pvalue <- function(p, digits = 3) {
 #' @keywords internal
 format_with_stars <- function(estimates, pvals, stars, digits) {
   if (isFALSE(stars)) {
-    return(ifelse(is.na(estimates), "",
-      as.character(round(estimates, digits))
-    ))
+    return(ifelse(is.na(estimates), "", as.character(round(estimates, digits))))
   }
 
   if (isTRUE(stars)) {
@@ -488,21 +483,15 @@ format_with_stars <- function(estimates, pvals, stars, digits) {
   stars <- sort(stars, decreasing = TRUE)
   star_chars <- c("*", "**", "***")[seq_along(stars)]
 
-  sapply(seq_along(estimates), function(i) {
-    if (is.na(estimates[i])) {
-      return("")
-    }
+  vapply(seq_along(estimates), function(i) {
+    if (is.na(estimates[i])) return("")
     est_str <- as.character(round(estimates[i], digits))
     if (!is.na(pvals[i])) {
-      for (j in seq_along(stars)) {
-        if (pvals[i] < stars[j]) {
-          est_str <- paste0(est_str, star_chars[j])
-          break
-        }
-      }
+      star_idx <- which(pvals[i] < stars)[1]
+      if (!is.na(star_idx)) est_str <- paste0(est_str, star_chars[star_idx])
     }
     est_str
-  })
+  }, character(1))
 }
 
 #' Build model statistics rows

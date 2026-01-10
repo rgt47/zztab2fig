@@ -6,19 +6,6 @@
 #' @name output-formats
 NULL
 
-#' Check if a system command is available
-#'
-#' @param cmd Command name to check.
-#' @return Logical indicating if command is available.
-#' @keywords internal
-command_exists <- function(cmd) {
-  result <- tryCatch(
-    system2("which", cmd, stdout = TRUE, stderr = TRUE),
-    error = function(e) NULL,
-    warning = function(w) NULL
-  )
-  !is.null(result) && length(result) > 0
-}
 
 #' Convert PDF to PNG
 #'

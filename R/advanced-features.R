@@ -404,32 +404,16 @@ apply_footnotes <- function(kable_obj, footnote_spec) {
     return(kable_obj)
   }
 
-  # Build args list, only including non-NULL values
-  args <- list(kable_input = kable_obj)
+  # Optional arguments to pass through if non-NULL
+  optional_args <- c("general", "number", "alphabet", "symbol",
+                     "general_title", "number_title", "alphabet_title",
+                     "symbol_title")
 
-  if (!is.null(footnote_spec$general)) {
-    args$general <- footnote_spec$general
-  }
-  if (!is.null(footnote_spec$number)) {
-    args$number <- footnote_spec$number
-  }
-  if (!is.null(footnote_spec$alphabet)) {
-    args$alphabet <- footnote_spec$alphabet
-  }
-  if (!is.null(footnote_spec$symbol)) {
-    args$symbol <- footnote_spec$symbol
-  }
-  if (!is.null(footnote_spec$general_title)) {
-    args$general_title <- footnote_spec$general_title
-  }
-  if (!is.null(footnote_spec$number_title)) {
-    args$number_title <- footnote_spec$number_title
-  }
-  if (!is.null(footnote_spec$alphabet_title)) {
-    args$alphabet_title <- footnote_spec$alphabet_title
-  }
-  if (!is.null(footnote_spec$symbol_title)) {
-    args$symbol_title <- footnote_spec$symbol_title
+  args <- list(kable_input = kable_obj)
+  for (arg in optional_args) {
+    if (!is.null(footnote_spec[[arg]])) {
+      args[[arg]] <- footnote_spec[[arg]]
+    }
   }
 
   args$footnote_as_chunk <- footnote_spec$footnote_as_chunk

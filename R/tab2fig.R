@@ -70,15 +70,10 @@ t2f_internal <- function(df, filename = NULL,
   if (is.null(filename)) filename <- deparse(substitute(df))
   if (!is.data.frame(df)) stop("`df` must be a dataframe.", call. = FALSE)
   if (nrow(df) == 0) stop("`df` must not be empty.", call. = FALSE)
-  if (!is.logical(verbose) || length(verbose) != 1) {
-    stop("`verbose` must be a single logical value.", call. = FALSE)
-  }
-  if (!is.logical(crop) || length(crop) != 1) {
-    stop("`crop` must be a single logical value.", call. = FALSE)
-  }
-  if (!is.logical(longtable) || length(longtable) != 1) {
-    stop("`longtable` must be a single logical value.", call. = FALSE)
-  }
+
+  assert_single_logical(verbose, "verbose")
+  assert_single_logical(crop, "crop")
+  assert_single_logical(longtable, "longtable")
 
   # Validate crop_margin
   if (!is.numeric(crop_margin) || !(length(crop_margin) %in% c(1, 4))) {
@@ -86,17 +81,9 @@ t2f_internal <- function(df, filename = NULL,
   }
 
   # Validate caption and label
-  if (!is.null(caption) && (!is.character(caption) || length(caption) != 1)) {
-    stop("`caption` must be a single character string or NULL.", call. = FALSE)
-  }
-  if (!is.null(caption_short) &&
-      (!is.character(caption_short) || length(caption_short) != 1)) {
-    stop("`caption_short` must be a single character string or NULL.",
-      call. = FALSE)
-  }
-  if (!is.null(label) && (!is.character(label) || length(label) != 1)) {
-    stop("`label` must be a single character string or NULL.", call. = FALSE)
-  }
+  assert_string_or_null(caption, "caption")
+  assert_string_or_null(caption_short, "caption_short")
+  assert_string_or_null(label, "label")
 
   # Validate alignment (can be character vector or list with siunitx specs)
   if (!is.null(align) && !is.list(align)) {
@@ -142,19 +129,13 @@ t2f_internal <- function(df, filename = NULL,
   striped <- theme_settings$striped
 
   # Validate resolved values
-  if (!is.character(scolor) || length(scolor) != 1) {
-    stop("`scolor` must be a single character string.", call. = FALSE)
-  }
-  if (!is.character(document_class) || length(document_class) != 1) {
-    stop("`document_class` must be a single character string.", call. = FALSE)
-  }
+  assert_single_string(scolor, "scolor")
+  assert_single_string(document_class, "document_class")
 
   # Validate directory path
   if (is.null(sub_dir)) stop("Directory name cannot be NULL", call. = FALSE)
   if (sub_dir == "") stop("Directory name cannot be empty", call. = FALSE)
-  if (!is.character(sub_dir) || length(sub_dir) != 1) {
-    stop("`sub_dir` must be a single character string.", call. = FALSE)
-  }
+  assert_single_string(sub_dir, "sub_dir")
 
   # Try to create directory and check if we can write to it
   if (!dir.exists(sub_dir)) {
@@ -248,27 +229,28 @@ t2f_internal <- function(df, filename = NULL,
 #' @return Character string with LaTeX geometry package specification
 #' @export
 geometry <- function(margin = NULL, paper = NULL, landscape = FALSE, ...) {
-  opts <- list(margin = margin, paper = paper, ...)
-  if (landscape) opts$landscape <- TRUE
+  opts <- c(
+    if (!is.null(margin)) paste0("margin=", margin),
+    if (!is.null(paper)) paste0("paper=", paper),
+    if (landscape) "landscape"
+  )
 
-  opts <- opts[!sapply(opts, is.null)]
+  # Handle additional named arguments
 
-  if (length(opts) == 0) {
-    return("\\usepackage{geometry}")
+  extra <- list(...)
+  if (length(extra) > 0) {
+    extra_opts <- vapply(names(extra), function(nm) {
+      val <- extra[[nm]]
+      if (is.logical(val) && val) nm else paste0(nm, "=", val)
+    }, character(1))
+    opts <- c(opts, extra_opts)
   }
 
-  # Handle logical values
-  opt_strs <- sapply(names(opts), function(name) {
-    value <- opts[[name]]
-    if (is.logical(value) && value) {
-      name
-    } else {
-      paste0(name, "=", value)
-    }
-  })
-
-  opt_str <- paste(opt_strs, collapse = ",")
-  paste0("\\usepackage[", opt_str, "]{geometry}")
+  if (length(opts) == 0) {
+    "\\usepackage{geometry}"
+  } else {
+    paste0("\\usepackage[", paste(opts, collapse = ","), "]{geometry}")
+  }
 }
 
 #' Create a babel package specification for language support
@@ -411,14 +393,13 @@ auto_align <- function(df) {
 detect_siunitx_columns <- function(align) {
   if (is.null(align)) return(integer(0))
 
-  siunitx_cols <- integer(0)
-  for (i in seq_along(align)) {
-    col_align <- if (is.list(align)) align[[i]] else align[i]
-    if (is.character(col_align) && grepl("^S\\[", col_align)) {
-      siunitx_cols <- c(siunitx_cols, i)
-    }
+  is_siunitx <- function(x) is.character(x) && grepl("^S\\[", x)
+
+  if (is.list(align)) {
+    which(vapply(align, is_siunitx, logical(1)))
+  } else {
+    which(grepl("^S\\[", align))
   }
-  siunitx_cols
 }
 
 #' Protect siunitx column headers with braces

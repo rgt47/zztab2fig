@@ -10,13 +10,7 @@ NULL
 
 # Helper function to check broom availability
 check_broom <- function() {
-  if (!requireNamespace("broom", quietly = TRUE)) {
-    stop(
-      "Package 'broom' is required for this object type.\n",
-      "Install it with: install.packages('broom')",
-      call. = FALSE
-    )
-  }
+  require_package("broom", "this object type")
 }
 
 #' Convert any broom-supported object to a LaTeX table
@@ -70,15 +64,6 @@ t2f_tidy <- function(x, tidy_args = list(), glance = FALSE, digits = 3, ...) {
   t2f.default(tidy_df, ...)
 }
 
-#' Round numeric columns in a data frame
-#' @keywords internal
-round_numeric_cols <- function(df, digits) {
-  numeric_cols <- sapply(df, is.numeric)
-  df[numeric_cols] <- lapply(df[numeric_cols], function(col) {
-    round(col, digits)
-  })
-  df
-}
 
 
 # Survival Analysis Methods -----------------------------------------------
@@ -114,24 +99,8 @@ t2f.coxph <- function(x, digits = 3, exponentiate = TRUE,
     conf.level = conf.level
   )
 
-  result <- data.frame(Term = tidy_df$term, stringsAsFactors = FALSE)
-
   est_label <- if (exponentiate) "HR" else "Estimate"
-  result[[est_label]] <- round(tidy_df$estimate, digits)
-
-  if ("std.error" %in% names(tidy_df)) {
-    result$`Std. Error` <- round(tidy_df$std.error, digits)
-  }
-
-  if (conf.int && "conf.low" %in% names(tidy_df)) {
-    result$`CI Lower` <- round(tidy_df$conf.low, digits)
-    result$`CI Upper` <- round(tidy_df$conf.high, digits)
-  }
-
-  if ("p.value" %in% names(tidy_df)) {
-    result$`p value` <- format_pvalue(tidy_df$p.value, digits)
-  }
-
+  result <- build_coef_table(tidy_df, digits, est_label, conf.int)
   t2f.default(result, ...)
 }
 
@@ -151,23 +120,7 @@ t2f.survreg <- function(x, digits = 3, conf.int = TRUE,
   check_broom()
 
   tidy_df <- broom::tidy(x, conf.int = conf.int, conf.level = conf.level)
-
-  result <- data.frame(Term = tidy_df$term, stringsAsFactors = FALSE)
-  result$Estimate <- round(tidy_df$estimate, digits)
-
-  if ("std.error" %in% names(tidy_df)) {
-    result$`Std. Error` <- round(tidy_df$std.error, digits)
-  }
-
-  if (conf.int && "conf.low" %in% names(tidy_df)) {
-    result$`CI Lower` <- round(tidy_df$conf.low, digits)
-    result$`CI Upper` <- round(tidy_df$conf.high, digits)
-  }
-
-  if ("p.value" %in% names(tidy_df)) {
-    result$`p value` <- format_pvalue(tidy_df$p.value, digits)
-  }
-
+  result <- build_coef_table(tidy_df, digits, "Estimate", conf.int)
   t2f.default(result, ...)
 }
 
@@ -232,19 +185,8 @@ t2f.Arima <- function(x, digits = 3, conf.int = TRUE,
   check_broom()
 
   tidy_df <- broom::tidy(x, conf.int = conf.int, conf.level = conf.level)
-
-  result <- data.frame(Term = tidy_df$term, stringsAsFactors = FALSE)
-  result$Estimate <- round(tidy_df$estimate, digits)
-
-  if ("std.error" %in% names(tidy_df)) {
-    result$`Std. Error` <- round(tidy_df$std.error, digits)
-  }
-
-  if (conf.int && "conf.low" %in% names(tidy_df)) {
-    result$`CI Lower` <- round(tidy_df$conf.low, digits)
-    result$`CI Upper` <- round(tidy_df$conf.high, digits)
-  }
-
+  result <- build_coef_table(tidy_df, digits, "Estimate", conf.int,
+                             include_pvalue = FALSE)
   t2f.default(result, ...)
 }
 
@@ -267,23 +209,7 @@ t2f.nls <- function(x, digits = 3, conf.int = TRUE,
   check_broom()
 
   tidy_df <- broom::tidy(x, conf.int = conf.int, conf.level = conf.level)
-
-  result <- data.frame(Term = tidy_df$term, stringsAsFactors = FALSE)
-  result$Estimate <- round(tidy_df$estimate, digits)
-
-  if ("std.error" %in% names(tidy_df)) {
-    result$`Std. Error` <- round(tidy_df$std.error, digits)
-  }
-
-  if (conf.int && "conf.low" %in% names(tidy_df)) {
-    result$`CI Lower` <- round(tidy_df$conf.low, digits)
-    result$`CI Upper` <- round(tidy_df$conf.high, digits)
-  }
-
-  if ("p.value" %in% names(tidy_df)) {
-    result$`p value` <- format_pvalue(tidy_df$p.value, digits)
-  }
-
+  result <- build_coef_table(tidy_df, digits, "Estimate", conf.int)
   t2f.default(result, ...)
 }
 
@@ -310,23 +236,8 @@ t2f.polr <- function(x, digits = 3, exponentiate = FALSE,
     conf.level = conf.level
   )
 
-  result <- data.frame(Term = tidy_df$term, stringsAsFactors = FALSE)
-
   est_label <- if (exponentiate) "OR" else "Estimate"
-  result[[est_label]] <- round(tidy_df$estimate, digits)
-
-  if ("std.error" %in% names(tidy_df)) {
-    result$`Std. Error` <- round(tidy_df$std.error, digits)
-  }
-
-  if (conf.int && "conf.low" %in% names(tidy_df)) {
-    result$`CI Lower` <- round(tidy_df$conf.low, digits)
-    result$`CI Upper` <- round(tidy_df$conf.high, digits)
-  }
-
-  if ("p.value" %in% names(tidy_df)) {
-    result$`p value` <- format_pvalue(tidy_df$p.value, digits)
-  }
+  result <- build_coef_table(tidy_df, digits, est_label, conf.int)
 
   if ("coef.type" %in% names(tidy_df)) {
     result$Type <- tidy_df$coef.type
@@ -467,13 +378,7 @@ t2f.kmeans <- function(x, matrix = "centers", digits = 3, ...) {
 #' @export
 t2f.lmerMod <- function(x, effects = "fixed", digits = 3,
                         conf.int = TRUE, conf.level = 0.95, ...) {
-  if (!requireNamespace("broom.mixed", quietly = TRUE)) {
-    stop(
-      "Package 'broom.mixed' is required for lme4 models.\n",
-      "Install it with: install.packages('broom.mixed')",
-      call. = FALSE
-    )
-  }
+  require_package("broom.mixed", "lme4 models")
 
   tidy_df <- broom.mixed::tidy(
     x,
@@ -483,17 +388,8 @@ t2f.lmerMod <- function(x, effects = "fixed", digits = 3,
   )
 
   if (effects == "fixed") {
-    result <- data.frame(Term = tidy_df$term, stringsAsFactors = FALSE)
-    result$Estimate <- round(tidy_df$estimate, digits)
-
-    if ("std.error" %in% names(tidy_df)) {
-      result$`Std. Error` <- round(tidy_df$std.error, digits)
-    }
-
-    if (conf.int && "conf.low" %in% names(tidy_df)) {
-      result$`CI Lower` <- round(tidy_df$conf.low, digits)
-      result$`CI Upper` <- round(tidy_df$conf.high, digits)
-    }
+    result <- build_coef_table(tidy_df, digits, "Estimate", conf.int,
+                               include_pvalue = FALSE)
   } else {
     result <- round_numeric_cols(tidy_df, digits)
   }
@@ -512,13 +408,7 @@ t2f.lmerMod <- function(x, effects = "fixed", digits = 3,
 t2f.glmerMod <- function(x, effects = "fixed", digits = 3,
                          exponentiate = FALSE, conf.int = TRUE,
                          conf.level = 0.95, ...) {
-  if (!requireNamespace("broom.mixed", quietly = TRUE)) {
-    stop(
-      "Package 'broom.mixed' is required for lme4 models.\n",
-      "Install it with: install.packages('broom.mixed')",
-      call. = FALSE
-    )
-  }
+  require_package("broom.mixed", "lme4 models")
 
   tidy_df <- broom.mixed::tidy(
     x,
@@ -529,23 +419,8 @@ t2f.glmerMod <- function(x, effects = "fixed", digits = 3,
   )
 
   if (effects == "fixed") {
-    result <- data.frame(Term = tidy_df$term, stringsAsFactors = FALSE)
-
     est_label <- if (exponentiate) "OR" else "Estimate"
-    result[[est_label]] <- round(tidy_df$estimate, digits)
-
-    if ("std.error" %in% names(tidy_df)) {
-      result$`Std. Error` <- round(tidy_df$std.error, digits)
-    }
-
-    if (conf.int && "conf.low" %in% names(tidy_df)) {
-      result$`CI Lower` <- round(tidy_df$conf.low, digits)
-      result$`CI Upper` <- round(tidy_df$conf.high, digits)
-    }
-
-    if ("p.value" %in% names(tidy_df)) {
-      result$`p value` <- format_pvalue(tidy_df$p.value, digits)
-    }
+    result <- build_coef_table(tidy_df, digits, est_label, conf.int)
   } else {
     result <- round_numeric_cols(tidy_df, digits)
   }
@@ -567,13 +442,7 @@ t2f.glmerMod <- function(x, effects = "fixed", digits = 3,
 #' @export
 t2f.lme <- function(x, effects = "fixed", digits = 3,
                     conf.int = TRUE, conf.level = 0.95, ...) {
-  if (!requireNamespace("broom.mixed", quietly = TRUE)) {
-    stop(
-      "Package 'broom.mixed' is required for nlme models.\n",
-      "Install it with: install.packages('broom.mixed')",
-      call. = FALSE
-    )
-  }
+  require_package("broom.mixed", "nlme models")
 
   tidy_df <- broom.mixed::tidy(
     x,
@@ -583,21 +452,7 @@ t2f.lme <- function(x, effects = "fixed", digits = 3,
   )
 
   if (effects == "fixed") {
-    result <- data.frame(Term = tidy_df$term, stringsAsFactors = FALSE)
-    result$Estimate <- round(tidy_df$estimate, digits)
-
-    if ("std.error" %in% names(tidy_df)) {
-      result$`Std. Error` <- round(tidy_df$std.error, digits)
-    }
-
-    if (conf.int && "conf.low" %in% names(tidy_df)) {
-      result$`CI Lower` <- round(tidy_df$conf.low, digits)
-      result$`CI Upper` <- round(tidy_df$conf.high, digits)
-    }
-
-    if ("p.value" %in% names(tidy_df)) {
-      result$`p value` <- format_pvalue(tidy_df$p.value, digits)
-    }
+    result <- build_coef_table(tidy_df, digits, "Estimate", conf.int)
   } else {
     result <- round_numeric_cols(tidy_df, digits)
   }

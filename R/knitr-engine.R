@@ -171,6 +171,3 @@ register_t2f_engine <- function() {
   }
   invisible(NULL)
 }
-
-# Null-coalescing operator (internal utility)
-`%||%` <- function(x, y) if (is.null(x)) y else x
