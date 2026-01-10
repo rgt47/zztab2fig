@@ -80,6 +80,25 @@ round_numeric_cols <- function(df, digits) {
   df
 }
 
+# Formatting Helpers ----
+
+#' Format p-values for display
+#' @param p Numeric vector of p-values.
+#' @param digits Number of decimal places.
+#' @return Character vector of formatted p-values.
+#' @keywords internal
+format_pvalue <- function(p, digits = 3) {
+  vapply(p, function(pval) {
+    if (is.na(pval)) {
+      ""
+    } else if (pval < 0.001) {
+      "<0.001"
+    } else {
+      format(round(pval, digits), nsmall = digits)
+    }
+  }, character(1))
+}
+
 # Coefficient Table Builder ----
 
 #' Build a coefficient table from tidy output

@@ -454,21 +454,6 @@ t2f_regression <- function(...,
 
 # Helper functions
 
-#' Format p-values for display
-#' @keywords internal
-format_pvalue <- function(p, digits = 3) {
-  sapply(p, function(pval) {
-    if (is.na(pval)) {
-      return("")
-    }
-    if (pval < 0.001) {
-      "<0.001"
-    } else {
-      format(round(pval, digits), nsmall = digits)
-    }
-  })
-}
-
 #' Format estimates with significance stars
 #' @keywords internal
 format_with_stars <- function(estimates, pvals, stars, digits) {

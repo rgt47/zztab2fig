@@ -11,5 +11,11 @@
 
   For each article, provide: title, journal, authors, publication date,abstract and DOI link.
 
-Generate a summary of the research results divided by Alzheimer's disease
-sub-field: clinical trials, biomarkers, etc. 
+Generate a two to three page summary of these recent research results divided by
+Alzheimer's disease sub-field: clinical trials, biomarkers, etc. Generate one
+summary from a clinical perspective and one from a biostatistics pers 
+
+generate a markdown file. for each article list the metadata and also generate a refactored abstract for consumption by a biostatistician working in alzheimers disease.
+
+if considered useful to generate the 'biostatistician abstract' get the full text of the article.
+
