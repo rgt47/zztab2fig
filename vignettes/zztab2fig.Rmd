@@ -1,0 +1,899 @@
+---
+title: "Creating LaTeX Tables and Cropped PDFs from Dataframes"
+author: "Ronald (Ryy) G. Thomas"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Creating LaTeX Tables and Cropped PDFs from Dataframes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Introduction
+
+The `zztab2fig` package provides a streamlined workflow to transform R objects
+into publication-ready LaTeX tables and generate cropped PDF outputs. With
+built-in options for styling, directory management, and verbose logging, the
+package is ideal for researchers, analysts, and data scientists who need
+professional table outputs for reports, presentations, or publications.
+
+## What's New in v0.2.0
+
+Version 0.2.0 introduced substantial enhancements:
+
+- **S3 method dispatch**: `t2f()` now works directly with 20+ object types:
+  - Base: `lm`, `glm`, `anova`, `aov`, `htest`, `matrix`, `table`
+  - Via broom: `coxph`, `survreg`, `survfit`, `nls`, `polr`, `prcomp`, `kmeans`,
+    `lmerMod`, `glmerMod`, `lme`, `Arima`, and more
+- **Theme system**: Built-in themes for NEJM, APA, Nature, and minimal styles
+- **Inline workflow**: `t2f_inline()` for R Markdown without float positioning,
+  with `\captionof` for proper table numbering
+- **t2f_regression()**: Side-by-side regression model comparison tables
+- **Advanced formatting**: Table footnotes, spanning headers, multi-row cells,
+  and decimal alignment via siunitx
+- **Caption control**: `caption_position` (above/below), short captions, and
+  cross-reference labels
+- **Dependency helpers**: `check_latex_deps()`, `ensure_pdfcrop()` for setup
+
+For detailed coverage of these features, see the companion vignettes:
+
+- *Quickstart Guide* - Concise reference for common operations
+- *Object Types and Themes* - S3 methods and theme demonstrations
+- *Advanced Features* - Footnotes, headers, alignment, placement helpers, and
+  inline workflow
+- *Why zztab2fig?* - Practical comparison with pander
+
+This vignette covers the foundational workflow and customization options.
+
+# Installation
+
+The package can be installed from CRAN or directly from GitHub if hosted there.
+
+```r
+# Install from CRAN
+#install.packages("zztab2fig")
+
+# Or install from GitHub
+# devtools::install_github("yourusername/zztab2fig")
+```
+
+Load the package:
+
+```{r setup, message=FALSE, warning=FALSE}
+library(zztab2fig)
+# Load dplyr for data manipulation examples
+library(dplyr)
+```
+
+# Key Functions
+
+## `t2f()`
+
+The primary function for converting R objects to LaTeX tables. In v0.2.0, `t2f()`
+is an S3 generic with methods for data frames, matrices, tables, and statistical
+objects.
+
+### Core Arguments
+
+- `x`: Object to convert (data frame, matrix, lm, glm, etc.)
+- `filename`: Base name for output files. Defaults to the object name.
+- `sub_dir`: Output subdirectory. Default: `"output"`.
+- `scolor`: LaTeX color for row shading (e.g., `"blue!10"`). Default: `"blue!10"`.
+- `verbose`: Print progress messages. Default: `FALSE`.
+- `extra_packages`: List of LaTeX package specifications.
+- `document_class`: LaTeX document class. Default: `"article"`.
+
+### New Parameters (v0.2.0)
+
+- `caption`: LaTeX table caption.
+- `caption_short`: Short caption for List of Tables.
+- `label`: LaTeX label for cross-referencing.
+- `align`: Column alignment vector or list (supports siunitx).
+- `longtable`: Enable multi-page tables. Default: `FALSE`.
+- `crop`: Crop PDF output. Default: `TRUE`.
+- `crop_margin`: Margin size in points. Default: `10`.
+- `theme`: Theme name (`"nejm"`, `"apa"`, `"nature"`, `"minimal"`) or
+  `t2f_theme` object.
+- `footnote`: A `t2f_footnote` object for table footnotes.
+- `header_above`: A `t2f_header_above` object for spanning column headers.
+- `collapse_rows`: A `t2f_collapse_rows` object for multi-row cells.
+
+### Returns
+
+Invisibly returns the path to the generated PDF file.
+
+## LaTeX Package Helper Functions
+
+The package provides convenient R functions to generate LaTeX package specifications:
+
+### `geometry()`
+Configures page layout and margins:
+```r
+geometry(margin = "5mm", paper = "a4paper", landscape = TRUE)
+```
+
+### `babel()`
+Adds language support:
+```r
+babel("spanish")  # for Spanish language support
+```
+
+### `fontspec()`
+Configures custom fonts (requires XeLaTeX or LuaLaTeX):
+```r
+fontspec(main_font = "Times New Roman", sans_font = "Arial")
+```
+
+### Helper Functions
+See the full vignette for detailed descriptions of helper functions like `sanitize_column_names()`, `sanitize_table_cells()`, and `create_latex_table()`.
+
+# Example Workflow
+
+## Step 1: Prepare Your Data
+
+Load a dataframe, e.g., the `mtcars` dataset:
+
+```r
+data(mtcars)
+```
+
+## Step 2: Generate the LaTeX Table and PDF
+
+```r
+t2f(
+  df = mtcars,
+  filename = "mtcars_table",
+  sub_dir = "tables",
+  scolor = "blue!10",
+  verbose = TRUE
+)
+```
+
+## Step 3: Advanced Usage with Custom LaTeX Packages
+
+```r
+# Create a table with custom margins and language support
+t2f(
+  df = mtcars,
+  filename = "mtcars_custom",
+  sub_dir = "tables", 
+  extra_packages = list(
+    geometry(margin = "5mm", paper = "a4paper"),
+    babel("spanish")
+  ),
+  verbose = TRUE
+)
+
+# Wide table with landscape orientation
+t2f(
+  df = mtcars,
+  filename = "mtcars_wide",
+  extra_packages = list(
+    geometry(margin = "3mm", landscape = TRUE)
+  )
+)
+```
+
+## Step 4: Inspect the Outputs
+
+Navigate to the `tables` subdirectory to find:
+- `mtcars_table.tex`: The LaTeX source file.
+- `mtcars_table.pdf`: The compiled PDF.
+- `mtcars_table_cropped.pdf`: The cropped PDF.
+
+# Feature Demonstrations
+
+## Basic Table Generation
+
+The simplest usage creates a standard LaTeX table:
+
+```{r basic-example, message=FALSE, warning=FALSE}
+library(zztab2fig)
+
+# Basic table with default settings
+data(iris)
+small_iris <- head(iris, 8)
+
+result <- t2f(small_iris, 
+              filename = "basic_iris", 
+              sub_dir = "basic_output",
+              verbose = TRUE)
+cat("Generated files in:", dirname(result))
+```
+
+This creates:
+- `basic_output/basic_iris.tex`: LaTeX source file
+- `basic_output/basic_iris.pdf`: Full PDF 
+- `basic_output/basic_iris_cropped.pdf`: Cropped PDF for inclusion
+
+Here's the table content that was generated:
+
+```{r show-basic, echo=FALSE}
+knitr::kable(small_iris, caption = "Basic Iris Dataset Table (as displayed in R)")
+```
+
+And here's the actual LaTeX-generated PDF table produced by `zztab2fig`:
+
+```{r include-basic-pdf, echo=FALSE, fig.cap="LaTeX Table Generated by zztab2fig", out.width="100%"}
+# Ensure the file exists before including it
+pdf_path <- "basic_output/basic_iris_cropped.pdf"
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+} else {
+  cat("PDF file not found:", pdf_path)
+}
+```
+
+## Custom Colors and Styling
+
+Control table appearance with different color schemes. Here's a comparison:
+
+```{r color-demo, message=FALSE, warning=FALSE}
+# Create a sample dataset
+color_demo_data <- head(mtcars[, c("mpg", "cyl", "hp", "wt")], 6)
+
+# Generate tables with different colors
+t2f(color_demo_data, 
+    filename = "blue_table", 
+    sub_dir = "color_demo",
+    scolor = "blue!12")
+
+t2f(color_demo_data, 
+    filename = "green_table", 
+    sub_dir = "color_demo", 
+    scolor = "green!15")
+```
+
+**Original data:**
+```{r show-color-data, echo=FALSE}
+knitr::kable(color_demo_data, caption = "Sample Data for Color Demonstration")
+```
+
+**Blue-styled LaTeX table (scolor = "blue!12"):**
+```{r include-blue-pdf, echo=FALSE, fig.cap="Blue-styled LaTeX Table", out.width="100%"}
+pdf_path <- "color_demo/blue_table_cropped.pdf"
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+} else {
+  cat("PDF file not found:", pdf_path)
+}
+```
+
+**Green-styled LaTeX table (scolor = "green!15"):**
+```{r include-green-pdf, echo=FALSE, fig.cap="Green-styled LaTeX Table", out.width="100%"}
+pdf_path <- "color_demo/green_table_cropped.pdf"
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+} else {
+  cat("PDF file not found:", pdf_path)
+}
+```
+
+**Available color options include:** `blue!10`, `green!20`, `red!15`, `gray!25`, `purple!12`, `orange!18`, `yellow!30`, etc. The number after `!` controls intensity (lower = lighter).
+
+## Page Layout Customization
+
+### Minimal Margins for Wide Tables
+
+```r
+# Perfect for wide datasets
+wide_data <- mtcars[1:8, 1:8]  # First 8 rows and columns
+
+t2f(wide_data,
+    filename = "wide_table",
+    extra_packages = list(
+      geometry(margin = "3mm")
+    ))
+```
+
+### Landscape Orientation
+
+```r
+# Landscape mode for very wide tables
+t2f(mtcars,
+    filename = "landscape_mtcars",
+    extra_packages = list(
+      geometry(margin = "5mm", landscape = TRUE)
+    ))
+```
+
+### Custom Paper Sizes
+
+```r
+# A4 paper with specific margins
+t2f(small_iris,
+    filename = "a4_table",
+    extra_packages = list(
+      geometry(paper = "a4paper", margin = "10mm")
+    ))
+
+# Letter paper
+t2f(small_iris, 
+    filename = "letter_table",
+    extra_packages = list(
+      geometry(paper = "letterpaper", margin = "0.75in")
+    ))
+```
+
+# Advanced Use Cases
+
+## Multilingual Documents
+
+Create tables with proper language support:
+
+```r
+# Spanish language support
+spanish_data <- data.frame(
+  "Producto" = c("Café", "Té", "Azúcar"),
+  "Precio" = c("$2.50", "$1.80", "$0.75"),
+  "Disponible" = c("Sí", "Sí", "No"),
+  stringsAsFactors = FALSE
+)
+
+t2f(spanish_data,
+    filename = "tabla_espanol",
+    extra_packages = list(
+      babel("spanish")
+    ))
+
+# French with custom margins
+french_data <- data.frame(
+  "Produit" = c("Café", "Thé", "Sucre"), 
+  "Prix" = c("2,50€", "1,80€", "0,75€"),
+  stringsAsFactors = FALSE
+)
+
+t2f(french_data,
+    filename = "tableau_francais", 
+    extra_packages = list(
+      babel("french"),
+      geometry(margin = "8mm")
+    ))
+```
+
+## Document Classes
+
+Different document classes for specific purposes:
+
+```r
+# Minimal document class (less overhead)
+t2f(small_iris,
+    filename = "minimal_table",
+    document_class = "minimal",
+    extra_packages = list(
+      geometry(margin = "5mm")
+    ))
+
+# Article class with custom formatting  
+t2f(small_iris,
+    filename = "article_table",
+    document_class = "article")
+```
+
+## Complex Layouts
+
+Combine multiple LaTeX packages for sophisticated layouts:
+
+```r
+# Professional report-style table
+report_data <- mtcars[1:10, c("mpg", "cyl", "disp", "hp", "wt")]
+
+t2f(report_data,
+    filename = "professional_table",
+    scolor = "blue!8",
+    extra_packages = list(
+      geometry(margin = "15mm", paper = "a4paper"),
+      "\\usepackage{microtype}",  # Better typography
+      "\\usepackage{array}"       # Enhanced table formatting
+    ))
+
+# Conference poster table (large, landscape)  
+t2f(mtcars,
+    filename = "poster_table",
+    scolor = "blue!12", 
+    extra_packages = list(
+      geometry(
+        paper = "a3paper",
+        margin = "10mm", 
+        landscape = TRUE
+      )
+    ))
+```
+
+## Data Processing Workflows
+
+### Working with dplyr
+
+```r
+library(dplyr)
+
+# Summary statistics table
+summary_stats <- mtcars %>%
+  group_by(cyl) %>%
+  summarise(
+    Count = n(),
+    Mean_MPG = round(mean(mpg), 2),
+    Mean_HP = round(mean(hp), 1),
+    .groups = "drop"
+  )
+
+t2f(summary_stats,
+    filename = "cylinder_summary",
+    scolor = "green!12")
+
+# Top performers table
+top_mpg <- mtcars %>%
+  arrange(desc(mpg)) %>%
+  slice_head(n = 8) %>%
+  select(mpg, cyl, hp, wt)
+
+t2f(top_mpg,
+    filename = "fuel_efficient_cars", 
+    scolor = "blue!15")
+```
+
+### Handling Special Characters
+
+The package automatically sanitizes LaTeX special characters:
+
+```r
+# Data with special characters
+special_data <- data.frame(
+  "Category" = c("R&D", "Sales", "Marketing"),
+  "Budget%" = c("25%", "40%", "35%"),  
+  "Cost$" = c("$50K", "$80K", "$70K"),
+  "Notes#" = c("Priority #1", "High #2", "Medium #3"),
+  stringsAsFactors = FALSE
+)
+
+t2f(special_data,
+    filename = "special_chars_demo",
+    scolor = "orange!15")
+```
+
+## Batch Processing
+
+Generate multiple tables efficiently:
+
+```r
+# Process multiple datasets
+datasets <- list(
+  cars = mtcars[1:10, 1:5],
+  flowers = iris[1:10, ],
+  trees = trees[1:10, ]
+)
+
+# Generate all tables with consistent styling
+for (name in names(datasets)) {
+  t2f(datasets[[name]],
+      filename = paste0("batch_", name),
+      scolor = "blue!10",
+      sub_dir = "batch_output")
+}
+
+# Or using lapply
+lapply(names(datasets), function(name) {
+  t2f(datasets[[name]], 
+      filename = name,
+      sub_dir = paste0("dataset_", name))
+})
+```
+
+## Integration Strategies
+
+### Inline Tables with t2f_inline()
+
+For tables that should appear exactly where the code chunk is placed (without
+LaTeX float positioning), use `t2f_inline()`:
+
+```r
+model <- lm(mpg ~ cyl + hp, data = mtcars)
+t2f_inline(model,
+           width = "3in",
+           align = "left",
+           caption = "Linear Model Results",
+           label = "tab:model",
+           caption_position = "above")
+```
+
+Key features:
+
+- Table appears exactly at code chunk location (no float)
+- Uses `\captionof{table}{...}` for proper "Table 1:" numbering
+- Cross-references work with `\ref{tab:model}`
+- `caption_position`: "above" (default) or "below"
+
+**Note**: Add `\usepackage{caption}` to your R Markdown YAML:
+
+```yaml
+header-includes:
+  - \usepackage{caption}
+```
+
+For coefficient tables, use the convenience function:
+
+```r
+t2f_coef(model, caption = "Coefficients")  # defaults: width="3in", align="left"
+```
+
+### Traditional Workflow with t2f()
+
+Include generated PDFs in R Markdown documents. Here's a working example:
+
+```{r demo-table, echo=TRUE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(zztab2fig)
+
+# Generate summary statistics table
+summary_data <- mtcars %>% 
+  group_by(cyl) %>%
+  summarise(
+    Count = n(),
+    Mean_MPG = round(mean(mpg), 1),
+    Mean_HP = round(mean(hp), 0),
+    .groups = "drop"
+  )
+
+# Create the table
+result_path <- t2f(summary_data, "vignette_demo", sub_dir = "tables")
+cat("Table generated at:", result_path)
+```
+
+The table is now saved as a PDF that can be included in documents or presentations.
+
+Here's what the data looks like in R:
+
+```{r show-table, echo=FALSE}
+# Display the table content in the vignette  
+knitr::kable(summary_data, caption = "Summary Data (as displayed in R)")
+```
+
+And here's the professional LaTeX table generated by `t2f()`:
+
+```{r include-demo-pdf, echo=FALSE, fig.cap="Professional LaTeX Table from t2f()", out.width="100%"}
+pdf_path <- "tables/vignette_demo_cropped.pdf"
+if (file.exists(pdf_path)) {
+  knitr::include_graphics(pdf_path)
+} else {
+  cat("PDF file not found:", pdf_path)
+}
+```
+
+### With LaTeX Documents
+
+Use generated `.tex` files in larger documents:
+
+```latex
+\documentclass{article}
+\usepackage{graphicx}
+
+\begin{document}
+\section{Data Analysis}
+
+The following table shows our results:
+
+\input{tables/results.tex}
+
+\end{document}
+```
+
+### With Shiny Applications
+
+```r
+# In server.R
+output$download_table <- downloadHandler(
+  filename = "analysis_table.pdf",
+  content = function(file) {
+    # Generate table
+    result <- t2f(processed_data(), 
+                  filename = "shiny_table",
+                  sub_dir = tempdir())
+    file.copy(result, file)
+  }
+)
+```
+
+# Troubleshooting & Best Practices
+
+## Common Installation Issues
+
+### Checking Dependencies
+
+Use the built-in helper to check your LaTeX setup:
+
+```r
+check_latex_deps()
+```
+
+Output:
+```
+Checking LaTeX dependencies for zztab2fig...
+
+pdflatex: OK
+pdfcrop:  OK
+
+All dependencies available. zztab2fig is ready to use.
+```
+
+### Error: `pdflatex` or `pdfcrop` not found
+
+**For TinyTeX users** (recommended for R users):
+
+```r
+# If pdfcrop is missing
+ensure_pdfcrop(auto_install = TRUE)
+
+# This will attempt to install via tinytex::tlmgr_install("pdfcrop")
+```
+
+**Solution by Platform:**
+
+- **TinyTeX (recommended):**
+  ```r
+  install.packages("tinytex")
+  tinytex::install_tinytex()
+  tinytex::tlmgr_install("pdfcrop")
+  ```
+- **Ubuntu/Debian:** `sudo apt-get install texlive texlive-extra-utils`
+- **macOS:** Install MacTeX from [https://www.tug.org/mactex/](https://www.tug.org/mactex/)
+- **Windows:** Install MiKTeX from [https://miktex.org/](https://miktex.org/)
+- **Conda:** `conda install -c conda-forge texlive-core`
+
+**Verify Installation:**
+```bash
+pdflatex --version
+pdfcrop --version
+```
+
+### LaTeX Compilation Errors
+
+The package now provides detailed error messages when LaTeX compilation fails:
+
+```r
+# If this fails, you'll get specific error information
+problematic_data <- data.frame(
+  "Bad\\Column" = 1:3,  # Unescaped backslash
+  stringsAsFactors = FALSE
+)
+
+# The error message will show LaTeX log details
+t2f(problematic_data, "test_error")
+```
+
+**Debugging Steps:**
+1. Check the generated `.tex` file for syntax errors
+2. Look at the `.log` file in the output directory  
+3. Test the `.tex` file manually with `pdflatex`
+4. Verify your data doesn't contain problematic characters
+
+## Performance Tips
+
+### For Large Tables
+
+```r
+# Memory-efficient processing for large datasets
+large_data <- data.frame(
+  matrix(rnorm(10000), ncol = 10)
+)
+
+# Use minimal document class to reduce overhead
+t2f(large_data,
+    filename = "large_table",
+    document_class = "minimal",
+    extra_packages = list(
+      geometry(margin = "2mm", landscape = TRUE)
+    ))
+```
+
+### Batch Processing Optimization
+
+```r
+# Process multiple tables efficiently
+# datasets <- list(...)  # Your actual datasets here
+
+# Set up common directory first
+output_dir <- "batch_tables"
+dir.create(output_dir, showWarnings = FALSE)
+
+# Use consistent settings to avoid repeated LaTeX compilation setup
+common_settings <- list(
+  sub_dir = output_dir,
+  scolor = "blue!10",
+  verbose = FALSE  # Reduce console output for batch processing
+)
+
+# Process with do.call to avoid repetitive code
+lapply(names(datasets), function(name) {
+  do.call(t2f, c(list(df = datasets[[name]], filename = name), common_settings))
+})
+```
+
+## Best Practices
+
+### Data Preparation
+
+```r
+library(dplyr)
+library(stringr)
+
+# Clean your data before table generation
+prepare_table_data <- function(df) {
+  df %>%
+    # Round numeric columns appropriately
+    mutate(across(where(is.numeric), ~ round(.x, 2))) %>%
+    # Handle NA values
+    mutate(across(everything(), ~ ifelse(is.na(.x), "—", as.character(.x)))) %>%
+    # Ensure reasonable column names
+    rename_with(~ gsub("\\.", " ", .x)) %>%
+    # Limit precision for display
+    mutate(across(where(is.character), ~ str_trunc(.x, 20)))
+}
+
+clean_data <- prepare_table_data(messy_data)
+t2f(clean_data, filename = "clean_table")
+```
+
+### Consistent Styling
+
+Create reusable style configurations:
+
+```r
+# Define style presets
+table_styles <- list(
+  corporate = list(
+    scolor = "blue!8",
+    extra_packages = list(
+      geometry(margin = "15mm", paper = "a4paper")
+    )
+  ),
+  
+  presentation = list(
+    scolor = "blue!15",
+    extra_packages = list(
+      geometry(margin = "5mm", landscape = TRUE)
+    )
+  ),
+  
+  minimal = list(
+    scolor = "gray!10",
+    document_class = "minimal",
+    extra_packages = list(geometry(margin = "3mm"))
+  )
+)
+
+# Apply consistent styling
+apply_style <- function(data, filename, style_name) {
+  style <- table_styles[[style_name]]
+  do.call(t2f, c(list(df = data, filename = filename), style))
+}
+
+# Usage
+apply_style(mtcars, "corporate_mtcars", "corporate")
+apply_style(iris, "presentation_iris", "presentation")
+```
+
+### File Organization
+
+```r
+# Organize outputs by project/analysis
+project_name <- "quarterly_analysis"
+
+# Create structured output directories
+output_structure <- c(
+  file.path(project_name, "tables"),
+  file.path(project_name, "figures"), 
+  file.path(project_name, "temp")
+)
+
+sapply(output_structure, dir.create, recursive = TRUE, showWarnings = FALSE)
+
+# Generate tables with organized structure
+t2f(quarterly_data,
+    filename = "q4_summary",
+    sub_dir = file.path(project_name, "tables"))
+```
+
+## Advanced LaTeX Customization
+
+### Custom LaTeX Preambles
+
+```r
+# For users comfortable with LaTeX
+custom_preamble <- list(
+  "\\usepackage{booktabs}",
+  "\\usepackage{longtable}",
+  "\\usepackage{microtype}",
+  "\\renewcommand{\\arraystretch}{1.2}",  # Increase row spacing
+  "\\usepackage[table]{xcolor}"
+)
+
+# t2f(your_data,
+#     filename = "custom_latex",
+#     extra_packages = custom_preamble)
+```
+
+### Integration with External LaTeX Templates
+
+```r
+# Generate just the table content
+# table_only_data <- your_data  # Your actual data here
+
+# Create table with minimal wrapper for inclusion
+# t2f(table_only_data,
+#     filename = "table_content",
+#     document_class = "minimal",
+#     extra_packages = list("\\usepackage{booktabs}"))
+
+# Then include the generated .tex content in your main document
+```
+
+# Real-World Examples
+
+## Academic Papers
+
+```r
+# Create publication-ready tables
+results_table <- data.frame(
+  Model = c("Linear", "Quadratic", "Cubic"),
+  R_squared = c(0.85, 0.92, 0.94),
+  AIC = c(145.2, 138.7, 141.3),
+  p_value = c("< 0.001", "< 0.001", "0.002"),
+  stringsAsFactors = FALSE
+)
+
+# Academic journal formatting
+t2f(results_table,
+    filename = "model_comparison", 
+    scolor = "gray!8",
+    extra_packages = list(
+      geometry(margin = "20mm", paper = "letterpaper")
+    ))
+```
+
+## Business Reports
+
+```r
+# Quarterly sales summary
+sales_summary <- data.frame(
+  Quarter = c("Q1", "Q2", "Q3", "Q4"),
+  Revenue = c("$125K", "$143K", "$158K", "$171K"),
+  Growth = c("—", "+14.4%", "+10.5%", "+8.2%"),
+  Target = c("$120K", "$140K", "$155K", "$165K"),
+  Status = c("Yes", "Yes", "Yes", "Yes"),
+  stringsAsFactors = FALSE
+)
+
+t2f(sales_summary,
+    filename = "quarterly_sales",
+    scolor = "blue!10",
+    extra_packages = list(
+      geometry(margin = "12mm", paper = "a4paper")
+    ))
+```
+
+## Conference Presentations
+
+```r
+# Large, readable table for presentations
+key_findings <- mtcars[1:6, c("mpg", "cyl", "hp", "wt")]
+
+t2f(key_findings,
+    filename = "presentation_findings",
+    scolor = "blue!15",
+    extra_packages = list(
+      geometry(
+        margin = "8mm", 
+        paper = "a4paper",
+        landscape = TRUE
+      )
+    ))
+```
+
+# References
+
+- **`kableExtra`**: A package for creating and styling LaTeX/HTML tables in R. [CRAN link](https://cran.r-project.org/package=kableExtra)
+- **`pdflatex` and `pdfcrop`**: Tools from TeX distributions like TeX Live and MiKTeX.
+- **`zztab2fig`**: [GitHub link](https://github.com/yourusername/zztab2fig) (if applicable).
+
+# Conclusion
+
+The `zztab2fig` package simplifies the process of creating professional-quality tables for publications and presentations. By combining R's data processing capabilities with LaTeX's typesetting power, the package bridges the gap between analysis and presentation, making it an essential tool for any data analyst or researcher.

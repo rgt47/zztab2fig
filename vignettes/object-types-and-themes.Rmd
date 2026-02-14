@@ -1,0 +1,626 @@
+---
+title: "Working with Different Object Types and Themes"
+author: "Ronald G. Thomas"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Working with Different Object Types and Themes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center"
+)
+
+has_latex <- nzchar(Sys.which("pdflatex")) && nzchar(Sys.which("pdfcrop"))
+
+output_dir <- tempdir()
+
+include_table <- function(filename) {
+  pdf_path <- file.path(output_dir, paste0(filename, "_cropped.pdf"))
+  if (!file.exists(pdf_path)) return(invisible(NULL))
+  png_path <- sub("\\.pdf$", ".png", pdf_path)
+  convert_pdf_to_png(pdf_path, png_path, dpi = 150)
+  knitr::include_graphics(png_path)
+}
+```
+
+zztab2fig v0.2.0 introduced S3 method dispatch for `t2f()`, enabling direct
+conversion of statistical objects to publication-quality tables. This vignette
+demonstrates how different R object types are handled and how themes affect
+table appearance.
+
+```{r load-package, message=FALSE, warning=FALSE}
+library(zztab2fig)
+```
+
+
+# Object Types
+
+## Data Frames
+
+Data frames are the most common input type. The `t2f.data.frame()` method
+handles standard data frame objects with full formatting support.
+
+```{r dataframe-example, eval=has_latex}
+df <- data.frame(
+  Variable = c("Age", "Weight", "Height"),
+  Mean = c(45.2, 72.5, 168.3),
+  SD = c(12.1, 15.8, 9.2),
+  N = c(150, 148, 150)
+)
+
+t2f(df, filename = "descriptive_stats", sub_dir = output_dir,
+    caption = "Descriptive Statistics")
+```
+
+```{r dataframe-display, echo=FALSE, eval=has_latex, out.width="50%"}
+include_table("descriptive_stats")
+```
+
+Data frames from dplyr pipelines work seamlessly:
+
+```{r dplyr-example, eval=has_latex, message=FALSE}
+library(dplyr)
+
+summary_table <- mtcars |>
+  group_by(cyl) |>
+  summarise(
+    N = n(),
+    `Mean MPG` = round(mean(mpg), 1),
+    `SD MPG` = round(sd(mpg), 1),
+    `Mean HP` = round(mean(hp), 0),
+    .groups = "drop"
+  )
+
+t2f(summary_table,
+    filename = "cylinder_summary",
+    caption = "Vehicle Statistics by Cylinder Count",
+    sub_dir = output_dir)
+```
+
+```{r dplyr-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("cylinder_summary")
+```
+
+
+## Matrices
+
+Matrices are converted to data frames with optional row names as the first
+column via the `t2f.matrix()` method.
+
+```{r matrix-example, eval=has_latex}
+cor_mat <- cor(mtcars[, c("mpg", "cyl", "disp", "hp", "wt")])
+cor_mat <- round(cor_mat, 2)
+
+t2f(cor_mat,
+    filename = "correlation_matrix",
+    caption = "Correlation Matrix of Vehicle Characteristics",
+    rownames = TRUE,
+    sub_dir = output_dir)
+```
+
+```{r matrix-display, echo=FALSE, eval=has_latex, out.width="65%"}
+include_table("correlation_matrix")
+```
+
+
+## Contingency Tables
+
+Base R `table` objects are supported directly via the `t2f.table()` method.
+
+```{r table-example, eval=has_latex}
+gear_cyl_table <- table(mtcars$gear, mtcars$cyl)
+
+t2f(gear_cyl_table,
+    filename = "gear_cylinder_crosstab",
+    caption = "Cross-tabulation of Gears and Cylinders",
+    sub_dir = output_dir)
+```
+
+```{r table-display, echo=FALSE, eval=has_latex, out.width="45%"}
+include_table("gear_cylinder_crosstab")
+```
+
+
+## Linear Models
+
+The `t2f.lm()` method extracts coefficient tables from linear model objects.
+Control which statistics appear using the `include` parameter.
+
+```{r lm-example, eval=has_latex}
+model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+
+t2f(model,
+    filename = "regression_table",
+    caption = "Multiple Regression: MPG Predictors",
+    include = c("estimate", "std.error", "p.value"),
+    digits = 3,
+    sub_dir = output_dir)
+```
+
+```{r lm-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("regression_table")
+```
+
+Add confidence intervals (code only - full statistics):
+
+```{r lm-ci-example, eval=FALSE}
+t2f(model,
+    filename = "regression_with_ci",
+    include = c("estimate", "std.error", "conf.int", "p.value"),
+    conf.level = 0.95,
+    sub_dir = output_dir)
+```
+
+
+## Generalized Linear Models
+
+The `t2f.glm()` method supports logistic, Poisson, and other GLM families.
+Use `exponentiate = TRUE` to display odds ratios or rate ratios.
+
+```{r glm-example, eval=has_latex}
+logit_model <- glm(am ~ mpg + hp + wt,
+                   data = mtcars,
+                   family = binomial)
+
+t2f(logit_model,
+    filename = "logistic_odds_ratios",
+    caption = "Logistic Regression: Odds Ratios",
+    exponentiate = TRUE,
+    include = c("estimate", "conf.int", "p.value"),
+    sub_dir = output_dir)
+```
+
+```{r glm-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("logistic_odds_ratios")
+```
+
+
+## ANOVA Tables
+
+Both `aov` and `anova` objects are supported via `t2f.aov()` and `t2f.anova()`.
+
+```{r aov-example, eval=has_latex}
+aov_model <- aov(mpg ~ factor(cyl) + factor(gear), data = mtcars)
+
+t2f(aov_model,
+    filename = "anova_table",
+    caption = "Two-way ANOVA: MPG by Cylinder and Gear",
+    sub_dir = output_dir)
+```
+
+```{r aov-display, echo=FALSE, eval=has_latex, out.width="65%"}
+include_table("anova_table")
+```
+
+
+## Hypothesis Tests
+
+The `t2f.htest()` method handles output from t-tests, chi-square tests, and
+other hypothesis testing functions.
+
+```{r ttest-example, eval=has_latex}
+ttest <- t.test(mpg ~ am, data = mtcars)
+
+t2f(ttest,
+    filename = "ttest_result",
+    caption = "Two-sample t-test: MPG by Transmission",
+    sub_dir = output_dir)
+```
+
+```{r ttest-display, echo=FALSE, eval=has_latex, out.width="70%"}
+include_table("ttest_result")
+```
+
+
+## Regression Model Comparisons
+
+The `t2f_regression()` function creates side-by-side model comparison tables
+with significance stars.
+
+```{r regression-comparison, eval=has_latex}
+m1 <- lm(mpg ~ wt, data = mtcars)
+m2 <- lm(mpg ~ wt + hp, data = mtcars)
+m3 <- lm(mpg ~ wt + hp + cyl, data = mtcars)
+
+t2f_regression(
+  `(1)` = m1,
+  `(2)` = m2,
+  `(3)` = m3,
+  stars = TRUE,
+  digits = 3,
+  filename = "model_progression",
+  sub_dir = output_dir
+)
+```
+
+```{r regression-comparison-display, echo=FALSE, eval=has_latex, out.width="65%"}
+include_table("model_progression")
+```
+
+
+## RMS Package Models (v0.2.1)
+
+zztab2fig v0.2.1 adds full support for Frank Harrell's rms (Regression Modeling
+Strategies) package, commonly used in biostatistics and clinical trials.
+
+### rms Model Types
+
+```{r rms-example, eval=FALSE}
+library(rms)
+dd <- datadist(mtcars)
+options(datadist = "dd")
+
+ols_model <- ols(mpg ~ rcs(wt, 4) + cyl, data = mtcars)
+t2f(ols_model, filename = "ols_results")
+t2f(ols_model, output = "anova", filename = "ols_chunk_tests")
+
+lrm_model <- lrm(am ~ mpg + wt, data = mtcars)
+t2f(lrm_model, exponentiate = TRUE, filename = "logistic_or")
+
+library(survival)
+dd <- datadist(lung)
+options(datadist = "dd")
+cph_model <- cph(Surv(time, status) ~ age + sex, data = lung)
+t2f(cph_model, exponentiate = TRUE, filename = "cox_hr")
+```
+
+### rms Model Comparison
+
+```{r rms-compare-example, eval=FALSE}
+m1 <- ols(mpg ~ wt, data = mtcars)
+m2 <- ols(mpg ~ wt + cyl, data = mtcars)
+m3 <- ols(mpg ~ wt + cyl + hp, data = mtcars)
+
+t2f_rms_compare(Simple = m1, Moderate = m2, Full = m3,
+                filename = "model_comparison")
+```
+
+### Complete List of rms Methods
+
+| Object Class | Method | Key Parameters |
+|:-------------|:-------|:---------------|
+| `ols` | `t2f.ols()` | `output` (coef/anova) |
+| `lrm` | `t2f.lrm()` | `exponentiate`, `output` |
+| `cph` | `t2f.cph()` | `exponentiate`, `output` |
+| `orm` | `t2f.orm()` | `exponentiate`, `intercepts` |
+| `Glm` | `t2f.Glm()` | `exponentiate`, `output` |
+| `psm` | `t2f.psm()` | `output` |
+
+**Note**: The `output = "anova"` option produces ANOVA-style chunk tests, which
+is particularly useful for models with spline terms (e.g., `rcs()`).
+
+
+## Additional Object Types via broom
+
+zztab2fig supports additional statistical object types through broom
+integration. These methods use `broom::tidy()` to extract model information,
+then format the results.
+
+### Survival Analysis (survival package)
+
+```{r survival-example, eval=FALSE}
+library(survival)
+
+cox_model <- coxph(Surv(time, status) ~ age + sex, data = lung)
+t2f(cox_model, exponentiate = TRUE, filename = "cox_hr")
+
+survreg_model <- survreg(Surv(time, status) ~ age + sex, data = lung)
+t2f(survreg_model, filename = "parametric_survival")
+
+km_fit <- survfit(Surv(time, status) ~ sex, data = lung)
+t2f(km_fit, filename = "kaplan_meier")
+```
+
+### Mixed Effects Models (lme4, nlme packages)
+
+```{r mixed-example, eval=FALSE}
+library(lme4)
+
+lmer_model <- lmer(mpg ~ cyl + (1 | gear), data = mtcars)
+t2f(lmer_model, filename = "mixed_effects")
+
+library(nlme)
+lme_model <- lme(mpg ~ cyl, random = ~ 1 | gear, data = mtcars)
+t2f(lme_model, filename = "nlme_model")
+```
+
+### Other Statistical Models
+
+```{r other-models-example, eval=FALSE}
+nls_model <- nls(mpg ~ a * exp(b * wt), data = mtcars,
+                 start = list(a = 40, b = -0.5))
+t2f(nls_model, filename = "nonlinear")
+
+library(MASS)
+polr_model <- polr(factor(gear) ~ mpg + hp, data = mtcars)
+t2f(polr_model, filename = "ordinal_logistic")
+```
+
+### Exploratory Analysis
+
+```{r exploratory-example, eval=FALSE}
+pca_result <- prcomp(mtcars[, 1:5], scale. = TRUE)
+t2f(pca_result, matrix = "rotation", filename = "pca_loadings")
+t2f(pca_result, matrix = "summary", filename = "pca_summary")
+
+km_result <- kmeans(mtcars[, 1:5], centers = 3)
+t2f(km_result, matrix = "centers", filename = "cluster_centers")
+```
+
+### Complete List of broom-Based Methods
+
+| Object Class | Package | Method | Key Parameters |
+|:-------------|:--------|:-------|:---------------|
+| `coxph` | survival | `t2f.coxph()` | `exponentiate`, `conf.int` |
+| `survreg` | survival | `t2f.survreg()` | `digits` |
+| `survfit` | survival | `t2f.survfit()` | `times` |
+| `survdiff` | survival | `t2f.survdiff()` | `digits` |
+| `Arima` | stats | `t2f.Arima()` | `digits` |
+| `nls` | stats | `t2f.nls()` | `conf.int` |
+| `polr` | MASS | `t2f.polr()` | `exponentiate`, `conf.int` |
+| `multinom` | nnet | `t2f.multinom()` | `exponentiate`, `conf.int` |
+| `prcomp` | stats | `t2f.prcomp()` | `matrix` (rotation/summary) |
+| `kmeans` | stats | `t2f.kmeans()` | `matrix` (centers/summary) |
+| `lmerMod` | lme4 | `t2f.lmerMod()` | `effects`, `conf.int` |
+| `glmerMod` | lme4 | `t2f.glmerMod()` | `effects`, `exponentiate` |
+| `lme` | nlme | `t2f.lme()` | `effects` |
+
+**Note**: These methods require the `broom` package (or `broom.mixed` for
+lme4/nlme models) and the respective model packages to be installed.
+
+
+## Extensibility via t2f_tidy()
+
+For any object type supported by `broom::tidy()` but without a dedicated
+zztab2fig method, use `t2f_tidy()`:
+
+```{r t2f-tidy-example, eval=FALSE}
+library(randomForest)
+rf <- randomForest(Species ~ ., data = iris)
+t2f_tidy(rf, filename = "rf_importance")
+
+library(mgcv)
+gam_model <- gam(mpg ~ s(wt) + s(hp), data = mtcars)
+t2f_tidy(gam_model, filename = "gam_results")
+```
+
+This provides a fallback for the 50+ object types supported by broom that
+don't have dedicated zztab2fig methods.
+
+
+# Theme Demonstrations
+
+Each built-in theme provides distinct styling appropriate for different
+publication contexts. Below are side-by-side comparisons using the same data.
+
+```{r theme-data}
+demo_data <- mtcars[1:6, c("mpg", "cyl", "hp", "wt")]
+```
+
+## Default Theme
+
+The default styling uses blue row shading with booktabs rules.
+
+```{r theme-default, eval=has_latex}
+t2f(demo_data,
+    filename = "theme_default",
+    caption = "Default Theme",
+    sub_dir = output_dir)
+```
+
+```{r theme-default-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("theme_default")
+```
+
+
+## NEJM Theme
+
+The New England Journal of Medicine theme provides clean, professional medical
+journal styling with light yellow shading and sans-serif fonts.
+
+```{r theme-nejm, eval=has_latex}
+t2f(demo_data,
+    filename = "theme_nejm",
+    caption = "NEJM Theme",
+    theme = "nejm",
+    sub_dir = output_dir)
+```
+
+```{r theme-nejm-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("theme_nejm")
+```
+
+NEJM theme characteristics:
+
+- Light yellow alternating row colors
+- Sans-serif font (Helvetica)
+- Booktabs horizontal rules
+- Compact column spacing (4pt)
+- Footnotesize font
+
+
+## APA Theme
+
+The American Psychological Association theme follows APA 7th edition table
+guidelines.
+
+```{r theme-apa, eval=has_latex}
+t2f(demo_data,
+    filename = "theme_apa",
+    caption = "APA Theme",
+    theme = "apa",
+    sub_dir = output_dir)
+```
+
+```{r theme-apa-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("theme_apa")
+```
+
+APA theme characteristics:
+
+- No row shading
+- Times Roman font
+- Letter paper with 1-inch margins
+- Booktabs rules
+
+
+## Nature Theme
+
+The Nature journal theme uses Helvetica with subtle gray shading.
+
+```{r theme-nature, eval=has_latex}
+t2f(demo_data,
+    filename = "theme_nature",
+    caption = "Nature Theme",
+    theme = "nature",
+    sub_dir = output_dir)
+```
+
+```{r theme-nature-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("theme_nature")
+```
+
+Nature theme characteristics:
+
+- Light gray row shading (gray!8)
+- Sans-serif font (Helvetica)
+- Small font size
+- 15mm margins
+
+
+## Minimal Theme
+
+The minimal theme provides clean, unobtrusive styling suitable for general
+use.
+
+```{r theme-minimal, eval=has_latex}
+t2f(demo_data,
+    filename = "theme_minimal",
+    caption = "Minimal Theme",
+    theme = "minimal",
+    sub_dir = output_dir)
+```
+
+```{r theme-minimal-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("theme_minimal")
+```
+
+
+# Custom Themes
+
+Create custom themes for specific requirements using `t2f_theme()`.
+
+```{r custom-theme-create, eval=has_latex}
+presentation_theme <- t2f_theme(
+  name = "presentation",
+  scolor = "blue!15",
+  header_bold = TRUE,
+  font_size = "large",
+  striped = TRUE,
+  extra_packages = list(
+    geometry(margin = "10mm"),
+    "\\renewcommand{\\arraystretch}{1.3}"
+  )
+)
+
+t2f(demo_data,
+    filename = "theme_presentation",
+    caption = "Custom Presentation Theme",
+    theme = presentation_theme,
+    sub_dir = output_dir)
+```
+
+```{r custom-theme-display, echo=FALSE, eval=has_latex, out.width="70%"}
+include_table("theme_presentation")
+```
+
+
+# Global Theme Setting
+
+Set a theme globally for consistent styling across multiple tables in an
+analysis.
+
+```{r global-theme-workflow, eval=FALSE}
+t2f_theme_set("nejm")
+
+t2f(mtcars[1:5, 1:4], filename = "table1", sub_dir = "output")
+t2f(iris[1:5, ], filename = "table2", sub_dir = "output")
+
+model <- lm(mpg ~ wt + hp, data = mtcars)
+t2f(model, filename = "table3", sub_dir = "output")
+
+t2f(mtcars[1:5, 1:4],
+    filename = "table4_apa",
+    theme = "apa",
+    sub_dir = "output")
+
+t2f_theme_set(NULL)
+```
+
+
+# Summary
+
+## Object Type Support (Base Methods)
+
+| Object Class | Method | Key Parameters |
+|:-------------|:-------|:---------------|
+| `data.frame` | `t2f.data.frame()` | Standard t2f parameters |
+| `matrix` | `t2f.matrix()` | `rownames` |
+| `table` | `t2f.table()` | Standard t2f parameters |
+| `lm` | `t2f.lm()` | `digits`, `include`, `conf.level` |
+| `glm` | `t2f.glm()` | `digits`, `include`, `exponentiate`, `conf.level` |
+| `aov` | `t2f.aov()` | `digits` |
+| `anova` | `t2f.anova()` | `digits` |
+| `htest` | `t2f.htest()` | `digits` |
+
+## Object Type Support (rms package)
+
+| Object Class | Method | Key Parameters |
+|:-------------|:-------|:---------------|
+| `ols` | `t2f.ols()` | `output` (coef/anova) |
+| `lrm` | `t2f.lrm()` | `exponentiate`, `output` |
+| `cph` | `t2f.cph()` | `exponentiate`, `output` |
+| `orm` | `t2f.orm()` | `exponentiate`, `intercepts`, `output` |
+| `Glm` | `t2f.Glm()` | `exponentiate`, `output` |
+| `psm` | `t2f.psm()` | `output` |
+
+## Object Type Support (via broom)
+
+| Object Class | Package | Key Parameters |
+|:-------------|:--------|:---------------|
+| `coxph`, `survreg`, `survfit`, `survdiff` | survival | `exponentiate` |
+| `nls` | stats | `conf.int` |
+| `polr`, `multinom` | MASS, nnet | `exponentiate` |
+| `prcomp`, `kmeans` | stats | `matrix` |
+| `lmerMod`, `glmerMod` | lme4 | `effects` |
+| `lme` | nlme | `effects` |
+| `Arima` | stats | `digits` |
+| Any broom object | `t2f_tidy()` | `tidy_args`, `glance` |
+
+## Theme Comparison
+
+| Theme | Row Shading | Font | Use Case |
+|:------|:------------|:-----|:---------|
+| Default | blue!10 | Serif | General purpose |
+| NEJM | yellow!8 | Helvetica | Medical journals |
+| APA | None | Times | Psychology/social sciences |
+| Nature | gray!8 | Helvetica | Scientific journals |
+| Minimal | gray!5 | Serif | Clean, simple tables |
+
+## Theme Functions
+
+| Function | Purpose |
+|:---------|:--------|
+| `t2f_theme()` | Create custom theme |
+| `t2f_theme_set()` | Set global theme |
+| `t2f_theme_get()` | Get current global theme |
+| `t2f_theme_nejm()` | NEJM preset |
+| `t2f_theme_apa()` | APA preset |
+| `t2f_theme_nature()` | Nature preset |
+| `t2f_theme_minimal()` | Minimal preset |
+| `t2f_list_themes()` | List available themes |

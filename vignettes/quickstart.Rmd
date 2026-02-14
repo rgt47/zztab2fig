@@ -1,0 +1,386 @@
+---
+title: "Quickstart Guide: zztab2fig v0.2.1"
+author: "Ronald G. Thomas"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quickstart Guide: zztab2fig v0.2.1}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center"
+)
+
+has_latex <- nzchar(Sys.which("pdflatex")) && nzchar(Sys.which("pdfcrop"))
+
+output_dir <- tempdir()
+
+include_table <- function(filename) {
+  pdf_path <- file.path(output_dir, paste0(filename, "_cropped.pdf"))
+  if (!file.exists(pdf_path)) return(invisible(NULL))
+  png_path <- sub("\\.pdf$", ".png", pdf_path)
+  convert_pdf_to_png(pdf_path, png_path, dpi = 150)
+  knitr::include_graphics(png_path)
+}
+```
+
+This quickstart guide covers the key features in zztab2fig v0.2.1. For complete
+documentation, see the "Object Types and Themes" and "Advanced Features"
+vignettes.
+
+## Installation
+
+```{r install, eval=FALSE}
+# Install from GitHub
+# devtools::install_github("rgt47/zztab2fig")
+```
+
+```{r load}
+library(zztab2fig)
+```
+
+## Basic Usage
+
+Convert a data frame to a cropped PDF table:
+
+```{r basic, eval=has_latex}
+t2f(mtcars[1:6, 1:4], filename = "basic_table", sub_dir = output_dir)
+```
+
+```{r basic-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("basic_table")
+```
+
+This generates three files:
+
+- `basic_table.tex` - LaTeX source
+- `basic_table.pdf` - Full PDF
+- `basic_table_cropped.pdf` - Cropped PDF for document inclusion
+
+
+## Journal Themes
+
+Built-in themes provide journal-specific styling:
+
+```{r themes, eval=has_latex}
+t2f(mtcars[1:6, 1:4], theme = "nejm",
+    filename = "nejm_table", sub_dir = output_dir)
+```
+
+```{r themes-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("nejm_table")
+```
+
+Available themes: `"nejm"`, `"apa"`, `"nature"`, `"minimal"`
+
+Set a global theme:
+
+```{r global-theme, eval=FALSE}
+t2f_theme_set("nejm")
+t2f(mtcars[1:6, 1:4])
+t2f(iris[1:6, ])
+```
+
+
+## Statistical Objects
+
+t2f works directly with statistical objects:
+
+```{r stats-objects, eval=has_latex}
+model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+t2f(model, filename = "regression", sub_dir = output_dir,
+    include = c("estimate", "std.error", "p.value"))
+```
+
+```{r stats-display, echo=FALSE, eval=has_latex, out.width="55%"}
+include_table("regression")
+```
+
+Supported object types include `lm`, `glm`, `anova`, `aov`, `htest`, `matrix`,
+`table`, plus rms objects (`ols`, `lrm`, `cph`, `orm`, `Glm`, `psm`) and
+additional types via broom integration (coxph, survreg, nls, polr, prcomp,
+kmeans, lmerMod, and more).
+
+
+## Inline Tables for R Markdown
+
+Insert tables directly in R Markdown without LaTeX float positioning:
+
+```{r inline-example, eval=FALSE}
+model <- lm(mpg ~ cyl + hp, data = mtcars)
+t2f_inline(model,
+           width = "3in",
+           align = "left",
+           caption = "Model Results",
+           label = "tab:model",
+           caption_position = "above")
+```
+
+Or use the convenience function for coefficient tables:
+
+```{r coef-example, eval=FALSE}
+t2f_coef(model, caption = "Coefficients")
+```
+
+Add visual styling with frames and backgrounds:
+
+```{r inline-styled, eval=FALSE}
+t2f_inline(model,
+           width = "3in",
+           frame = TRUE,
+           frame_color = "gray",
+           background = "gray!5",
+           inner_sep = "4pt")
+```
+
+**Note**: Add `\usepackage{caption}` to your R Markdown YAML for captions.
+
+
+## Model Comparison
+
+Compare multiple models side-by-side:
+
+```{r regression-comparison, eval=has_latex}
+m1 <- lm(mpg ~ cyl, data = mtcars)
+m2 <- lm(mpg ~ cyl + hp, data = mtcars)
+m3 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+
+t2f_regression(
+  Model1 = m1, Model2 = m2, Model3 = m3,
+  stars = TRUE,
+  filename = "model_comparison",
+  sub_dir = output_dir
+)
+```
+
+```{r regression-display, echo=FALSE, eval=has_latex, out.width="65%"}
+include_table("model_comparison")
+```
+
+
+## RMS Package Integration
+
+Full support for Frank Harrell's rms (Regression Modeling Strategies) package,
+commonly used in biostatistics and clinical trials:
+
+```{r rms-setup, eval=FALSE}
+library(rms)
+dd <- datadist(mtcars)
+options(datadist = "dd")
+```
+
+### Coefficient Tables with Odds/Hazard Ratios
+
+```{r rms-lrm, eval=FALSE}
+model <- lrm(am ~ mpg + wt, data = mtcars)
+t2f(model, exponentiate = TRUE, filename = "lrm_odds_ratios")
+```
+
+### ANOVA-Style Chunk Tests
+
+Useful for models with spline terms:
+
+```{r rms-anova, eval=FALSE}
+model <- ols(mpg ~ rcs(wt, 4) + cyl, data = mtcars)
+t2f(model, output = "anova", filename = "ols_anova")
+```
+
+### RMS Model Comparison
+
+```{r rms-compare, eval=FALSE}
+m1 <- ols(mpg ~ wt, data = mtcars)
+m2 <- ols(mpg ~ wt + cyl, data = mtcars)
+t2f_rms_compare(Simple = m1, Full = m2, filename = "rms_comparison")
+```
+
+RMS methods: `t2f.ols()`, `t2f.lrm()`, `t2f.cph()`, `t2f.orm()`, `t2f.Glm()`,
+`t2f.psm()`, and `t2f_rms_compare()`.
+
+
+## Extensibility: Any Broom Object
+
+For any object supported by the broom package, use `t2f_tidy()`:
+
+```{r t2f-tidy, eval=FALSE}
+library(survival)
+cox_model <- coxph(Surv(time, status) ~ age + sex, data = lung)
+t2f_tidy(cox_model, filename = "cox_results")
+
+t2f_tidy(cox_model,
+         tidy_args = list(exponentiate = TRUE, conf.int = TRUE),
+         filename = "cox_hazard_ratios")
+```
+
+This provides an escape hatch for the 100+ object types broom supports.
+
+
+## Captions and Labels
+
+Add LaTeX captions and cross-reference labels:
+
+```{r caption-label, eval=FALSE}
+t2f(mtcars[1:6, 1:4],
+    caption = "Motor Trend Car Road Tests (1974)",
+    label = "tab:mtcars",
+    filename = "captioned_table")
+```
+
+
+## Column Alignment
+
+Explicit or auto-detected alignment:
+
+```{r alignment, eval=FALSE}
+t2f(iris[1:6, ], align = NULL)
+t2f(mtcars[1:6, 1:4], align = c("l", "r", "r", "r"))
+t2f(mtcars[1:6, 1:4], align = "c")
+```
+
+
+## Decimal Alignment
+
+Use siunitx for decimal-aligned columns:
+
+```{r decimal, eval=has_latex}
+df <- data.frame(
+  Item = c("A", "B", "C"),
+  Value1 = c(1.5, 123.45, 12.345),
+  Value2 = c(0.001, 10.1, 1000.01)
+)
+
+t2f(df, filename = "decimal_aligned", sub_dir = output_dir,
+    align = list("l", t2f_siunitx(table_format = "3.3"),
+                 t2f_siunitx(table_format = "4.2")))
+```
+
+```{r decimal-display, echo=FALSE, eval=has_latex, out.width="45%"}
+include_table("decimal_aligned")
+```
+
+
+## Multi-Page Tables
+
+For large tables that span multiple pages:
+
+```{r longtable, eval=FALSE}
+t2f(mtcars,
+    longtable = TRUE,
+    caption = "Complete mtcars Dataset",
+    filename = "long_table")
+```
+
+
+## Quick Reference
+
+### Key t2f() Parameters
+
+| Parameter | Description | Default |
+|:----------|:------------|:--------|
+| `caption` | LaTeX table caption | NULL |
+| `label` | LaTeX label for cross-refs | NULL |
+| `align` | Column alignment (l/c/r) | NULL (auto) |
+| `longtable` | Multi-page table support | FALSE |
+| `crop` | Crop PDF margins | TRUE |
+| `crop_margin` | Margin size (pts) | 10 |
+| `theme` | Theme name or object | NULL |
+
+### Key t2f_inline() Parameters
+
+| Parameter | Description | Default |
+|:----------|:------------|:--------|
+| `width` | Figure width (LaTeX units) | NULL |
+| `align` | left, center, right | "center" |
+| `caption` | Uses \\captionof (no float) | NULL |
+| `label` | LaTeX cross-reference label | NULL |
+| `caption_position` | "above" or "below" | "above" |
+| `frame` | Draw border around table | FALSE |
+| `frame_color` | Border color (xcolor syntax) | "black" |
+| `background` | Background color (xcolor syntax) | NULL |
+| `inner_sep` | Padding inside frame | "2pt" |
+| `format` | "auto", "pdf", "png" | "auto" |
+
+### Core Functions
+
+| Function | Purpose |
+|:---------|:--------|
+| `t2f()` | Convert object to PDF table |
+| `t2f_inline()` | Inline tables for R Markdown |
+| `t2f_coef()` | Quick coefficient tables |
+| `t2f_regression()` | Compare regression models |
+| `t2f_rms_compare()` | Compare rms models |
+| `t2f_tidy()` | Any broom-supported object |
+| `t2f_theme_set()` | Set global theme |
+| `t2f_theme_get()` | Get current theme |
+| `check_latex_deps()` | Check LaTeX dependencies |
+| `ensure_pdfcrop()` | Install pdfcrop via TinyTeX |
+
+### S3 Methods (Base)
+
+| Object Type | Method |
+|:------------|:-------|
+| `data.frame` | `t2f.data.frame()` |
+| `matrix` | `t2f.matrix()` |
+| `lm` | `t2f.lm()` |
+| `glm` | `t2f.glm()` |
+| `anova` / `aov` | `t2f.anova()` / `t2f.aov()` |
+| `htest` | `t2f.htest()` |
+
+### S3 Methods (rms)
+| Object Type | Method | Notes |
+|:------------|:-------|:------|
+| `ols` | `t2f.ols()` | Ordinary least squares |
+| `lrm` | `t2f.lrm()` | Logistic regression (OR) |
+| `cph` | `t2f.cph()` | Cox proportional hazards (HR) |
+| `orm` | `t2f.orm()` | Ordinal regression |
+| `Glm` | `t2f.Glm()` | Generalized linear model |
+| `psm` | `t2f.psm()` | Parametric survival |
+
+All rms methods support `output = "coef"` (default) or `output = "anova"` for
+chunk tests, and `exponentiate = TRUE` for odds/hazard ratios.
+
+### S3 Methods (via broom)
+
+| Object Type | Package |
+|:------------|:--------|
+| `coxph`, `survreg`, `survfit` | survival |
+| `nls` | stats |
+| `polr`, `multinom` | MASS, nnet |
+| `prcomp`, `kmeans` | stats |
+| `lmerMod`, `glmerMod` | lme4 |
+| `lme` | nlme |
+| `Arima` | stats |
+
+Use `t2f_tidy()` for any object type supported by broom.
+
+### Theme Presets
+
+| Function | Style |
+|:---------|:------|
+| `t2f_theme_nejm()` | NEJM (medical journals) |
+| `t2f_theme_apa()` | APA (psychology) |
+| `t2f_theme_nature()` | Nature (scientific) |
+| `t2f_theme_minimal()` | Clean, minimal |
+
+
+## System Requirements
+
+- R >= 4.0
+- LaTeX distribution (TeX Live, MiKTeX, TinyTeX, or MacTeX)
+- `pdflatex` and `pdfcrop` executables
+- Optional: ImageMagick (for PNG output)
+
+Check your setup:
+
+```{r check-deps, eval=FALSE}
+check_latex_deps()
+```
+
+If pdfcrop is missing with TinyTeX:
+
+```{r ensure-pdfcrop, eval=FALSE}
+ensure_pdfcrop(auto_install = TRUE)
+```
