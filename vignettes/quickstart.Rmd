@@ -1,7 +1,15 @@
 ---
 title: "Quickstart Guide: zztab2fig v0.2.1"
 author: "Ronald G. Thomas"
-output: rmarkdown::html_vignette
+output:
+  pdf_document:
+    keep_tex: false
+    latex_engine: pdflatex
+    includes:
+      in_header: !expr NULL
+  rmarkdown::html_vignette: default
+header-includes:
+  - \usepackage{float}
 vignette: >
   %\VignetteIndexEntry{Quickstart Guide: zztab2fig v0.2.1}
   %\VignetteEngine{knitr::rmarkdown}
@@ -11,8 +19,7 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-  fig.align = "center"
+  comment = "#>"
 )
 
 has_latex <- nzchar(Sys.which("pdflatex")) && nzchar(Sys.which("pdfcrop"))
@@ -20,11 +27,20 @@ has_latex <- nzchar(Sys.which("pdflatex")) && nzchar(Sys.which("pdfcrop"))
 output_dir <- tempdir()
 
 include_table <- function(filename) {
+  # Try new naming first (filename.pdf), fall back to old (_cropped.pdf)
   pdf_path <- file.path(output_dir, paste0(filename, ".pdf"))
+  cropped_path <- file.path(output_dir, paste0(filename, "_cropped.pdf"))
+  if (file.exists(cropped_path)) {
+    pdf_path <- cropped_path
+  }
   if (!file.exists(pdf_path)) return(invisible(NULL))
-  png_path <- sub("\\.pdf$", ".png", pdf_path)
-  convert_pdf_to_png(pdf_path, png_path, dpi = 150)
-  knitr::include_graphics(png_path)
+  if (knitr::is_latex_output()) {
+    cat(sprintf("\n\n\\centering\\includegraphics{%s}\n\n", pdf_path))
+  } else {
+    png_path <- sub("\\.pdf$", ".png", pdf_path)
+    convert_pdf_to_png(pdf_path, png_path, dpi = 300)
+    knitr::include_graphics(png_path)
+  }
 }
 ```
 
@@ -51,7 +67,7 @@ Convert a data frame to a cropped PDF table:
 t2f(mtcars[1:6, 1:4], filename = "basic_table", sub_dir = output_dir)
 ```
 
-```{r basic-display, echo=FALSE, eval=has_latex, out.width="55%"}
+```{r basic-display, echo=FALSE, eval=has_latex, results='asis'}
 include_table("basic_table")
 ```
 
@@ -139,7 +155,7 @@ t2f(mtcars[1:6, 1:4], theme = "nejm",
     filename = "nejm_table", sub_dir = output_dir)
 ```
 
-```{r themes-display, echo=FALSE, eval=has_latex, out.width="55%"}
+```{r themes-display, echo=FALSE, eval=has_latex, results='asis'}
 include_table("nejm_table")
 ```
 
@@ -164,7 +180,7 @@ t2f(model, filename = "regression", sub_dir = output_dir,
     include = c("estimate", "std.error", "p.value"))
 ```
 
-```{r stats-display, echo=FALSE, eval=has_latex, out.width="55%"}
+```{r stats-display, echo=FALSE, eval=has_latex, results='asis'}
 include_table("regression")
 ```
 
@@ -225,7 +241,7 @@ t2f_regression(
 )
 ```
 
-```{r regression-display, echo=FALSE, eval=has_latex, out.width="65%"}
+```{r regression-display, echo=FALSE, eval=has_latex, results='asis'}
 include_table("model_comparison")
 ```
 
@@ -325,7 +341,7 @@ t2f(df, filename = "decimal_aligned", sub_dir = output_dir,
                  t2f_siunitx(table_format = "4.2")))
 ```
 
-```{r decimal-display, echo=FALSE, eval=has_latex, out.width="45%"}
+```{r decimal-display, echo=FALSE, eval=has_latex, results='asis'}
 include_table("decimal_aligned")
 ```
 
