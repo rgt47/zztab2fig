@@ -20,7 +20,7 @@ has_latex <- nzchar(Sys.which("pdflatex")) && nzchar(Sys.which("pdfcrop"))
 output_dir <- tempdir()
 
 include_table <- function(filename) {
-  pdf_path <- file.path(output_dir, paste0(filename, "_cropped.pdf"))
+  pdf_path <- file.path(output_dir, paste0(filename, ".pdf"))
   if (!file.exists(pdf_path)) return(invisible(NULL))
   png_path <- sub("\\.pdf$", ".png", pdf_path)
   convert_pdf_to_png(pdf_path, png_path, dpi = 150)
@@ -58,8 +58,76 @@ include_table("basic_table")
 This generates three files:
 
 - `basic_table.tex` - LaTeX source
-- `basic_table.pdf` - Full PDF
-- `basic_table_cropped.pdf` - Cropped PDF for document inclusion
+- `basic_table.pdf` - Cropped PDF (primary output for document inclusion)
+- `basic_table_full.pdf` - Full PDF (before cropping)
+
+
+## Interactive Terminal Graphics (zzvim-R)
+When working in a kitty-compatible terminal (Kitty, Ghostty, WezTerm, iTerm2)
+with zzvim-R, you can preview tables directly in the terminal using
+`show_table()`:
+
+```{r show-table, eval=FALSE}
+# Display table in terminal with inline preview
+show_table(mtcars[1:6, 1:4])
+
+# With theme
+show_table(mtcars[1:6, 1:4], theme = "nejm")
+
+# Statistical objects work too
+model <- lm(mpg ~ cyl + hp, data = mtcars)
+show_table(model)
+```
+
+Navigate through your table history:
+
+```{r show-navigation, eval=FALSE}
+show_table(mtcars[1:6, 1:4])
+show_table(iris[1:6, ])
+show_prev()      # Go back to mtcars table
+show_next()      # Forward to iris table
+show_history()   # List all graphics (plots and tables)
+show()           # Redisplay current
+```
+
+Tables and plots share a unified history. Use `show_history("table")` to filter
+to tables only, or `show_history("plot")` for plots.
+
+Export options:
+
+```{r show-export, eval=FALSE}
+show_table(model, theme = "nejm")
+show_zoom()              # Open PDF in external viewer
+show_save("table.pdf")   # Save current as PDF
+show_save("table.png")   # Save current as PNG
+```
+
+
+## Embedding Tables in Rmd/Quarto
+
+For reproducible documents, use `t2f()` with `graph_include()`:
+```{r graph-include-example, eval=FALSE}
+# In an Rmd/qmd code chunk:
+t2f(model, theme = "nejm") |> graph_include()
+```
+
+The `t2f()` function returns the path to the generated PDF, which
+`graph_include()` passes to `knitr::include_graphics()`.
+
+This is the recommended workflow for batch rendering:
+
+1. **Interactive exploration**: Use `show_table()` to preview and compare tables
+2. **Final document**: Use `t2f() |> graph_include()` for reproducible embedding
+
+```{r workflow-example, eval=FALSE}
+# Interactive session (terminal)
+show_table(model, theme = "nejm")
+show_table(model, theme = "apa")
+show_prev()  # compare themes
+
+# Rmd chunk (batch mode)
+t2f(model, theme = "nejm", caption = "Table 1") |> graph_include()
+```
 
 
 ## Journal Themes
@@ -318,6 +386,20 @@ t2f(mtcars,
 | `check_latex_deps()` | Check LaTeX dependencies |
 | `ensure_pdfcrop()` | Install pdfcrop via TinyTeX |
 
+### Terminal Graphics (zzvim-R)
+
+| Function | Purpose |
+|:---------|:--------|
+| `show_table()` | Display table in terminal |
+| `show_plot()` | Display plot in terminal |
+| `show()` | Redisplay last graphic |
+| `show_prev()` | Previous in history |
+| `show_next()` | Next in history |
+| `show_history()` | List all graphics |
+| `show_zoom()` | Open PDF in viewer |
+| `show_save()` | Export to file |
+| `graph_include()` | Embed in Rmd/qmd (batch mode) |
+
 ### S3 Methods (Base)
 
 | Object Type | Method |
@@ -371,7 +453,9 @@ Use `t2f_tidy()` for any object type supported by broom.
 - R >= 4.0
 - LaTeX distribution (TeX Live, MiKTeX, TinyTeX, or MacTeX)
 - `pdflatex` and `pdfcrop` executables
-- Optional: ImageMagick (for PNG output)
+- Optional: ImageMagick (for PNG output and terminal graphics)
+- Optional: zzvim-R plugin (for `show_table()` and terminal graphics)
+- Optional: jsonlite package (for graphics history)
 
 Check your setup:
 
