@@ -162,8 +162,8 @@ t2f_internal <- function(df, filename = NULL,
 
   # Paths for output files
   tex_file <- file.path(sub_dir, paste0(filename, ".tex"))
+  full_pdf_file <- file.path(sub_dir, paste0(filename, "_full.pdf"))
   pdf_file <- file.path(sub_dir, paste0(filename, ".pdf"))
-  cropped_pdf_file <- file.path(sub_dir, paste0(filename, "_cropped.pdf"))
 
   # Process alignment (may include siunitx specs)
   siunitx_packages <- NULL
@@ -201,16 +201,24 @@ t2f_internal <- function(df, filename = NULL,
     collapse_rows = collapse_rows
   )
 
-  # Compile LaTeX to PDF
+  # Compile LaTeX to PDF (produces filename.pdf initially)
   log_message("Compiling LaTeX to PDF...", verbose)
   compile_latex(tex_file, sub_dir)
 
+  # Temporary path for compiled PDF (same name as tex file)
+  compiled_pdf <- file.path(sub_dir, paste0(filename, ".pdf"))
+
   # Determine output file
   if (crop) {
+    # Rename compiled PDF to _full, then crop to main filename
+    file.rename(compiled_pdf, full_pdf_file)
     log_message("Cropping PDF...", verbose)
-    crop_pdf(pdf_file, cropped_pdf_file, margin = crop_margin)
-    output_file <- cropped_pdf_file
+    crop_pdf(full_pdf_file, pdf_file, margin = crop_margin)
+    output_file <- pdf_file
   } else {
+    # No cropping - rename to _full and copy to main
+    file.rename(compiled_pdf, full_pdf_file)
+    file.copy(full_pdf_file, pdf_file)
     output_file <- pdf_file
   }
 
