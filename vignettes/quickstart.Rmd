@@ -10,6 +10,7 @@ output:
   rmarkdown::html_vignette: default
 header-includes:
   - \usepackage{float}
+  - \usepackage{wrapfig}
 vignette: >
   %\VignetteIndexEntry{Quickstart Guide: zztab2fig v0.2.1}
   %\VignetteEngine{knitr::rmarkdown}
@@ -41,6 +42,18 @@ include_table <- function(filename) {
     convert_pdf_to_png(pdf_path, png_path, dpi = 300)
     knitr::include_graphics(png_path)
   }
+}
+
+wrap_table <- function(filename, position = "r", width = "0.45\\textwidth") {
+  pdf_path <- file.path(output_dir, paste0(filename, "_cropped.pdf"))
+  if (!file.exists(pdf_path)) {
+    pdf_path <- file.path(output_dir, paste0(filename, ".pdf"))
+  }
+  if (!file.exists(pdf_path)) return(knitr::asis_output(""))
+  knitr::asis_output(sprintf("\\begin{wrapfigure}{%s}{%s}
+  \\raggedleft
+  \\includegraphics{%s}
+\\end{wrapfigure}\\noindent", position, width, pdf_path))
 }
 ```
 
@@ -222,6 +235,32 @@ t2f_inline(model,
 ```
 
 **Note**: Add `\usepackage{caption}` to your R Markdown YAML for captions.
+
+
+## Text Wrapping Around Tables
+
+To wrap paragraph text around a table, use the `wrapfig` LaTeX package. First,
+add `\usepackage{wrapfig}` to your YAML header, then use inline R code with
+`knitr::asis_output()`:
+
+```{r wrap-helper, eval=FALSE}
+wrap_table <- function(filename, position = "r", width = "0.45\\textwidth") {
+  pdf_path <- paste0(filename, "_cropped.pdf")
+  knitr::asis_output(sprintf("\\begin{wrapfigure}{%s}{%s}
+  \\centering
+  \\includegraphics{%s}
+\\end{wrapfigure}", position, width, pdf_path))
+}
+```
+
+```{r wrap-demo-table, include=FALSE, eval=has_latex}
+t2f(mtcars[1:4, 1:3], theme = "nejm",
+    filename = "wrap_demo", sub_dir = output_dir)
+```
+
+Then embed the table inline using backtick-r syntax. The following paragraph demonstrates text wrapping:
+`r if (has_latex) wrap_table("wrap_demo", width = "0.38\\textwidth")`
+This text flows around the table on the right. The position parameter controls placement: "r" for right, "l" for left. The width parameter sets how much horizontal space the table occupies. Text continues to wrap naturally until sufficient content fills the space beside the table. This approach works well for small summary tables that complement the narrative without interrupting the reading flow. Notice how the paragraph continues alongside the table, making efficient use of page space. When the text extends beyond the table height, it returns to full width automatically. This technique is particularly useful in research papers where you want to discuss results while displaying the supporting data in close proximity to the discussion. Additional text can continue here to demonstrate that normal formatting resumes after the wrapped section.
 
 
 ## Model Comparison
