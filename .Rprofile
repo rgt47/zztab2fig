@@ -7,27 +7,6 @@
 # ==========================================
 
 # ==========================================
-# Part 1: User Personal Settings
-# ==========================================
-options(repos = c(CRAN = "https://cloud.r-project.org"))
-q <- function(save="no", ...) quit(save=save, ...)
-
-# Package installation behavior (non-interactive)
-# Prevents prompts during install.packages()
-options(
-install.packages.check.source = "no",
-install.packages.compile.from.source = "never",
-
-# Parallel installation (faster package installs)
-  Ncpus = parallel::detectCores()
-)
-
-# ==========================================
-# Part 2: ZZCOLLAB Template - renv + Options
-# ==========================================
-# ==========================================
-
-# ==========================================
 # Part 1: User Personal Settings (always)
 # ==========================================
 q <- function(save="no", ...) quit(save=save, ...)
@@ -69,9 +48,11 @@ if (!in_container) {
   # ==========================================
 
   # renv Cache Path Configuration
-  # Container uses /home/analyst/.cache/R/renv (set by Dockerfile ENV)
-  # Volume mount shares cache: -v $(pwd)/.cache/R/renv:/home/analyst/.cache/R/renv
-  Sys.setenv(RENV_PATHS_CACHE = file.path(getwd(), ".cache/R/renv"))
+  # If RENV_PATHS_CACHE already set (e.g., via docker -e), use it
+  # Otherwise use project-local cache
+  if (Sys.getenv("RENV_PATHS_CACHE") == "") {
+    Sys.setenv(RENV_PATHS_CACHE = file.path(getwd(), ".cache/R/renv"))
+  }
 
   # Activate renv (set project-local library paths)
   if (file.exists("renv/activate.R")) {
@@ -91,7 +72,8 @@ if (!in_container) {
       bare = TRUE,
       settings = list(snapshot.type = "implicit"),
       force = TRUE,
-      restart = FALSE
+      restart = FALSE,
+      load = FALSE
     )
 
     message("✅ renv initialized")
@@ -115,6 +97,22 @@ if (!in_container) {
       })
     }
   } else {
+    # ==========================================
+    # Recover renv infrastructure if missing
+    # ==========================================
+    # This handles: renv.lock exists but renv/ doesn't (e.g., git clone)
+    if (!file.exists("renv/activate.R")) {
+      message("\n🔧 ZZCOLLAB: renv.lock found but renv/ missing - recovering...")
+      tryCatch({
+        renv_init_quiet()
+        if (file.exists("renv/activate.R")) {
+          source("renv/activate.R")
+        }
+      }, error = function(e) {
+        warning("⚠️  renv recovery failed: ", conditionMessage(e), call. = FALSE)
+      })
+    }
+
     # ==========================================
     # Auto-Restore Missing Packages
     # ==========================================

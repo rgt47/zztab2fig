@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 
 ARG BASE_IMAGE=rocker/tidyverse
-ARG R_VERSION=4.5.1
+ARG R_VERSION=4.5.2
 ARG USERNAME=analyst
 
 FROM ${BASE_IMAGE}:${R_VERSION}
