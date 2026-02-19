@@ -2482,6 +2482,72 @@
       "Author": "Shawn Garbett [cre, ctb] (ORCID: <https://orcid.org/0000-0003-4079-5621>), Jeremy Stephens [aut, ctb], Kirill Simonov [aut], Yihui Xie [ctb] (ORCID: <https://orcid.org/0000-0003-0645-5666>), Zhuoer Dong [ctb], Hadley Wickham [ctb] (ORCID: <https://orcid.org/0000-0003-4757-117X>), Jeffrey Horner [ctb], reikoch [ctb], Will Beasley [ctb] (ORCID: <https://orcid.org/0000-0002-5613-5006>), Brendan O'Connor [ctb], Michael Quinn [ctb], Charlie Gao [ctb], Gregory R. Warnes [ctb], Zhian N. Kamvar [ctb]",
       "Repository": "RSPM",
       "Encoding": "UTF-8"
+    },
+    "broom": {
+      "Package": "broom",
+      "Version": "1.0.12",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "broom.mixed": {
+      "Package": "broom.mixed",
+      "Version": "0.2.9.7",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "future.apply": {
+      "Package": "future.apply",
+      "Version": "1.20.1",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "lme4": {
+      "Package": "lme4",
+      "Version": "1.1-38",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "MASS": {
+      "Package": "MASS",
+      "Version": "7.3-65",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "mgcv": {
+      "Package": "mgcv",
+      "Version": "1.9-4",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "nlme": {
+      "Package": "nlme",
+      "Version": "3.1-168",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "pander": {
+      "Package": "pander",
+      "Version": "0.6.6",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "randomForest": {
+      "Package": "randomForest",
+      "Version": "4.7-1.2",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "rms": {
+      "Package": "rms",
+      "Version": "8.1-1",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "survival": {
+      "Package": "survival",
+      "Version": "3.8-6",
+      "Source": "Repository",
+      "Repository": "CRAN"
     }
   }
 }
