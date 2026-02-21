@@ -22,12 +22,12 @@ NULL
   )
 
   # Check for required system dependencies
-  has_xelatex <- command_exists("xelatex")
+  has_pdflatex <- command_exists("pdflatex")
   has_pdfcrop <- command_exists("pdfcrop")
 
-  if (!has_xelatex) {
+  if (!has_pdflatex) {
     packageStartupMessage(
-      "Note: xelatex not found. Install a LaTeX distribution to use t2f()."
+      "Note: pdflatex not found. Install a LaTeX distribution to use t2f()."
     )
   }
 

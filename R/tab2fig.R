@@ -618,7 +618,7 @@ compile_latex <- function(tex_file, sub_dir) {
   old_wd <- setwd(sub_dir)
   on.exit(setwd(old_wd))
 
-  cmd <- paste("xelatex -interaction=batchmode", shQuote(basename(tex_file)))
+  cmd <- paste("pdflatex -interaction=batchmode", shQuote(basename(tex_file)))
   result <- system(cmd)
 
   if (result != 0) {
