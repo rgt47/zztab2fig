@@ -391,7 +391,7 @@ t2f_rms_compare <- function(...,
                             exponentiate = FALSE,
                             stars = c(0.05, 0.01, 0.001),
                             filename = "rms_comparison",
-                            sub_dir = "figures",
+                            sub_dir = get_default_figures_dir(),
                             t2f_args = list()) {
   check_rms()
   models <- list(...)

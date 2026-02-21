@@ -33,7 +33,7 @@ NULL
 #'
 #' @export
 t2f_batch <- function(data_list,
-                      sub_dir = "figures",
+                      sub_dir = get_default_figures_dir(),
                       theme = NULL,
                       parallel = FALSE,
                       verbose = FALSE,
@@ -180,7 +180,7 @@ t2f_batch_spec <- function(df, filename, ...) {
 #'
 #' @export
 t2f_batch_advanced <- function(specs,
-                               sub_dir = "figures",
+                               sub_dir = get_default_figures_dir(),
                                theme = NULL,
                                parallel = FALSE,
                                verbose = FALSE,
