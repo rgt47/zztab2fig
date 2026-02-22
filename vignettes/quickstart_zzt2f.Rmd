@@ -1,0 +1,338 @@
+---
+title: "Quickstart Guide: zzt2f (Typst Backend)"
+author: "Ronald G. Thomas"
+output:
+  rmarkdown::html_vignette: default
+vignette: >
+  %\VignetteIndexEntry{Quickstart Guide: zzt2f (Typst Backend)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+has_typst <- requireNamespace("tinytable", quietly = TRUE) &&
+  nzchar(Sys.which("typst"))
+
+output_dir <- tempdir()
+
+include_table <- function(filename, format = "png") {
+  img_path <- file.path(
+    output_dir, paste0(filename, ".", format)
+  )
+  if (!file.exists(img_path)) return(invisible(NULL))
+  knitr::include_graphics(img_path)
+}
+```
+
+This quickstart covers `zzt2f()`, the Typst-based alternative to
+`t2f()`. Where `t2f()` requires a full LaTeX distribution (pdflatex
++ pdfcrop + ImageMagick), `zzt2f()` needs only two lightweight
+dependencies: the tinytable R package and the Typst CLI (~40 MB
+binary). Typst auto-sizes pages, so no cropping step is needed.
+
+Both functions share the same theme system. The key difference is
+the compilation backend: LaTeX vs Typst.
+
+
+## Installation
+
+```{r install, eval=FALSE}
+# R package
+install.packages("tinytable")
+
+# Typst CLI
+# macOS:   brew install typst
+# Linux:   curl -fsSL https://typst.community | sh
+# Windows: winget install --id Typst.Typst
+```
+
+```{r load}
+library(zztab2fig)
+```
+
+Verify that both dependencies are available:
+
+```{r check-deps, eval=has_typst}
+check_typst_deps()
+```
+
+
+## Basic Usage
+
+Convert a data frame to a table image:
+
+```{r basic, eval=has_typst}
+zzt2f(
+  mtcars[1:6, 1:4],
+  filename = "basic_table",
+  sub_dir = output_dir
+)
+```
+
+```{r basic-display, echo=FALSE, eval=has_typst}
+include_table("basic_table", "pdf")
+```
+
+By default, `zzt2f()` produces a PDF. The output is a single file
+with no intermediate artifacts (no `.tex`, no `_full.pdf`, no
+cropping step).
+
+
+## Output Formats
+
+`zzt2f()` supports three output formats via the `format` argument:
+
+```{r format-pdf, eval=has_typst}
+zzt2f(mtcars[1:6, 1:4],
+      filename = "fmt_pdf",
+      sub_dir = output_dir,
+      format = "pdf")
+```
+
+```{r format-png, eval=has_typst}
+zzt2f(mtcars[1:6, 1:4],
+      filename = "fmt_png",
+      sub_dir = output_dir,
+      format = "png",
+      dpi = 300)
+```
+
+```{r format-png-display, echo=FALSE, eval=has_typst}
+include_table("fmt_png", "png")
+```
+
+```{r format-svg, eval=has_typst}
+zzt2f(mtcars[1:6, 1:4],
+      filename = "fmt_svg",
+      sub_dir = output_dir,
+      format = "svg")
+```
+
+PNG output respects the `dpi` argument (default 300). SVG output
+produces resolution-independent vector graphics suitable for web
+documents.
+
+
+## Journal Themes
+
+`zzt2f()` reuses the same theme system as `t2f()`. All built-in
+themes translate automatically to Typst styling:
+
+```{r theme-nejm, eval=has_typst}
+zzt2f(mtcars[1:6, 1:4],
+      theme = "nejm",
+      filename = "nejm_table",
+      sub_dir = output_dir,
+      format = "png")
+```
+
+```{r theme-nejm-display, echo=FALSE, eval=has_typst}
+include_table("nejm_table", "png")
+```
+
+```{r theme-apa, eval=has_typst}
+zzt2f(mtcars[1:6, 1:4],
+      theme = "apa",
+      filename = "apa_table",
+      sub_dir = output_dir,
+      format = "png")
+```
+
+```{r theme-apa-display, echo=FALSE, eval=has_typst}
+include_table("apa_table", "png")
+```
+
+Available themes: `"nejm"`, `"apa"`, `"nature"`, `"lancet"`,
+`"minimal"`.
+
+The global theme set via `t2f_theme_set()` is respected by
+`zzt2f()` as well:
+
+```{r global-theme, eval=FALSE}
+t2f_theme_set("nejm")
+zzt2f(mtcars[1:6, 1:4], filename = "auto_themed")
+```
+
+
+## Captions and Footnotes
+
+```{r caption, eval=has_typst}
+fn <- t2f_footnote(
+  general = "Data from Motor Trend US magazine (1974).",
+  symbol = c("p < 0.05", "p < 0.01")
+)
+
+zzt2f(mtcars[1:6, 1:4],
+      caption = "Motor Trend Car Road Tests",
+      footnote = fn,
+      filename = "captioned_table",
+      sub_dir = output_dir,
+      format = "png")
+```
+
+```{r caption-display, echo=FALSE, eval=has_typst}
+include_table("captioned_table", "png")
+```
+
+Footnotes from `t2f_footnote()` are translated to plain-text notes
+below the table. General, numbered, alphabetic, and symbol notation
+styles are all supported.
+
+
+## Spanning Headers
+
+Group columns under spanning headers using `t2f_header_above()`:
+
+```{r header, eval=has_typst}
+hdr <- t2f_header_above(
+  " " = 1,
+  "Performance" = 2,
+  "Engine" = 1
+)
+
+zzt2f(mtcars[1:6, 1:4],
+      header_above = hdr,
+      filename = "header_table",
+      sub_dir = output_dir,
+      format = "png")
+```
+
+```{r header-display, echo=FALSE, eval=has_typst}
+include_table("header_table", "png")
+```
+
+
+## Column Alignment
+
+Alignment is auto-detected (numeric columns right-aligned, others
+left-aligned) or set explicitly:
+
+```{r alignment, eval=has_typst}
+zzt2f(iris[1:6, ],
+      align = c("r", "r", "r", "r", "l"),
+      filename = "aligned_table",
+      sub_dir = output_dir,
+      format = "png")
+```
+
+```{r alignment-display, echo=FALSE, eval=has_typst}
+include_table("aligned_table", "png")
+```
+
+A single character applies to all columns:
+
+```{r align-center, eval=FALSE}
+zzt2f(mtcars[1:6, 1:4], align = "c")
+```
+
+
+## Row Stripe Color Override
+
+Override the theme's stripe color with `scolor`:
+
+```{r scolor, eval=has_typst}
+zzt2f(mtcars[1:6, 1:4],
+      scolor = "blue!15",
+      filename = "blue_stripes",
+      sub_dir = output_dir,
+      format = "png")
+```
+
+```{r scolor-display, echo=FALSE, eval=has_typst}
+include_table("blue_stripes", "png")
+```
+
+LaTeX color syntax (`"blue!15"`, `"gray!5"`) is automatically
+translated to hex. Hex values (`"#E6E6FF"`) pass through unchanged.
+
+
+## Working with Statistical Objects
+
+`zzt2f()` operates on data frames only. For statistical objects,
+extract the data frame first, then pass it to `zzt2f()`:
+
+```{r stats-workflow, eval=has_typst}
+model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+coef_df <- broom::tidy(model, conf.int = TRUE)
+coef_df$p.value <- format_pvalue(coef_df$p.value)
+
+zzt2f(coef_df,
+      caption = "Linear Model Coefficients",
+      theme = "nejm",
+      filename = "lm_typst",
+      sub_dir = output_dir,
+      format = "png")
+```
+
+```{r stats-display, echo=FALSE, eval=has_typst}
+include_table("lm_typst", "png")
+```
+
+This two-step pattern (tidy then render) provides full control over
+column selection, rounding, and formatting before the table is
+generated.
+
+
+## Quick Reference
+
+### zzt2f() Parameters
+
+| Parameter | Description | Default |
+|:----------|:------------|:--------|
+| `filename` | Base name (no extension) | deparsed input |
+| `sub_dir` | Output directory | `"analysis/figures"` |
+| `format` | `"pdf"`, `"png"`, or `"svg"` | `"pdf"` |
+| `dpi` | PNG resolution | 300 |
+| `caption` | Table caption | NULL |
+| `align` | Column alignment (l/c/r) | NULL (auto) |
+| `theme` | Theme name or object | NULL |
+| `scolor` | Row stripe color override | NULL |
+| `footnote` | `t2f_footnote()` object | NULL |
+| `header_above` | `t2f_header_above()` object | NULL |
+| `verbose` | Print progress messages | FALSE |
+
+### Parameters from t2f() Not Available in zzt2f()
+
+These are LaTeX-specific and have no Typst equivalent:
+
+- `extra_packages`, `document_class`
+- `caption_short`, `label`
+- `longtable`
+- `crop`, `crop_margin`
+- `collapse_rows`
+
+### Choosing Between t2f() and zzt2f()
+
+| | `t2f()` | `zzt2f()` |
+|:-----|:--------|:----------|
+| **Backend** | LaTeX (kableExtra) | Typst (tinytable) |
+| **Dependencies** | pdflatex + pdfcrop + ImageMagick | Typst CLI (~40 MB) |
+| **Output formats** | PDF (+ PNG/SVG via convert) | PDF, PNG, SVG natively |
+| **S3 dispatch** | Yes (lm, glm, rms, ...) | No (data frames only) |
+| **Cropping** | Required (pdfcrop) | Not needed (auto-sized) |
+| **Decimal alignment** | siunitx S columns | Not yet supported |
+| **Multi-page tables** | longtable | Not yet supported |
+| **Collapse rows** | multirow | Not yet supported |
+
+Use `t2f()` when you need S3 dispatch, siunitx decimal alignment,
+or multi-page tables. Use `zzt2f()` when you want fast compilation
+with minimal system dependencies, or when you need native PNG/SVG
+output without ImageMagick.
+
+
+## System Requirements
+
+- R >= 4.1 (for native pipe `|>`)
+- tinytable R package
+- Typst CLI (>= 0.11)
+
+Check your setup:
+
+```{r check-deps-end, eval=FALSE}
+check_typst_deps()
+```

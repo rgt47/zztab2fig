@@ -216,13 +216,14 @@ zzt2f_internal <- function(x,
   tbl <- do.call(tinytable::tt, tt_args)
 
   # --- Apply alignment ---
+  # tinytable expects align as a single collapsed string (e.g., "llrr")
   if (!is.null(align)) {
     if (length(align) == 1) align <- rep(align, ncol(x))
-    tbl <- tinytable::style_tt(tbl, j = seq_len(ncol(x)), align = align)
+    align_str <- paste0(align, collapse = "")
   } else {
-    auto <- auto_align(x)
-    tbl <- tinytable::style_tt(tbl, j = seq_len(ncol(x)), align = auto)
+    align_str <- paste0(auto_align(x), collapse = "")
   }
+  tbl <- tinytable::style_tt(tbl, align = align_str)
 
   # --- Apply theme styling ---
   if (!is.null(ts$stripe_color)) {

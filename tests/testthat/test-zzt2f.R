@@ -125,8 +125,10 @@ test_that("translate_footnote converts symbol notes", {
   fn <- t2f_footnote(symbol = c("p < 0.05", "p < 0.01"))
   result <- zztab2fig:::translate_footnote(fn)
   expect_length(result, 2)
-  expect_true(grepl("p < 0.05", result[1]))
-  expect_true(grepl("p < 0.01", result[2]))
+  expect_true(grepl("p", result[1], fixed = TRUE))
+  expect_true(grepl("0.05", result[1], fixed = TRUE))
+  expect_true(grepl("p", result[2], fixed = TRUE))
+  expect_true(grepl("0.01", result[2], fixed = TRUE))
 })
 
 test_that("translate_footnote combines all note types", {

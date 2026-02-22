@@ -21,15 +21,17 @@ resolve_typst_theme <- function(theme, scolor = NULL) {
   resolved <- resolve_theme(theme)
   settings <- apply_theme_settings(resolved, scolor = scolor)
 
+  use_stripes <- settings$striped || !is.null(scolor)
+
   list(
-    stripe_color = if (settings$striped) {
+    stripe_color = if (use_stripes) {
       translate_latex_color(settings$scolor)
     } else {
       NULL
     },
     header_bold = settings$header_bold,
     font_size = translate_font_size(settings$font_size),
-    striped = settings$striped
+    striped = use_stripes
   )
 }
 
@@ -187,7 +189,29 @@ translate_footnote <- function(footnote) {
   }
 
   if (length(notes) == 0) return(NULL)
-  notes
+  vapply(notes, escape_typst_content, character(1), USE.NAMES = FALSE)
+}
+
+#' Escape Typst content-mode special characters
+#'
+#' @description Escapes characters that have special meaning in Typst
+#'   content mode (inside \code{[...]} blocks), such as \code{*}, \code{_},
+#'   \code{<}, \code{>}, \code{@}, \code{#}, and \code{$}.
+#'
+#' @param x Character string.
+#' @return Escaped character string safe for Typst content.
+#' @keywords internal
+escape_typst_content <- function(x) {
+  x <- gsub("\\\\", "\\\\\\\\", x)
+  x <- gsub("#", "\\\\#", x, fixed = TRUE)
+  x <- gsub("\\$", "\\\\$", x)
+  x <- gsub("\\*", "\\\\*", x)
+  x <- gsub("_", "\\\\_", x, fixed = TRUE)
+  x <- gsub("<", "\\\\<", x, fixed = TRUE)
+  x <- gsub(">", "\\\\>", x, fixed = TRUE)
+  x <- gsub("@", "\\\\@", x, fixed = TRUE)
+  x <- gsub("`", "\\\\`", x, fixed = TRUE)
+  x
 }
 
 #' Translate t2f_header to tinytable group_tt spec
