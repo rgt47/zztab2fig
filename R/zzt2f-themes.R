@@ -202,16 +202,12 @@ translate_footnote <- function(footnote) {
 #' @return Escaped character string safe for Typst content.
 #' @keywords internal
 escape_typst_content <- function(x) {
-  x <- gsub("\\\\", "\\\\\\\\", x)
-  x <- gsub("#", "\\\\#", x, fixed = TRUE)
-  x <- gsub("\\$", "\\\\$", x)
-  x <- gsub("\\*", "\\\\*", x)
-  x <- gsub("_", "\\\\_", x, fixed = TRUE)
-  x <- gsub("<", "\\\\<", x, fixed = TRUE)
-  x <- gsub(">", "\\\\>", x, fixed = TRUE)
-  x <- gsub("@", "\\\\@", x, fixed = TRUE)
-  x <- gsub("`", "\\\\`", x, fixed = TRUE)
-  x
+  special <- c("\\", "#", "$", "*", "_", "<", ">", "@", "`")
+  chars <- strsplit(x, "")[[1]]
+  escaped <- vapply(chars, function(ch) {
+    if (ch %in% special) paste0("\\", ch) else ch
+  }, character(1))
+  paste0(escaped, collapse = "")
 }
 
 #' Translate t2f_header to tinytable group_tt spec

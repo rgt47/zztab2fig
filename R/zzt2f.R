@@ -204,6 +204,26 @@ zzt2f_internal <- function(x,
     stop("Directory is not writable: ", sub_dir, call. = FALSE)
   }
 
+  # --- Escape Typst-special characters in cell data ---
+  x[] <- lapply(x, function(col) {
+    if (is.character(col)) {
+      vapply(col, escape_typst_content, character(1), USE.NAMES = FALSE)
+    } else if (is.factor(col)) {
+      factor(
+        vapply(
+          as.character(col), escape_typst_content,
+          character(1), USE.NAMES = FALSE
+        ),
+        levels = vapply(
+          levels(col), escape_typst_content,
+          character(1), USE.NAMES = FALSE
+        )
+      )
+    } else {
+      col
+    }
+  })
+
   # --- Build tinytable ---
   log_message("Building tinytable object...", verbose)
 
