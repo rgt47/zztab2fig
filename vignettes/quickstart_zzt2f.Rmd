@@ -15,7 +15,7 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  out.width = "80%",
+  out.width = "45%",
   fig.align = "center"
 )
 
@@ -180,7 +180,7 @@ zzt2f(mtcars[1:6, 1:4],
       format = "png")
 ```
 
-```{r caption-display, echo=FALSE, eval=has_typst}
+```{r caption-display, echo=FALSE, eval=has_typst, out.width="55%"}
 include_table("captioned_table")
 ```
 
@@ -225,7 +225,7 @@ zzt2f(iris[1:6, ],
       format = "png")
 ```
 
-```{r alignment-display, echo=FALSE, eval=has_typst}
+```{r alignment-display, echo=FALSE, eval=has_typst, out.width="60%"}
 include_table("aligned_table")
 ```
 
@@ -274,7 +274,7 @@ zzt2f(coef_df,
       format = "png")
 ```
 
-```{r stats-display, echo=FALSE, eval=has_typst}
+```{r stats-display, echo=FALSE, eval=has_typst, out.width="75%"}
 include_table("lm_typst")
 ```
 

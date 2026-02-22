@@ -258,8 +258,9 @@ zzt2f_internal <- function(x,
   }
 
   if (!is.null(ts$font_size)) {
+    fontsize_em <- ts$font_size / 10
     tbl <- tinytable::style_tt(
-      tbl, j = seq_len(ncol(x)), fontsize = ts$font_size
+      tbl, j = seq_len(ncol(x)), fontsize = fontsize_em
     )
   }
 
@@ -276,6 +277,10 @@ zzt2f_internal <- function(x,
 
   log_message("Saving Typst source...", verbose)
   tinytable::save_tt(tbl, output = typ_file, overwrite = TRUE)
+
+  typ_content <- readLines(typ_file)
+  page_directive <- "#set page(width: auto, height: auto, margin: (x: 5pt, y: 5pt))"
+  writeLines(c(page_directive, typ_content), typ_file)
 
   log_message(paste0("Compiling to ", toupper(format), "..."), verbose)
 
