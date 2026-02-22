@@ -38,10 +38,12 @@ Suggests:
     stringr,
     survival,
     testthat (>= 3.0.0),
+    tinytable,
     tinytex
 SystemRequirements: LaTeX, pdflatex, pdfcrop,
     imagemagick convert command (optional for PNG output),
-    pdf2svg (optional for SVG output)
+    pdf2svg (optional for SVG output),
+    Typst CLI (optional, for zzt2f)
 Encoding: UTF-8
 VignetteBuilder: knitr
 Config/testthat/edition: 3

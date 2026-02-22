@@ -6,7 +6,7 @@
 \usage{
 t2f_batch(
   data_list,
-  sub_dir = "figures",
+  sub_dir = get_default_figures_dir(),
   theme = NULL,
   parallel = FALSE,
   verbose = FALSE,

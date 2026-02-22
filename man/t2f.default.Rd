@@ -8,7 +8,7 @@
 \method{t2f}{default}(
   x,
   filename = NULL,
-  sub_dir = "figures",
+  sub_dir = get_default_figures_dir(),
   scolor = NULL,
   verbose = FALSE,
   extra_packages = NULL,
