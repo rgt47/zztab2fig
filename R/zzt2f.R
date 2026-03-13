@@ -61,19 +61,47 @@ NULL
 #' }
 #'
 #' @export
-zzt2f <- function(x,
-                  filename = NULL,
-                  sub_dir = get_default_figures_dir(),
-                  verbose = FALSE,
-                  caption = NULL,
-                  align = NULL,
-                  theme = NULL,
-                  scolor = NULL,
-                  footnote = NULL,
-                  header_above = NULL,
-                  format = c("pdf", "png", "svg"),
-                  dpi = 300L,
-                  ...) {
+zzt2f <- function(x, ...) {
+  UseMethod("zzt2f")
+}
+
+#' Default method for zzt2f (data frames)
+#'
+#' @param x A data frame, matrix, or table object to render.
+#' @param filename Base name for output file.
+#' @param sub_dir Output directory.
+#' @param verbose Print progress messages.
+#' @param caption Table caption.
+#' @param align Column alignment.
+#' @param theme Theme name or object.
+#' @param scolor Row stripe color override.
+#' @param footnote A t2f_footnote object.
+#' @param header_above A t2f_header object.
+#' @param format Output format: "pdf", "png", or "svg".
+#' @param dpi PNG resolution.
+#' @param ... Additional arguments passed to tinytable::tt().
+#'
+#' @return Invisibly returns the path to the output file.
+#' @export
+zzt2f.default <- function(x,
+                          filename = NULL,
+                          sub_dir = get_default_figures_dir(),
+                          verbose = FALSE,
+                          caption = NULL,
+                          align = NULL,
+                          theme = NULL,
+                          scolor = NULL,
+                          footnote = NULL,
+                          header_above = NULL,
+                          format = c("pdf", "png", "svg"),
+                          dpi = 300L,
+                          ...) {
+  if (!is.data.frame(x) && !is.matrix(x) && !inherits(x, "table")) {
+    stop("No zzt2f method for class '", class(x)[1],
+      "'. Convert to data.frame first.",
+      call. = FALSE
+    )
+  }
   if (is.null(filename)) filename <- deparse(substitute(x))
   format <- match.arg(format)
   zzt2f_internal(
@@ -91,6 +119,291 @@ zzt2f <- function(x,
     dpi = dpi,
     ...
   )
+}
+
+#' @rdname zzt2f.default
+#' @export
+zzt2f.data.frame <- function(x, ...) {
+  zzt2f.default(x, ...)
+}
+
+#' @rdname zzt2f.default
+#' @export
+zzt2f.matrix <- function(x, ...) {
+  zzt2f.default(x, ...)
+}
+
+#' @rdname zzt2f.default
+#' @export
+zzt2f.table <- function(x, ...) {
+  zzt2f.default(x, ...)
+}
+
+#' zzt2f method for linear models
+#'
+#' @param x An lm object.
+#' @param digits Number of decimal places.
+#' @param include Character vector of statistics to include.
+#' @param conf.level Confidence level for confidence intervals.
+#' @param ... Additional arguments passed to zzt2f.default.
+#'
+#' @return Invisibly returns the path to the output file.
+#' @export
+zzt2f.lm <- function(x,
+                     digits = 3,
+                     include = c("estimate", "std.error",
+                                 "statistic", "p.value"),
+                     conf.level = 0.95,
+                     ...) {
+  s <- summary(x)
+  coef_df <- as.data.frame(s$coefficients)
+
+  result <- data.frame(
+    Term = rownames(coef_df),
+    stringsAsFactors = FALSE
+  )
+
+  if ("estimate" %in% include) {
+    result$Estimate <- round(coef_df[, "Estimate"], digits)
+  }
+  if ("std.error" %in% include) {
+    result$`Std. Error` <- round(coef_df[, "Std. Error"], digits)
+  }
+  if ("statistic" %in% include) {
+    result$`t value` <- round(coef_df[, "t value"], digits)
+  }
+  if ("p.value" %in% include) {
+    result$`p value` <- format_pvalue(coef_df[, "Pr(>|t|)"], digits)
+  }
+  if ("conf.int" %in% include) {
+    ci <- confint(x, level = conf.level)
+    result$`CI Lower` <- round(ci[, 1], digits)
+    result$`CI Upper` <- round(ci[, 2], digits)
+  }
+
+  rownames(result) <- NULL
+  zzt2f.default(result, ...)
+}
+
+#' zzt2f method for generalized linear models
+#'
+#' @param x A glm object.
+#' @param digits Number of decimal places.
+#' @param include Character vector of statistics to include.
+#' @param exponentiate Logical. Exponentiate coefficients.
+#' @param conf.level Confidence level for confidence intervals.
+#' @param ... Additional arguments passed to zzt2f.default.
+#'
+#' @return Invisibly returns the path to the output file.
+#' @export
+zzt2f.glm <- function(x,
+                      digits = 3,
+                      include = c("estimate", "std.error",
+                                  "statistic", "p.value"),
+                      exponentiate = FALSE,
+                      conf.level = 0.95,
+                      ...) {
+  s <- summary(x)
+  coef_df <- as.data.frame(s$coefficients)
+
+  result <- data.frame(
+    Term = rownames(coef_df),
+    stringsAsFactors = FALSE
+  )
+
+  estimates <- coef_df[, "Estimate"]
+  std_errors <- coef_df[, "Std. Error"]
+
+  if (exponentiate) {
+    estimates <- exp(estimates)
+    std_errors <- estimates * std_errors
+  }
+
+  est_label <- if (exponentiate) "OR" else "Estimate"
+
+  if ("estimate" %in% include) {
+    result[[est_label]] <- round(estimates, digits)
+  }
+  if ("std.error" %in% include) {
+    result$`Std. Error` <- round(std_errors, digits)
+  }
+  if ("statistic" %in% include) {
+    stat_name <- colnames(coef_df)[3]
+    result[[stat_name]] <- round(coef_df[, 3], digits)
+  }
+  if ("p.value" %in% include) {
+    result$`p value` <- format_pvalue(coef_df[, 4], digits)
+  }
+  if ("conf.int" %in% include) {
+    ci <- confint(x, level = conf.level)
+    if (exponentiate) ci <- exp(ci)
+    result$`CI Lower` <- round(ci[, 1], digits)
+    result$`CI Upper` <- round(ci[, 2], digits)
+  }
+
+  rownames(result) <- NULL
+  zzt2f.default(result, ...)
+}
+
+#' zzt2f method for ANOVA objects
+#'
+#' @param x An anova object.
+#' @param digits Number of decimal places.
+#' @param ... Additional arguments passed to zzt2f.default.
+#'
+#' @return Invisibly returns the path to the output file.
+#' @export
+zzt2f.anova <- function(x, digits = 3, ...) {
+  df <- as.data.frame(x)
+  df <- cbind(Source = rownames(df), df)
+  rownames(df) <- NULL
+
+  df <- round_numeric_cols(df, digits)
+
+  pval_cols <- grep("Pr|p.value|P-value", names(df),
+                    ignore.case = TRUE)
+  for (col in pval_cols) {
+    df[[col]] <- format_pvalue(df[[col]], digits)
+  }
+
+  zzt2f.default(df, ...)
+}
+
+#' zzt2f method for aov objects
+#' @rdname zzt2f.anova
+#' @export
+zzt2f.aov <- function(x, digits = 3, ...) {
+  zzt2f.anova(summary(x)[[1]], digits = digits, ...)
+}
+
+#' zzt2f method for hypothesis tests
+#'
+#' @param x An htest object.
+#' @param digits Number of decimal places.
+#' @param ... Additional arguments passed to zzt2f.default.
+#'
+#' @return Invisibly returns the path to the output file.
+#' @export
+zzt2f.htest <- function(x, digits = 3, ...) {
+  result <- data.frame(
+    Statistic = names(x$statistic),
+    Value = round(x$statistic, digits),
+    stringsAsFactors = FALSE
+  )
+
+  if (!is.null(x$parameter)) {
+    result$df <- round(x$parameter, digits)
+  }
+
+  result$`p value` <- format_pvalue(x$p.value, digits)
+
+  if (!is.null(x$conf.int)) {
+    result$`CI Lower` <- round(x$conf.int[1], digits)
+    result$`CI Upper` <- round(x$conf.int[2], digits)
+  }
+
+  if (!is.null(x$estimate)) {
+    for (i in seq_along(x$estimate)) {
+      result[[names(x$estimate)[i]]] <- round(x$estimate[i], digits)
+    }
+  }
+
+  rownames(result) <- NULL
+  zzt2f.default(result, ...)
+}
+
+#' Side-by-side regression comparison table (Typst backend)
+#'
+#' @param ... Named lm or glm objects to compare.
+#' @param include Character vector of statistics to include.
+#' @param stars Logical or numeric vector for significance thresholds.
+#' @param digits Number of decimal places.
+#' @param se_in_parens Show standard errors in parentheses.
+#' @param filename Base name for output files.
+#' @param sub_dir Output directory.
+#' @param zzt2f_args List of additional arguments passed to zzt2f().
+#'
+#' @return Invisibly returns the path to the output file.
+#'
+#' @examples
+#' \dontrun{
+#' m1 <- lm(mpg ~ cyl, data = mtcars)
+#' m2 <- lm(mpg ~ cyl + hp, data = mtcars)
+#' m3 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+#' zzt2f_regression(Model1 = m1, Model2 = m2, Model3 = m3)
+#' }
+#'
+#' @export
+zzt2f_regression <- function(...,
+                             include = c("estimate", "std.error"),
+                             stars = c(0.05, 0.01, 0.001),
+                             digits = 3,
+                             se_in_parens = TRUE,
+                             filename = "regression_table",
+                             sub_dir = get_default_figures_dir(),
+                             format = c("pdf", "png", "svg"),
+                             theme = NULL,
+                             caption = NULL,
+                             zzt2f_args = list()) {
+  format <- match.arg(format)
+  models <- list(...)
+
+  if (length(models) == 0) {
+    stop("At least one model must be provided.", call. = FALSE)
+  }
+
+  if (is.null(names(models))) {
+    names(models) <- paste0("Model ", seq_along(models))
+  }
+
+  all_terms <- unique(unlist(lapply(models, function(m) {
+    names(coef(m))
+  })))
+
+  result <- data.frame(Term = all_terms, stringsAsFactors = FALSE)
+
+  for (model_name in names(models)) {
+    m <- models[[model_name]]
+    s <- summary(m)
+    coefs <- s$coefficients
+
+    estimates <- rep(NA_real_, length(all_terms))
+    se <- rep(NA_real_, length(all_terms))
+    pvals <- rep(NA_real_, length(all_terms))
+
+    for (i in seq_along(all_terms)) {
+      term <- all_terms[i]
+      if (term %in% rownames(coefs)) {
+        estimates[i] <- coefs[term, "Estimate"]
+        se[i] <- coefs[term, "Std. Error"]
+        pval_col <- grep("Pr|p.value", colnames(coefs),
+                         ignore.case = TRUE)
+        if (length(pval_col) > 0) {
+          pvals[i] <- coefs[term, pval_col[1]]
+        }
+      }
+    }
+
+    formatted <- format_with_stars(estimates, pvals, stars, digits)
+
+    if (se_in_parens && "std.error" %in% include) {
+      se_formatted <- ifelse(is.na(se), "",
+        paste0("(", round(se, digits), ")")
+      )
+      formatted <- paste(formatted, se_formatted, sep = " ")
+    }
+
+    result[[model_name]] <- formatted
+  }
+
+  stats_rows <- build_model_stats(models, digits)
+  result <- rbind(result, stats_rows)
+
+  do.call(zzt2f.default, c(
+    list(x = result, filename = filename, sub_dir = sub_dir,
+         format = format, theme = theme, caption = caption),
+    zzt2f_args
+  ))
 }
 
 #' Internal Typst pipeline

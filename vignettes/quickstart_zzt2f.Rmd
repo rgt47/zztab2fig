@@ -195,7 +195,7 @@ Group columns under spanning headers using `t2f_header_above()`:
 
 ```{r header, eval=has_typst}
 hdr <- t2f_header_above(
-  " " = 1,
+  " " = 2,
   "Performance" = 2,
   "Engine" = 1
 )
