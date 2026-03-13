@@ -31,6 +31,7 @@ resolve_typst_theme <- function(theme, scolor = NULL) {
     },
     header_bold = settings$header_bold,
     font_size = translate_font_size(settings$font_size),
+    font_family = resolved$font_family,
     striped = use_stripes
   )
 }

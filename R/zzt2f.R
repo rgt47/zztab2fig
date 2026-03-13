@@ -95,6 +95,7 @@ zzt2f.default <- function(x,
                           header_above = NULL,
                           format = c("pdf", "png", "svg"),
                           dpi = 300L,
+                          separator_row = NULL,
                           ...) {
   if (!is.data.frame(x) && !is.matrix(x) && !inherits(x, "table")) {
     stop("No zzt2f method for class '", class(x)[1],
@@ -117,6 +118,7 @@ zzt2f.default <- function(x,
     header_above = header_above,
     format = format,
     dpi = dpi,
+    separator_row = separator_row,
     ...
   )
 }
@@ -397,11 +399,13 @@ zzt2f_regression <- function(...,
   }
 
   stats_rows <- build_model_stats(models, digits)
+  coef_nrow <- nrow(result)
   result <- rbind(result, stats_rows)
 
   do.call(zzt2f.default, c(
     list(x = result, filename = filename, sub_dir = sub_dir,
-         format = format, theme = theme, caption = caption),
+         format = format, theme = theme, caption = caption,
+         separator_row = coef_nrow),
     zzt2f_args
   ))
 }
@@ -435,6 +439,7 @@ zzt2f_internal <- function(x,
                            header_above,
                            format,
                            dpi,
+                           separator_row = NULL,
                            ...) {
   require_package("tinytable", "the zzt2f() Typst backend")
   if (!command_exists("typst")) {
@@ -603,8 +608,14 @@ zzt2f_internal <- function(x,
   tinytable::save_tt(tbl, output = typ_file, overwrite = TRUE)
 
   typ_content <- readLines(typ_file)
-  page_directive <- "#set page(width: auto, height: auto, margin: (x: 5pt, y: 5pt))"
-  writeLines(c(page_directive, typ_content), typ_file)
+  typ_content <- postprocess_typst(typ_content, list(
+    font_family = ts$font_family,
+    caption_above = !is.null(caption),
+    separator_row = separator_row,
+    n_cols = ncol(x),
+    compact_footnotes = !is.null(footnote)
+  ))
+  writeLines(typ_content, typ_file)
 
   log_message(paste0("Compiling to ", toupper(format), "..."), verbose)
 

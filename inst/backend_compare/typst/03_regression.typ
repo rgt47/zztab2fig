@@ -71,15 +71,15 @@ block[ // start block
     // tinytable header start
     table.header(
       repeat: true,
-[term], [estimate], [std.error], [p.value],
+[Term], [Estimate], [Std. Error], [p value],
     ),
     // tinytable header end
 
     // tinytable cell content after
-[(Intercept)], [38.7517874], [1.78686403], [\<0.001],
-[cyl], [-0.9416168], [0.55091638], [0.098],
-[hp], [-0.0180381], [0.01187625], [0.140],
-[wt], [-3.1669731], [0.74057588], [\<0.001],
+[(Intercept)], [38.752], [1.787], [\<0.001],
+[cyl], [-0.942], [0.551], [0.098],
+[hp], [-0.018], [0.012], [0.140],
+[wt], [-3.167], [0.741], [\<0.001],
 
     // tinytable footer after
 

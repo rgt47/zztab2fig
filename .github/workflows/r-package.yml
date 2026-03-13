@@ -54,7 +54,7 @@ jobs:
         env:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          Rscript -e "install.packages(c('remotes', 'rcmdcheck', 'testthat', 'knitr', 'rmarkdown'), repos = 'https://cloud.r-project.org')"
+          Rscript -e "install.packages(c('remotes', 'rcmdcheck', 'tinytest', 'knitr', 'rmarkdown'), repos = 'https://cloud.r-project.org')"
           Rscript -e "remotes::install_deps(dependencies = TRUE)"
 
       - name: Run R CMD check
@@ -66,7 +66,7 @@ jobs:
       - name: Run tests
         continue-on-error: true
         run: |
-          Rscript -e "testthat::test_local()"
+          Rscript -e "tinytest::test_package('zztab2fig')"
 
   # ===========================================
   # Render report.Rmd if it exists

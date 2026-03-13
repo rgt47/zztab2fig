@@ -19,7 +19,6 @@ Imports:
     mgcv,
     pander,
     randomForest,
-    testthat,
     renv,
 Suggests:
     broom,
@@ -37,7 +36,7 @@ Suggests:
     rms,
     stringr,
     survival,
-    testthat (>= 3.0.0),
+    tinytest,
     tinytable,
     tinytex
 SystemRequirements: LaTeX, pdflatex, pdfcrop,
@@ -46,6 +45,5 @@ SystemRequirements: LaTeX, pdflatex, pdfcrop,
     Typst CLI (optional, for zzt2f)
 Encoding: UTF-8
 VignetteBuilder: knitr
-Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
