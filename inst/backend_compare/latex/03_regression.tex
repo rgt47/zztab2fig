@@ -1,0 +1,20 @@
+\documentclass{article}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\begin{document}
+\thispagestyle{empty}
+
+\begin{table}
+\centering
+\begin{tabular}{lrrl}
+\toprule
+\textbf{Term} & \textbf{Estimate} & \textbf{Std\_\_Error} & \textbf{p\_value}\\
+\midrule
+\cellcolor{blue!10}{(Intercept)} & \cellcolor{blue!10}{38.752} & \cellcolor{blue!10}{1.787} & \cellcolor{blue!10}{\textless{}0.001}\\
+cyl & -0.942 & 0.551 & 0.098\\
+\cellcolor{blue!10}{hp} & \cellcolor{blue!10}{-0.018} & \cellcolor{blue!10}{0.012} & \cellcolor{blue!10}{0.140}\\
+wt & -3.167 & 0.741 & \textless{}0.001\\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{document}

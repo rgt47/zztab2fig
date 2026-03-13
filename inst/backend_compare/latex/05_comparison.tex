@@ -1,0 +1,33 @@
+\documentclass{article}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\begin{document}
+\thispagestyle{empty}
+
+\begin{table}
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Term} & \textbf{Model1} & \textbf{Model2} & \textbf{Model3}\\
+\midrule
+(Intercept) & 37.885*
+(2.074) & 36.908*
+(2.191) & 38.752*
+\cellcolor{blue!10}{(1.787)}\\
+cyl & -2.876*
+(0.322) & -2.265*
+(0.576) & -0.942
+(0.551)\\
+hp &  & -0.019
+(0.015) & -0.018
+\cellcolor{blue!10}{(0.012)}\\
+wt &  &  & -3.167*
+(0.741)\\
+\cellcolor{blue!10}{N} & \cellcolor{blue!10}{32} & \cellcolor{blue!10}{32} & \cellcolor{blue!10}{32}\\
+\addlinespace
+R-squared & 0.726 & 0.741 & 0.843\\
+\cellcolor{blue!10}{Adj. R-squared} & \cellcolor{blue!10}{0.717} & \cellcolor{blue!10}{0.723} & \cellcolor{blue!10}{0.826}\\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{document}

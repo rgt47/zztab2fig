@@ -164,6 +164,17 @@ zzt2f_internal <- function(x,
   }
   if (nrow(x) == 0) stop("`x` must not be empty.", call. = FALSE)
 
+  # --- Promote non-default row names to first column ---
+  rn <- rownames(x)
+  default_rn <- as.character(seq_len(nrow(x)))
+  if (!is.null(rn) && !identical(rn, default_rn)) {
+    x <- cbind(" " = rn, x)
+    rownames(x) <- NULL
+    if (!is.null(align) && length(align) > 1) {
+      align <- c("l", align)
+    }
+  }
+
   # --- Validate alignment ---
   if (!is.null(align)) {
     if (!is.character(align)) {

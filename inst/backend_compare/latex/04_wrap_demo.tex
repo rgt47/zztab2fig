@@ -1,0 +1,27 @@
+\documentclass{article}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\usepackage[margin=20mm,paper=letterpaper]{geometry}
+\definecolor{nejmshade}{HTML}{FEF8EA}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{microtype}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{document}
+\thispagestyle{empty}
+
+\begin{table}
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{ } & \textbf{mpg} & \textbf{cyl} & \textbf{disp}\\
+\midrule
+\cellcolor{nejmshade}{Mazda RX4} & \cellcolor{nejmshade}{21.0} & \cellcolor{nejmshade}{6} & \cellcolor{nejmshade}{160}\\
+Mazda RX4 Wag & 21.0 & 6 & 160\\
+\cellcolor{nejmshade}{Datsun 710} & \cellcolor{nejmshade}{22.8} & \cellcolor{nejmshade}{4} & \cellcolor{nejmshade}{108}\\
+Hornet 4 Drive & 21.4 & 6 & 258\\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{document}
