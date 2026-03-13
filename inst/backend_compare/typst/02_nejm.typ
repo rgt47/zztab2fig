@@ -1,4 +1,5 @@
 #set page(width: auto, height: auto, margin: (x: 5pt, y: 5pt))
+#set text(font: "Helvetica Neue")
 #show figure: set block(breakable: true)
 #figure( // start preamble figure
   

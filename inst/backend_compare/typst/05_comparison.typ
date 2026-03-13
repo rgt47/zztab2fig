@@ -64,6 +64,7 @@ block[ // start block
  table.hline(y: 8, start: 0, end: 4, stroke: 0.08em + black),
  table.hline(y: 0, start: 0, end: 4, stroke: 0.08em + black),
     // tinytable lines before
+ table.hline(y: 5, start: 0, end: 4, stroke: 0.05em + black),
 
     // tinytable header start
     table.header(

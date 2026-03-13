@@ -258,15 +258,14 @@ translated to hex. Hex values (`"#E6E6FF"`) pass through unchanged.
 
 ## Working with Statistical Objects
 
-`zzt2f()` operates on data frames only. For statistical objects,
-extract the data frame first, then pass it to `zzt2f()`:
+`zzt2f()` supports S3 dispatch for common statistical objects
+(`lm`, `glm`, `anova`, `aov`, `htest`), automatically extracting,
+rounding, and formatting coefficients:
 
 ```{r stats-workflow, eval=has_typst}
 model <- lm(mpg ~ cyl + hp + wt, data = mtcars)
-coef_df <- broom::tidy(model, conf.int = TRUE)
-coef_df$p.value <- format_pvalue(coef_df$p.value)
 
-zzt2f(coef_df,
+zzt2f(model,
       caption = "Linear Model Coefficients",
       theme = "nejm",
       filename = "lm_typst",
@@ -278,9 +277,8 @@ zzt2f(coef_df,
 include_table("lm_typst")
 ```
 
-This two-step pattern (tidy then render) provides full control over
-column selection, rounding, and formatting before the table is
-generated.
+For full control over column selection, you can also use the
+`include` parameter or pass a pre-formatted data frame directly.
 
 
 ## Quick Reference
