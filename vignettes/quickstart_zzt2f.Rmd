@@ -281,6 +281,40 @@ For full control over column selection, you can also use the
 `include` parameter or pass a pre-formatted data frame directly.
 
 
+## Model Comparison
+
+Compare multiple models side-by-side with `zzt2f_regression()`:
+
+```{r regression-comparison, eval=has_typst}
+m1 <- lm(mpg ~ cyl, data = mtcars)
+m2 <- lm(mpg ~ cyl + hp, data = mtcars)
+m3 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+
+zzt2f_regression(
+  Model1 = m1, Model2 = m2, Model3 = m3,
+  stars = TRUE,
+  filename = "model_comparison",
+  sub_dir = output_dir,
+  format = "png"
+)
+```
+
+```{r regression-display, echo=FALSE, eval=has_typst, out.width="75%"}
+include_table("model_comparison")
+```
+
+A separator line is automatically inserted between coefficient
+rows and summary statistics (N, R-squared, Adj. R-squared).
+
+
+## Text Wrapping Around Tables
+
+Text wrapping (flowing paragraph text around a table) requires
+the LaTeX `wrapfig` package and is only available via `t2f()`.
+This is one of the few features with no Typst equivalent. Use
+`t2f()` for documents that require wrapped tables.
+
+
 ## Quick Reference
 
 ### zzt2f() Parameters
@@ -316,13 +350,13 @@ These are LaTeX-specific and have no Typst equivalent:
 | **Backend** | LaTeX (kableExtra) | Typst (tinytable) |
 | **Dependencies** | pdflatex + pdfcrop + ImageMagick | Typst CLI (~40 MB) |
 | **Output formats** | PDF (+ PNG/SVG via convert) | PDF, PNG, SVG natively |
-| **S3 dispatch** | Yes (lm, glm, rms, ...) | No (data frames only) |
+| **S3 dispatch** | Yes (lm, glm, rms, ...) | Yes (lm, glm, anova, htest) |
 | **Cropping** | Required (pdfcrop) | Not needed (auto-sized) |
 | **Decimal alignment** | siunitx S columns | Not yet supported |
 | **Multi-page tables** | longtable | Not yet supported |
 | **Collapse rows** | multirow | Not yet supported |
 
-Use `t2f()` when you need S3 dispatch, siunitx decimal alignment,
+Use `t2f()` when you need rms support, siunitx decimal alignment,
 or multi-page tables. Use `zzt2f()` when you want fast compilation
 with minimal system dependencies, or when you need native PNG/SVG
 output without ImageMagick.

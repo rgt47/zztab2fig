@@ -341,15 +341,72 @@ t2f_tidy(cox_model,
 This provides an escape hatch for the 100+ object types broom supports.
 
 
-## Captions and Labels
+## Captions and Footnotes
 
-Add LaTeX captions and cross-reference labels:
+Add captions and structured footnotes:
+
+```{r caption-footnote, eval=has_latex}
+fn <- t2f_footnote(
+  general = "Data from Motor Trend US magazine (1974).",
+  symbol = c("p < 0.05", "p < 0.01")
+)
+
+t2f(mtcars[1:6, 1:4],
+    caption = "Motor Trend Car Road Tests",
+    footnote = fn,
+    filename = "captioned_table",
+    sub_dir = output_dir)
+```
+
+```{r caption-footnote-display, echo=FALSE, eval=has_latex, results='asis'}
+include_table("captioned_table")
+```
+
+Cross-reference labels are also supported:
 
 ```{r caption-label, eval=FALSE}
 t2f(mtcars[1:6, 1:4],
     caption = "Motor Trend Car Road Tests (1974)",
     label = "tab:mtcars",
-    filename = "captioned_table")
+    filename = "labeled_table")
+```
+
+
+## Spanning Headers
+
+Group columns under spanning headers using `t2f_header_above()`:
+
+```{r header-above, eval=has_latex}
+hdr <- t2f_header_above(
+  " " = 1,
+  "Performance" = 2,
+  "Engine" = 1
+)
+
+t2f(mtcars[1:6, 1:4],
+    header_above = hdr,
+    filename = "header_table",
+    sub_dir = output_dir)
+```
+
+```{r header-above-display, echo=FALSE, eval=has_latex, results='asis'}
+include_table("header_table")
+```
+
+
+## Row Stripe Color Override
+
+Override the theme's stripe color with `scolor`:
+
+```{r scolor, eval=has_latex}
+t2f(mtcars[1:6, 1:4],
+    scolor = "blue!15",
+    filename = "blue_stripes",
+    sub_dir = output_dir)
+```
+
+```{r scolor-display, echo=FALSE, eval=has_latex, results='asis'}
+include_table("blue_stripes")
 ```
 
 
