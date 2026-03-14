@@ -119,6 +119,11 @@ pp_compact_footnotes <- function(lines) {
     for (j in (i + 1):min(i + 20, length(lines))) {
       if (grepl("table\\.cell.*text\\(\\[", lines[j])) {
         lines[j] <- sub(
+          "table\\.cell\\(",
+          "table.cell(inset: (y: 1pt), ",
+          lines[j]
+        )
+        lines[j] <- sub(
           "text\\(",
           "text(size: 0.75em, ",
           lines[j]
