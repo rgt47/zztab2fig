@@ -485,11 +485,19 @@ zzt2f_internal <- function(x,
   # --- Promote non-default row names to first column ---
   rn <- rownames(x)
   default_rn <- as.character(seq_len(nrow(x)))
-  if (!is.null(rn) && !identical(rn, default_rn)) {
+  has_rownames <- !is.null(rn) && !identical(rn, default_rn)
+  if (has_rownames) {
     x <- cbind(" " = rn, x)
     rownames(x) <- NULL
     if (!is.null(align) && length(align) > 1) {
       align <- c("l", align)
+    }
+    if (!is.null(header_above) && inherits(header_above, "t2f_header")) {
+      h <- header_above$header
+      if (length(h) > 0 && trimws(names(h)[1]) == "") {
+        h[1] <- h[1] + 1L
+        header_above$header <- h
+      }
     }
   }
 
