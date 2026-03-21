@@ -721,7 +721,7 @@ prepare_table_data <- function(df) {
     # Round numeric columns appropriately
     mutate(across(where(is.numeric), ~ round(.x, 2))) %>%
     # Handle NA values
-    mutate(across(everything(), ~ ifelse(is.na(.x), "—", as.character(.x)))) %>%
+    mutate(across(everything(), ~ ifelse(is.na(.x), "--", as.character(.x)))) %>%
     # Ensure reasonable column names
     rename_with(~ gsub("\\.", " ", .x)) %>%
     # Limit precision for display
@@ -856,7 +856,7 @@ t2f(results_table,
 sales_summary <- data.frame(
   Quarter = c("Q1", "Q2", "Q3", "Q4"),
   Revenue = c("$125K", "$143K", "$158K", "$171K"),
-  Growth = c("—", "+14.4%", "+10.5%", "+8.2%"),
+  Growth = c("--", "+14.4%", "+10.5%", "+8.2%"),
   Target = c("$120K", "$140K", "$155K", "$165K"),
   Status = c("Yes", "Yes", "Yes", "Yes"),
   stringsAsFactors = FALSE
