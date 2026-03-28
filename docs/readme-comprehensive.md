@@ -571,7 +571,7 @@ mtcars[1:5, 1:4]
 | **RMS Package** | Full support | Manual |
 | **Journal Themes** | 5 built-in | Manual styling |
 | **Model Comparison** | Built-in | Manual |
-| **Learning Curve** | Minimal | Moderate |
+| **Learning Curve** | Moderate | Moderate |
 | **Dependencies** | LaTeX required | Self-contained |
 
 ### When to Choose zztab2fig

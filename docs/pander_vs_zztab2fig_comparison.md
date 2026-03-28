@@ -28,18 +28,18 @@ A comprehensive comparison of two R packages for table generation and rendering.
 
 The `pander` R package serves two primary purposes:
 
-1. **Rendering R objects to Pandoc markdown** — Converts R objects (data frames,
+1. **Rendering R objects to Pandoc markdown** --Converts R objects (data frames,
    tables, statistical test results, regression summaries, etc.) into
    Pandoc-flavored markdown format for use in dynamic reports.
 
-2. **Report generation** — Provides tools for creating reproducible reports by
+2. **Report generation** --Provides tools for creating reproducible reports by
    integrating R output with markdown documents that Pandoc can then convert to
    HTML, PDF, Word, and other formats.
 
 Key functions include:
 
-- `pander()` — Generic function that renders almost any R object to markdown
-- `pandoc.table()` — Creates markdown tables with various styling options
+- `pander()` --Generic function that renders almost any R object to markdown
+- `pandoc.table()` --Creates markdown tables with various styling options
 - Automatic formatting of statistical objects (t-tests, ANOVA, regression
   models)
 - Integration with knitr and R Markdown workflows
@@ -51,22 +51,22 @@ The `zztab2fig` package is a specialized tool designed for creating
 publication-ready LaTeX tables from R objects. Version 0.2.1 adds full RMS
 package integration to the v0.2.0 feature set:
 
-- **S3 method dispatch** — Handles data frames, matrices, tables, lm, glm,
+- **S3 method dispatch** --Handles data frames, matrices, tables, lm, glm,
   anova, aov, and htest objects natively
-- **RMS package support** — Full integration with Frank Harrell's rms package
+- **RMS package support** --Full integration with Frank Harrell's rms package
   (ols, lrm, cph, orm, Glm, psm) for biostatistics workflows
-- **Theme system** — Built-in themes for NEJM, APA, Nature journals plus custom
+- **Theme system** --Built-in themes for NEJM, APA, Nature journals plus custom
   theme support
-- **Multiple output formats** — PDF (default), PNG, SVG, and TEX-only output
-- **LaTeX-native output** — Generates actual LaTeX code compiled to PDF
-- **Automatic PDF cropping** — Creates margin-cropped PDFs ready for document
+- **Multiple output formats** --PDF (default), PNG, SVG, and TEX-only output
+- **LaTeX-native output** --Generates actual LaTeX code compiled to PDF
+- **Automatic PDF cropping** --Creates margin-cropped PDFs ready for document
   inclusion
-- **R-friendly LaTeX syntax** — Helper functions (`geometry()`, `babel()`,
+- **R-friendly LaTeX syntax** --Helper functions (`geometry()`, `babel()`,
   `fontspec()`) replace raw LaTeX strings
-- **Batch processing** — Process multiple tables with consistent styling
-- **Custom knitr engine** — Native R Markdown integration
-- **Caching** — Skip recompilation of unchanged tables
-- **Broom extensibility** — `t2f_tidy()` handles any broom-supported object
+- **Batch processing** --Process multiple tables with consistent styling
+- **Custom knitr engine** --Native R Markdown integration
+- **Caching** --Skip recompilation of unchanged tables
+- **Broom extensibility** --`t2f_tidy()` handles any broom-supported object
 
 ---
 
@@ -306,22 +306,22 @@ t2f(large_df, cache = TRUE)
 
 ### zztab2fig v0.2.0 Strengths
 
-1. **"The LaTeX Table Specialist"** — Definitive tool for publication-quality
+1. **Focused LaTeX table generation tool** --Definitive tool for publication-quality
    LaTeX tables with native PDF cropping.
 
-2. **Journal-Ready Themes** — NEJM, APA, Nature themes provide immediate
+2. **Journal-Ready Themes** --NEJM, APA, Nature themes provide immediate
    compliance with journal formatting requirements.
 
-3. **Statistical Object Support** — Now handles lm, glm, anova, htest objects
+3. **Statistical Object Support** --Now handles lm, glm, anova, htest objects
    with publication-appropriate formatting including significance stars.
 
-4. **Model Comparison Tables** — `t2f_regression()` creates side-by-side model
+4. **Model Comparison Tables** --`t2f_regression()` creates side-by-side model
    comparison tables competitive with stargazer and modelsummary.
 
-5. **Integrated Workflow** — Custom knitr engine, batch processing, and caching
+5. **Integrated Workflow** --Custom knitr engine, batch processing, and caching
    support efficient document production.
 
-6. **Cropped PDF Unique Selling Point** — No other package automatically
+6. **Automated PDF cropping capability** --No other package automatically
    generates margin-cropped PDFs ready for `\includegraphics{}`.
 
 ### When to Choose pander
@@ -396,7 +396,7 @@ t2f(df, filename = "styled_table")
 | RMS package support | Yes | Yes (full) | zztab2fig |
 | Batch processing | No | Yes | zztab2fig |
 | R Markdown integration | Excellent | Good | pander |
-| Learning curve | Steep | Gentle | zztab2fig |
+| Learning curve | Steep | Lower | zztab2fig |
 | Customization depth | Very High | Moderate | pander |
 | Publication readiness | Good | Excellent | zztab2fig |
 | Biostatistics workflow | Good | Excellent | zztab2fig |

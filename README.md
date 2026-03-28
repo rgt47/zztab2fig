@@ -192,11 +192,11 @@ cases:
 
 - **LaTeX-native approach**: Creates actual LaTeX code using `pdflatex` and
   `pdfcrop` for professional LaTeX typography
-- **Simplicity**: Single function `t2f()` with minimal parameters
+- **Minimal interface**: Single function `t2f()` with minimal parameters
 - **LaTeX ecosystem integration**: Generated `.tex` files can be manually
   edited and work within existing LaTeX workflows
 - **kableExtra styling**: Uses familiar kableExtra formatting
-- **Lightweight solution**: Minimal dependencies focused on one specific task
+- **Focused scope**: Minimal dependencies focused on one specific task
 
 ### Choose flextable when you want:
 

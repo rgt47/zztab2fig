@@ -698,7 +698,7 @@ architectural strengths include:
 - **RMS integration**: Full support for biostatistics/clinical trials workflows
 - **Theme system**: Consistent styling with journal-specific presets
 - **Caching layer**: Performance optimization for repeated operations
-- **R Markdown integration**: Seamless inline table generation
+- **R Markdown integration**: Inline table generation
 - **Batch processing**: Efficient multi-table workflows
 - **Extensibility**: User-defined S3 methods, themes, and t2f_tidy() fallback
 
