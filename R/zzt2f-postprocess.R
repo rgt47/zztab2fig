@@ -95,16 +95,18 @@ pp_caption_above <- function(lines) {
 #' @return Modified character vector.
 #' @keywords internal
 pp_separator_hline <- function(lines, separator_row, n_cols) {
-  y_pos <- separator_row + 1L
-  hline <- paste0(
-    " table.hline(y: ", y_pos,
-    ", start: 0, end: ", n_cols,
-    ", stroke: 0.05em + black),"
-  )
+  y_pos <- as.integer(separator_row) + 1L
+  hlines <- vapply(y_pos, function(y) {
+    paste0(
+      " table.hline(y: ", y,
+      ", start: 0, end: ", n_cols,
+      ", stroke: 0.05em + black),"
+    )
+  }, character(1L))
   idx <- grep("// tinytable lines before", lines, fixed = TRUE)
   if (length(idx) == 0) return(lines)
   i <- idx[1]
-  c(lines[seq_len(i)], hline, lines[(i + 1):length(lines)])
+  c(lines[seq_len(i)], hlines, lines[(i + 1):length(lines)])
 }
 
 #' Style footnotes to be compact

@@ -96,6 +96,9 @@ zzt2f.default <- function(x,
                           format = c("pdf", "png", "svg"),
                           dpi = 300L,
                           separator_row = NULL,
+                          formats = NULL,
+                          collapse_rows = NULL,
+                          compile = TRUE,
                           ...) {
   if (!is.data.frame(x) && !is.matrix(x) && !inherits(x, "table")) {
     stop("No zzt2f method for class '", class(x)[1],
@@ -119,6 +122,9 @@ zzt2f.default <- function(x,
     format = format,
     dpi = dpi,
     separator_row = separator_row,
+    formats = formats,
+    collapse_rows = collapse_rows,
+    compile = compile,
     ...
   )
 }
@@ -440,9 +446,12 @@ zzt2f_internal <- function(x,
                            format,
                            dpi,
                            separator_row = NULL,
+                           formats = NULL,
+                           collapse_rows = NULL,
+                           compile = TRUE,
                            ...) {
   require_package("tinytable", "the zzt2f() Typst backend")
-  if (!command_exists("typst")) {
+  if (isTRUE(compile) && !command_exists("typst")) {
     stop(
       "Typst CLI not found on PATH.\n",
       "Install from: https://github.com/typst/typst/releases\n",
@@ -541,6 +550,18 @@ zzt2f_internal <- function(x,
     stop("Directory is not writable: ", sub_dir, call. = FALSE)
   }
 
+  # --- Apply collapse_rows spec (must precede tinytable build) ---
+  if (!is.null(collapse_rows)) {
+    cr <- apply_zzt2f_collapse(x, collapse_rows)
+    x <- cr$data
+    if (identical(collapse_rows$hline, "none")) {
+      cr$boundaries <- integer(0)
+    }
+    if (length(cr$boundaries) > 0) {
+      separator_row <- sort(unique(c(separator_row, cr$boundaries)))
+    }
+  }
+
   # --- Escape Typst-special characters in cell data ---
   x[] <- lapply(x, function(col) {
     if (is.character(col)) {
@@ -607,6 +628,9 @@ zzt2f_internal <- function(x,
     tbl <- tinytable::group_tt(tbl, j = j_spec)
   }
 
+  # --- Apply user-supplied format specs ---
+  tbl <- apply_zzt2f_formats(tbl, formats, x)
+
   # --- Save and compile ---
   typ_file <- file.path(sub_dir, paste0(filename, ".typ"))
   ext <- format
@@ -624,6 +648,21 @@ zzt2f_internal <- function(x,
     compact_footnotes = !is.null(footnote)
   ))
   writeLines(typ_content, typ_file)
+
+  if (isFALSE(compile)) {
+    log_message(
+      "compile = FALSE; returning Typst source.", verbose
+    )
+    return(structure(
+      typ_content,
+      class = c("zzt2f_source", "character"),
+      typ_file = typ_file,
+      filename = filename,
+      sub_dir = sub_dir,
+      format = format,
+      dpi = dpi
+    ))
+  }
 
   log_message(paste0("Compiling to ", toupper(format), "..."), verbose)
 

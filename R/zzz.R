@@ -6,9 +6,10 @@
 NULL
 
 .onLoad <- function(libname, pkgname) {
-  # Register the t2f knitr engine if knitr is available
+  # Register the t2f and zzt2f knitr engines if knitr is available
   if (requireNamespace("knitr", quietly = TRUE)) {
     knitr::knit_engines$set(t2f = t2f_engine)
+    knitr::knit_engines$set(zzt2f = zzt2f_engine)
   }
 
   invisible()

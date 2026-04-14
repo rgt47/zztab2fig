@@ -307,12 +307,182 @@ A separator line is automatically inserted between coefficient
 rows and summary statistics (N, R-squared, Adj. R-squared).
 
 
-## Text Wrapping Around Tables
+## Helper Functions
 
-Text wrapping (flowing paragraph text around a table) requires
-the LaTeX `wrapfig` package and is only available via `t2f()`.
-This is one of the few features with no Typst equivalent. Use
-`t2f()` for documents that require wrapped tables.
+The `zzt2f()` pipeline supports a family of `zzt2f_*` helpers
+that parallel the LaTeX-side `t2f_*` helpers. These return small
+spec objects or Typst source fragments. The sections below show
+representative usage.
+
+### Cell-level formatting
+
+Formatting specs are consumed by `zzt2f()` via its `formats`
+parameter, which accepts a single spec or a list of specs.
+
+```{r styling-demo, eval=FALSE}
+library(zztab2fig)
+
+df <- mtcars[1:4, 1:4]
+
+zzt2f(
+  df,
+  filename = 'styled_demo',
+  formats = list(
+    zzt2f_bold_col('mpg'),
+    zzt2f_italic_col('hp'),
+    zzt2f_color_row(c(1, 3), background = 'gray!10'),
+    zzt2f_highlight(
+      function(x) as.numeric(x) > 20,
+      background = 'yellow!30'
+    ),
+    zzt2f_decimal(c('mpg', 'disp'), digits = 1)
+  )
+)
+```
+
+`zzt2f_format()` is the general constructor; the other five are
+thin wrappers for common cases.
+
+### Collapsed rows and spanning headers
+
+`zzt2f_collapse_rows()` visually merges consecutive identical
+values in the specified columns; `zzt2f_header_above()` delegates
+to `t2f_header_above()` and is consumed via `header_above`.
+
+```{r structure-demo, eval=FALSE}
+df <- data.frame(
+  Group    = rep(c('A', 'B'), each = 3),
+  Subgroup = rep(c('x', 'y', 'z'), 2),
+  Value    = 1:6
+)
+
+zzt2f(
+  df,
+  filename = 'collapsed',
+  collapse_rows = zzt2f_collapse_rows('Group'),
+  header_above = zzt2f_header_above(
+    ' ' = 1, 'Identifier' = 2
+  )
+)
+```
+
+### Footnotes, marks, and cross-references
+
+`zzt2f_footnote()` is an alias for `t2f_footnote()`; the spec is
+backend-agnostic. `zzt2f_mark()` inserts Typst superscript
+markers; `zzt2f_ref()` returns a Typst cross-reference string
+(`@label`).
+
+```{r refs-demo, eval=FALSE}
+df <- mtcars[1:3, 1:3]
+df$mpg[1] <- zzt2f_mark(as.character(df$mpg[1]), 1, 'symbol')
+
+zzt2f(
+  df,
+  filename = 'fn_demo',
+  footnote = zzt2f_footnote(
+    general = 'Source: mtcars (Motor Trend, 1974).',
+    symbol = c('Leading observation.')
+  )
+)
+
+ref_str <- zzt2f_ref('tab-fn-demo', cat = FALSE)
+```
+
+### Batch rendering
+
+```{r batch-demo, eval=FALSE}
+tables <- list(
+  cars   = mtcars[1:5, 1:3],
+  irises = iris[1:5,   1:3]
+)
+zzt2f_batch(tables, sub_dir = 'figures', theme = 'nejm')
+
+# Per-table overrides
+specs <- list(
+  zzt2f_batch_spec(mtcars[1:3, 1:3], 'mt_small'),
+  zzt2f_batch_spec(iris[1:3,   1:3], 'ir_small',
+                   theme = 'apa')
+)
+zzt2f_batch_advanced(specs, sub_dir = 'figures')
+```
+
+### Fitted models
+
+`zzt2f_tidy()` routes a `broom::tidy()` output through
+`zzt2f()`; `zzt2f_coef()` is an inline wrapper for use in R
+Markdown; `zzt2f_rms_compare()` builds a side-by-side comparison
+of `rms` models.
+
+```{r stat-demo, eval=FALSE}
+m <- lm(mpg ~ cyl + hp, data = mtcars)
+zzt2f_tidy(m, filename = 'lm_tidy', digits = 2)
+zzt2f_coef(m, caption = 'Model coefficients.')
+```
+
+### Embedding a rendered table in a Typst document
+
+The `zzt2f_include*()` helpers emit Typst source for embedding a
+previously rendered PDF into a host `.typ` document. They are
+invoked for their side effect (print-and-return) in R Markdown
+chunks, or captured via `cat = FALSE`.
+
+```{r include-demo, eval=FALSE}
+zzt2f(mtcars[1:3, 1:3], filename = 'inner')
+
+zzt2f_include(
+  'inner',
+  caption = 'Demo embedded table.',
+  label = 'tab-inner',
+  cat = FALSE
+)
+#> "#align(center)[#figure(image(\"inner.pdf\", width: 100%), ..."
+
+# Side-by-side
+zzt2f_include_sidebyside(
+  'fig/a', 'fig/b',
+  main_caption = 'Comparison',
+  cat = FALSE
+)
+```
+
+Note that Typst refuses paths outside its project root, so place
+the host `.typ` file in the same directory as (or above) the
+referenced PDFs.
+
+### Preamble directives
+
+Programmatic emitters for `.typ` preamble lines:
+
+```{r preamble-demo, eval=FALSE}
+preamble <- c(
+  zzt2f_page(paper = 'a4',
+             margin = list(x = '2cm', y = '2cm')),
+  zzt2f_textlang('en'),
+  zzt2f_font(main_font = 'Libertinus Serif')
+)
+```
+
+These are intentionally thin; most users will write preamble
+directives directly in their `.typ` source.
+
+### Advanced: source-level post-processing
+
+For users who want to transform the generated Typst source
+before compilation, pass `compile = FALSE` to `zzt2f()`:
+
+```{r source-demo, eval=FALSE}
+src <- zzt2f(
+  mtcars[1:3, 1:3],
+  filename = 'raw_demo',
+  compile = FALSE
+)
+# src is a character vector of .typ lines with attributes
+# recording filename / sub_dir / format.
+
+src <- c('// Added by hand', src)
+zzt2f_compile(src, filename = 'raw_demo')
+```
 
 
 ## Quick Reference
@@ -333,15 +503,24 @@ This is one of the few features with no Typst equivalent. Use
 | `header_above` | `t2f_header_above()` object | NULL |
 | `verbose` | Print progress messages | FALSE |
 
-### Parameters from t2f() Not Available in zzt2f()
+### New parameters added by the helper set
 
-These are LaTeX-specific and have no Typst equivalent:
+| Parameter | Description |
+|:----------|:------------|
+| `formats` | A `zzt2f_format` spec or list of specs. |
+| `collapse_rows` | A `zzt2f_collapse_rows()` spec. |
+| `compile` | If `FALSE`, return Typst source instead of compiling. |
 
-- `extra_packages`, `document_class`
-- `caption_short`, `label`
-- `longtable`
-- `crop`, `crop_margin`
-- `collapse_rows`
+### Parameters from t2f() still without a Typst equivalent
+
+- `extra_packages`, `document_class`: preamble is built by
+  `zzt2f_page()` / `zzt2f_font()` / `zzt2f_textlang()` or by the
+  user directly.
+- `caption_short`: Typst `#figure` has no short-caption concept.
+- `crop`, `crop_margin`: Typst auto-sizes the page; cropping is
+  unnecessary.
+- `longtable`: multi-page tables are not yet wired through
+  `zzt2f()` although Typst itself supports them natively.
 
 ### Choosing Between t2f() and zzt2f()
 
@@ -352,14 +531,19 @@ These are LaTeX-specific and have no Typst equivalent:
 | **Output formats** | PDF (+ PNG/SVG via convert) | PDF, PNG, SVG natively |
 | **S3 dispatch** | Yes (lm, glm, rms, ...) | Yes (lm, glm, anova, htest) |
 | **Cropping** | Required (pdfcrop) | Not needed (auto-sized) |
-| **Decimal alignment** | siunitx S columns | Not yet supported |
-| **Multi-page tables** | longtable | Not yet supported |
-| **Collapse rows** | multirow | Not yet supported |
+| **Decimal alignment** | siunitx S columns | `zzt2f_siunitx()` via Typst `metro` (partial) |
+| **Multi-page tables** | longtable | Not yet wired through `zzt2f()` |
+| **Collapse rows** | multirow | `zzt2f_collapse_rows()` (cell-emptying) |
+| **Cell formatting** | `t2f_format()` family | `zzt2f_format()` family |
+| **Figure inclusion** | `t2f_include*()` family | `zzt2f_include*()` family |
+| **Batch rendering** | `t2f_batch*()` family | `zzt2f_batch*()` family |
+| **Stat helpers** | `t2f_tidy`, `t2f_coef`, `t2f_rms_compare` | `zzt2f_tidy`, `zzt2f_coef`, `zzt2f_rms_compare` |
 
-Use `t2f()` when you need rms support, siunitx decimal alignment,
-or multi-page tables. Use `zzt2f()` when you want fast compilation
-with minimal system dependencies, or when you need native PNG/SVG
-output without ImageMagick.
+Use `t2f()` when you need multi-page tables or the full
+`siunitx` option set. Use `zzt2f()` when you want fast
+compilation with minimal system dependencies or native PNG/SVG
+output without ImageMagick. The helper APIs are now close to
+symmetric across the two backends.
 
 
 ## System Requirements
