@@ -1,4 +1,9 @@
-name: R Package Check
+# zzcollab r-package.yml v2.4.0
+#
+# R CMD check in a rocker/tidyverse container, triggered on
+# pushes and PRs to main/master.
+#
+name: R Package Check (Container)
 
 on:
   push:
@@ -7,155 +12,59 @@ on:
     branches: [ main, master ]
 
 jobs:
-  # ===========================================
-  # Core: Always runs for R packages
-  # ===========================================
   check:
     runs-on: ubuntu-latest
-    container: rocker/verse:latest
-
-    outputs:
-      has_report: ${{ steps.detect.outputs.has_report }}
-      has_data: ${{ steps.detect.outputs.has_data }}
-      has_blog: ${{ steps.detect.outputs.has_blog }}
+    container: rocker/tidyverse:4.4.2
+    env:
+      ZZCOLLAB_CONTAINER: "true"
+      CI_TOOLS_LIB: "/tmp/ci-tools"
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Detect project features
-        id: detect
-        run: |
-          echo "has_report=$(test -f analysis/report/report.Rmd && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "has_data=$(test -d analysis/data && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "has_blog=$(test -f index.qmd && echo true || echo false)" >> $GITHUB_OUTPUT
-
+      # C libraries required by R packages that link against
+      # libcurl (httr), openssl (git2r), and libxml2 (xml2).
       - name: Install system dependencies
         run: |
           apt-get update && apt-get install -y \
-            jq \
-            libcurl4-openssl-dev \
-            libssl-dev \
-            libxml2-dev \
-            pandoc \
-            imagemagick
+            jq libcurl4-openssl-dev libssl-dev libxml2-dev cmake
 
-      - name: Validate DESCRIPTION exists
-        run: |
-          test -f DESCRIPTION || { echo "Missing DESCRIPTION"; exit 1; }
-
-      - name: Cache R packages
-        uses: actions/cache@v3
+      # Persist the renv global package store across runs.
+      # Key is the renv.lock hash; stale caches serve as
+      # partial restores to avoid full recompilation.
+      - name: Cache renv packages
+        uses: actions/cache@v4
         with:
-          path: /usr/local/lib/R/site-library
-          key: r-pkgs-${{ hashFiles('DESCRIPTION') }}
-          restore-keys: r-pkgs-
+          path: ~/.cache/R/renv
+          key: renv-${{ hashFiles('renv.lock') }}
+          restore-keys: |
+            renv-
 
-      - name: Install dependencies
-        env:
-          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # Install renv from CRAN, then restore all packages
+      # pinned in renv.lock into the project-local library.
+      - name: Install renv and restore project packages
         run: |
-          Rscript -e "install.packages(c('remotes', 'rcmdcheck', 'tinytest', 'knitr', 'rmarkdown'), repos = 'https://cloud.r-project.org')"
-          Rscript -e "remotes::install_deps(dependencies = TRUE)"
+          Rscript -e "\
+            install.packages('renv', repos = 'https://cloud.r-project.org'); \
+            renv::restore(prompt = FALSE)"
 
+      # rcmdcheck lives in a throwaway library so it does not
+      # pollute the renv project library or conflict with
+      # renv-managed package versions.
+      - name: Install CI tools to separate library
+        run: |
+          mkdir -p $CI_TOOLS_LIB
+          Rscript -e "\
+            install.packages(c('rcmdcheck', 'tinytest'),
+              lib = Sys.getenv('CI_TOOLS_LIB'),
+              repos = 'https://cloud.r-project.org')"
+
+      # Full R CMD check (skipping PDF manual build).
+      # This also runs the tinytest suite via the standard
+      # tests/ entry point. Fails the workflow on any ERROR.
       - name: Run R CMD check
-        env:
-          _R_CHECK_FORCE_SUGGESTS_: false
         run: |
-          Rscript -e "rcmdcheck::rcmdcheck(args = c('--no-manual', '--no-vignettes'), build_args = '--no-build-vignettes', error_on = 'error')"
-
-      - name: Run tests
-        continue-on-error: true
-        run: |
-          Rscript -e "tinytest::test_package('zztab2fig')"
-
-  # ===========================================
-  # Render report.Rmd if it exists
-  # ===========================================
-  render-report:
-    needs: check
-    if: needs.check.outputs.has_report == 'true'
-    runs-on: ubuntu-latest
-    container: rocker/verse:latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache R packages
-        uses: actions/cache@v3
-        with:
-          path: /usr/local/lib/R/site-library
-          key: r-pkgs-${{ hashFiles('DESCRIPTION') }}
-          restore-keys: r-pkgs-
-
-      - name: Install dependencies
-        run: |
-          Rscript -e "install.packages('remotes', repos = 'https://cloud.r-project.org')"
-          Rscript -e "remotes::install_deps(dependencies = TRUE)"
-
-      - name: Render report
-        run: |
-          Rscript -e "rmarkdown::render('analysis/report/report.Rmd')"
-
-      - name: Upload report artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: report
-          path: |
-            analysis/report/report.html
-            analysis/report/report.pdf
-
-  # ===========================================
-  # Data validation if data/ exists
-  # ===========================================
-  validate-data:
-    needs: check
-    if: needs.check.outputs.has_data == 'true'
-    runs-on: ubuntu-latest
-    container: rocker/r-ver:latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Validate data structure
-        run: |
-          echo "Checking data directory structure..."
-          test -d analysis/data/raw_data || echo "⚠️  No raw_data directory"
-          test -d analysis/data/derived_data || echo "⚠️  No derived_data directory"
-          test -f analysis/data/README.md || echo "⚠️  No data README"
-          echo "✅ Data structure check complete"
-
-      - name: Check for data documentation
-        run: |
-          if [ -f analysis/data/README.md ]; then
-            echo "Data documentation found:"
-            head -20 analysis/data/README.md
-          fi
-
-  # ===========================================
-  # Render Quarto blog if index.qmd exists
-  # ===========================================
-  render-blog:
-    needs: check
-    if: needs.check.outputs.has_blog == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: quarto-dev/quarto-actions/setup@v2
-
-      - uses: r-lib/actions/setup-r@v2
-
-      - name: Install R dependencies
-        run: |
-          Rscript -e "install.packages('remotes', repos = 'https://cloud.r-project.org')"
-          Rscript -e "remotes::install_deps(dependencies = TRUE)"
-
-      - name: Render blog
-        run: quarto render
-
-      - name: Upload blog artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: blog
-          path: _site/
+          Rscript -e "\
+            .libPaths(c(Sys.getenv('CI_TOOLS_LIB'), .libPaths())); \
+            rcmdcheck::rcmdcheck(
+              args = '--no-manual', error_on = 'error')"
