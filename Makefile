@@ -1,4 +1,4 @@
-# Makefile for zzcollab research compendium
+# zzcollab Makefile v2.4.0
 # Docker-first workflow for reproducible research
 
 # Auto-detect from project (no manual configuration needed)
@@ -58,7 +58,7 @@ vignettes: document
 	R --quiet -e "devtools::build_vignettes()"
 
 test:
-	R --quiet -e "tinytest::test_package('zztab2fig')"
+	R --quiet -e "devtools::test()"
 
 deps:
 	R --quiet -e "devtools::install_deps(dependencies = TRUE)"
@@ -98,23 +98,14 @@ check-system-deps:
 #   3. Exit container (auto-snapshot on exit)
 #   4. Build new image (make docker-build)
 
-# Extract base image from Dockerfile for pre-pull
-BASE_IMAGE := $(shell grep '^ARG BASE_IMAGE=' Dockerfile 2>/dev/null | head -1 | cut -d= -f2 || echo "rocker/tidyverse")
-
 docker-build:
-	@echo "Pre-pulling base image to refresh manifest cache..."
-	@docker pull --platform linux/amd64 $(BASE_IMAGE):$(R_VERSION) || true
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --build-arg R_VERSION=$(R_VERSION) -t $(PACKAGE_NAME) .
+	zzcollab build
 
 docker-rebuild:
-	@echo "Pre-pulling base image to refresh manifest cache..."
-	@docker pull --platform linux/amd64 $(BASE_IMAGE):$(R_VERSION) || true
-	DOCKER_BUILDKIT=1 docker build --no-cache --platform linux/amd64 --build-arg R_VERSION=$(R_VERSION) -t $(PACKAGE_NAME) .
+	zzcollab build --no-cache
 
 docker-build-log:
-	@echo "Building Docker image and saving log to docker-build.log..."
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --progress=plain --build-arg R_VERSION=$(R_VERSION) -t $(PACKAGE_NAME) . 2>&1 | tee docker-build.log
-	@echo "✅ Build complete. Log saved to docker-build.log"
+	zzcollab build --log
 
 docker-push-team:
 	@echo "Tagging image as $(DOCKERHUB_ACCOUNT)/$(PROJECT_NAME):$(IMAGE_TAG)"
@@ -134,7 +125,7 @@ docker-check: docker-document
 	docker run --rm -v $$(pwd):/home/analyst/project $(PACKAGE_NAME) R CMD check --as-cran *.tar.gz
 
 docker-test:
-	docker run --rm -v $$(pwd):/home/analyst/project $(PACKAGE_NAME) R --quiet -e "tinytest::test_package('zztab2fig')"
+	docker run --rm -v $$(pwd):/home/analyst/project $(PACKAGE_NAME) R --quiet -e "devtools::test()"
 
 docker-vignettes: docker-document
 	docker run --rm -v $$(pwd):/home/analyst/project $(PACKAGE_NAME) R --quiet -e "devtools::build_vignettes()"

@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.4
+# zzcollab Dockerfile v2.4.0
 
 ARG BASE_IMAGE=rocker/tidyverse
-ARG R_VERSION=4.5.2
+ARG R_VERSION=4.4.2
 ARG USERNAME=analyst
 
 FROM ${BASE_IMAGE}:${R_VERSION}
@@ -22,7 +23,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get install -y --no-install-recommends \
         build-essential pkg-config \
         libcurl4-openssl-dev libssl-dev libxml2-dev \
-        libcairo2-dev libfontconfig1-dev libfreetype6-dev libicu-dev libxml2-dev && \
+        libblas-dev libcairo2-dev libcurl4-openssl-dev libfontconfig1-dev libfreetype6-dev libgit2-dev libicu-dev libjpeg-dev liblapack-dev libnlopt-dev libpng-dev libssl-dev libtiff-dev libxml2-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Configure R to use Posit Package Manager for pre-compiled binaries
@@ -36,13 +37,6 @@ RUN R -e "install.packages('renv')"
 RUN mkdir -p /home/${USERNAME}/.cache/R/renv && chmod 777 /home/${USERNAME}/.cache/R/renv
 COPY renv.lock renv.lock
 RUN R -e "renv::restore()"
-
-# Install TinyTeX binary for PDF output
-# See: https://github.com/rstudio/tinytex-releases
-RUN apt-get update && apt-get install -y --no-install-recommends wget perl && rm -rf /var/lib/apt/lists/* \
-    && wget -qO- "https://yihui.org/tinytex/install-bin-unix.sh" | sh \
-    && /root/.TinyTeX/bin/*/tlmgr path add
-ENV PATH="${PATH}:/root/.TinyTeX/bin/x86_64-linux"
 
 # Install languageserver for IDE support and yaml for R Markdown dependencies
 RUN R -e "install.packages(c('languageserver', 'yaml'))"
